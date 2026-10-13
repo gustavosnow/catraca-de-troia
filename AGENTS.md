@@ -1,46 +1,17 @@
-# Instruções e Regras de Negócio do Projeto: Catraca de Tróia
+# Catraca de Troia — instruções do projeto
 
-## 1. Visão Geral do Sistema
-O **Catraca de Tróia** é uma solução de controle de acesso escolar inteligente para a rede pública de ensino fundamental, integrada a hardware físico (câmeras de visão computacional e catracas eletrônicas) e comunicação instantânea com pais e responsáveis.
+Leia `docs/PROJETO_CATRACA_DE_TROIA.md` e `docs/ALINHAMENTO_E_RASTREABILIDADE.md` antes de alterar regras de negócio.
 
-- **Justificativa Central**: Controle de acesso ineficiente para o registro de entrada e saída de alunos no ensino fundamental da rede pública.
-- **Orçamento Global**: R$ 291.000,00 (Mão de Obra: R$ 276.000,00 incluindo contingência e reserva gerencial; Hardware/CAPEX: R$ 15.000,00).
-- **Prazo e Equipe**: 6 meses (24 semanas), 2.400 horas produtivas distribuídas entre Iniciação, Planejamento, Execução, Testes, Monitoramento e Encerramento.
-
-## 2. Objetivos SMART do Projeto
-- **S (Específico)**: Desenvolver e implementar uma plataforma de controle de acesso inteligente integrada a hardware (câmeras e catracas) para registrar automaticamente os horários de entrada e saída de alunos, permitindo que pais e responsáveis visualizem esses registros em tempo real.
-- **M (Mensurável)**: Avaliação contínua por indicadores-chave (KPIs):
-  1. Taxa de precisão do reconhecimento facial (Meta: > 99.4%);
-  2. Tempo médio de disponibilidade do sistema / Uptime (Meta: > 99.9%);
-  3. Tempo de resposta nas notificações aos pais (Meta: < 1.5s);
-  4. Número de registros processados por minuto (Meta: > 45 passagens/min).
-- **A (Atingível)**: Equipe multidisciplinar com funções bem definidas (back-end, front-end, design, testes) e recursos de investimento público.
-- **R (Relevante)**: Modernização da rede pública escolar, transparência total aos responsáveis e otimização da rotina de segurança da portaria.
-- **T (Temporal)**: Prazo estipulado de 6 meses desde o planejamento até a implantação e entrega final.
-
-## 3. Pilares Funcionais
-1. **Controle de Acesso Escolar (Portaria e Catracas)**:
-   - Suporte a múltiplos métodos de validação: Reconhecimento Facial por Visão Computacional, Crachá RFID/NFC, QR Code Dinâmico e Biometria Digital.
-   - Monitoramento contínuo de fluxo de alunos, professores, funcionários e visitantes.
-   - Bloqueio com alerta de segurança para alunos suspensos, saídas não autorizadas ou horários divergentes do turno.
-   - Módulo de liberação manual na portaria com registro do operador e justificativa.
-
-2. **Aplicativo dos Pais / Responsáveis**:
-   - Linha do tempo do dia com horário exato e catraca utilizada pelo estudante.
-   - Histórico semanal de presença e pontualidade.
-   - Envio de justificativas de falta com upload de atestado médico.
-   - Visualização da Carteirinha Digital do Estudante.
-   - Canal de Comunicados Oficiais e Avisos da Direção.
-
-3. **Documentação Oficial & Governança do Projeto**:
-   - Central de documentação normativa e técnica (`PROJETO_CATRACA_DE_TROIA.md`).
-   - Monitoramento das metas SMART, indicadores KPIs, detalhamento orçamentário (R$ 291k) e matriz de responsabilidade da equipe.
-
-## 4. Identidade Visual Oficial
-- **Conceito**: Intersecção entre os componentes mecânicos da catraca e os vetores de geometria facial biométrica.
-- **Paleta Oficial**:
-  - **Azul Marinho Tecnológico**: `#0B192C` / `#1E293B` (Solidez e autoridade institucional).
-  - **Laranja Vibrante / Alerta**: `#EA580C` / `#F97316` / `#FF6500` (Ação em tempo real e calor humano).
-
-## 5. Diretrizes de Sincronização Contínua
-- A pasta `/docs/` armazena os documentos oficiais de especificação (`PROJETO_CATRACA_DE_TROIA.md`). Qualquer novo requisito ou artefato deve ser documentado e refletido fielmente nas interfaces e regras de negócio do sistema.
+- As fontes acadêmicas atuais são o TAP, a Atividade 01, o Dicionário da EAP e o Plano de Riscos, vinculados na documentação. A consolidação foi feita em 13/10/2026.
+- Piloto em uma escola pública de ensino fundamental, com duas catracas, câmeras, servidor local e reconhecimento facial em Python/OpenCV. Expansão para outras escolas não faz parte do piloto.
+- Painel escolar e portal responsivo dos responsáveis compartilham backend e dados. Android/iOS via Capacitor é uma evolução proposta do portal; não declarar aplicativo nativo ou publicação em lojas como entrega concluída.
+- Meta de acurácia ≥ 95%; inferência ≤ 500 ms em ≥ 95% das tentativas; ≥ 95% das notificações processadas para envio em até 5s sob conectividade prevista; disponibilidade ≥ 99% no horário escolar; ausência de vulnerabilidades críticas/altas após correção e reteste. Não inventar metas de 99,4%, 99,9%, 1,5s ou 45 passagens/min.
+- As metas são critérios de homologação, não resultados demonstrados. O cenário de até 30 passagens/min do plano de riscos é referência de teste, não garantia de capacidade aferida.
+- 24 semanas, três pessoas, 2.880h de capacidade e 2.400h produtivas. Estimativas: mão de obra R$ 240.000; contingência R$ 24.000; hardware R$ 15.000; linha de base R$ 279.000; reserva gerencial R$ 12.000 fora da linha de base; global R$ 291.000. Financiamento não está assegurado.
+- Durante falhas de internet, identificação e registro devem continuar localmente, com fila e sincronização posterior. Não confundir cache do portal/PWA com continuidade operacional do servidor escolar.
+- Autorização real deve ser aplicada no backend, por perfil e vínculo validado pela escola. A seleção de dependente pelo próprio usuário e filtros React não validam vínculo.
+- Dados biométricos exigem governança institucional: necessidade, proporcionalidade, minimização, retenção, direitos e resposta a incidentes. Preferência de notificação não autoriza automaticamente biometria nem condiciona frequência escolar.
+- Entrada alternativa e liberação manual exigem aprovação institucional, segurança física e rastreabilidade. QR Code é contingência sujeita à aprovação; RFID e biometria digital não são entregas aprovadas do piloto.
+- Preservar a paleta azul-marinho e laranja e os ativos visuais existentes.
+- Manter explícitos os dados e fluxos simulados. Não declarar backend, criptografia, notificações externas, hardware, reconhecimento facial ou indicadores reais implementados sem evidência.
+- Validar alterações com `npm run lint` e `npm run build`; testar fluxos modificados quando necessário. Atualizar matriz de rastreabilidade e registrar mudanças de escopo.

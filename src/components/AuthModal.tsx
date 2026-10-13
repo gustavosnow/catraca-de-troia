@@ -67,7 +67,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [selectedChildrenIds, setSelectedChildrenIds] = useState<string[]>(['std-1']);
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState('');
-  const [acceptTerms, setAcceptTerms] = useState(true);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
 
   // Form states - Register Staff
@@ -274,10 +274,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setLoginError('As senhas digitadas não coincidem.');
       return;
     }
-    if (!acceptTerms) {
-      setLoginError('Você deve concordar com os termos de notificação escolar e privacidade.');
-      return;
-    }
 
     const newGuardianId = 'guardian-' + Date.now();
     const formattedName = `${parentName} (${parentRelation})`;
@@ -461,6 +457,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Modal Body */}
         <div className="p-5 sm:p-6 relative z-10 max-h-[72vh] overflow-y-auto space-y-4 custom-scrollbar">
           
+          <p className="text-xs text-amber-200">Autenticação demonstrativa. O cadastro não valida vínculos ou autoriza biometria; esses controles deverão ser implementados no backend.</p>
           {/* Feedback Messages */}
           {loginError && (
             <div className="p-3 rounded-xl bg-red-950/70 border border-red-800/60 text-red-300 text-xs flex items-center gap-2.5 animate-in fade-in">
@@ -846,7 +843,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       className="w-4 h-4 mt-0.5 rounded border-slate-700 bg-slate-900 text-orange-600 focus:ring-orange-500"
                     />
                     <span>
-                      Autorizo o envio de notificações em tempo real sobre os registros de entrada e saída dos meus dependentes na EMEF.
+                      Desejo receber notificações sobre entrada e saída (preferência demonstrativa). O tratamento biométrico e o vínculo com estudantes dependem de validação institucional.
                     </span>
                   </label>
 

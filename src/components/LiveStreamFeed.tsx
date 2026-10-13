@@ -148,7 +148,7 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
               </span>
             </h2>
             <p className="text-xs text-slate-500 font-medium">
-              Monitoramento biométrico com notificação instantânea (&lt; 1.5s) aos pais
+              Registros simulados • Meta: 95% processados para envio em até 5s na homologação
             </p>
           </div>
         </div>

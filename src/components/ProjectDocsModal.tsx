@@ -1,3 +1,4 @@
+import { projectBaseline } from '../data/projectBaseline';
 import React, { useState } from 'react';
 import { 
   FileText, 
@@ -123,6 +124,15 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-800 text-sm">
           
+          <aside className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs space-y-2">
+            <p><strong>Linha de base consultada em 13/10/2026.</strong> Protótipo demonstrativo, sem integração real com hardware ou notificações externas.</p>
+            <p>Painel escolar e portal responsivo compartilham o escopo do piloto. App Android/iOS é evolução proposta; publicação em lojas e expansão para outras escolas exigem controle de mudanças.</p>
+            <p>Linha de base de custos: R$ 279.000,00. Reserva gerencial de R$ 12.000,00 fora da linha de base. Orçamento global: R$ 291.000,00.</p>
+            <p>Autorização por vínculo deve ocorrer no backend. Preferência de notificação não equivale a autorização biométrica ou condição de frequência escolar.</p>
+            <div className="flex flex-wrap gap-3">{projectBaseline.sources.map(source => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="text-blue-700 underline">{source.title}</a>)}</div>
+          </aside>
+          {activeDocTab === 'smart' && <ul className="list-disc pl-5 space-y-2 text-xs">{projectBaseline.targets.map(target => <li key={target}>{target}</li>)}</ul>}
+          {activeDocTab === 'risks' && <p className="text-xs">Riscos R01–R08: exposição biométrica, consulta indevida ao histórico, falha de internet, falha das catracas, baixa acurácia, lentidão em picos, resistência ao cadastro e indisponibilidade de integrante essencial. Consulte os gatilhos e responsáveis no plano oficial.</p>}
           {/* TAB 1: Termo de Abertura / Justificativa */}
           {activeDocTab === 'charter' && (
             <div className="space-y-5 animate-in fade-in duration-150">
@@ -143,7 +153,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                   </div>
                   <h5 className="font-bold text-slate-900 text-xs">Objetivo Principal</h5>
                   <p className="text-xs text-slate-600 mt-1">
-                    Permitir maior transparência aos pais e/ou responsáveis, visualizando em tempo real a passagem dos estudantes.
+                    Piloto em uma escola pública: duas catracas, câmeras e servidor local; consulta de entrada e saída somente pelos responsáveis vinculados.
                   </p>
                 </div>
 
@@ -163,7 +173,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                   </div>
                   <h5 className="font-bold text-slate-900 text-xs">Prazo de Execução</h5>
                   <p className="text-xs text-slate-600 mt-1">
-                    6 meses (24 semanas) com capacidade alocada de 2.400 horas técnicas e gerenciais produtivas.
+                    24 semanas (aproximadamente seis meses), com 2.400 horas produtivas estimadas.
                   </p>
                 </div>
               </div>
@@ -219,7 +229,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                   <div>
                     <h5 className="font-bold text-emerald-950 text-xs">Mensurável (Measurable)</h5>
                     <p className="text-xs text-slate-700 mt-1">
-                      O sucesso será medido através de indicadores como: taxa de precisão do reconhecimento facial, tempo médio de disponibilidade do sistema (uptime), tempo de resposta nas notificações para os pais e número de registros processados por minuto.
+                      As metas abaixo serão aferidas em homologação; não são resultados comprovados pelo protótipo.
                     </p>
                   </div>
                 </div>
@@ -231,7 +241,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                   <div>
                     <h5 className="font-bold text-amber-950 text-xs">Atingível (Achievable)</h5>
                     <p className="text-xs text-slate-700 mt-1">
-                      O projeto dispõe de uma equipe definida (back-end, front-end, design, testes) e utilizará recursos públicos (computadores, servidores, hardware de portaria) e tecnologias estabelecidas (Python, HTML, CSS, JavaScript, visão computacional) para alcançar a entrega.
+                      Equipe técnica de três pessoas, com Python/OpenCV no processamento local e interfaces web. Infraestrutura e financiamento dependem de validação institucional.
                     </p>
                   </div>
                 </div>
@@ -277,7 +287,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                   <h3 className="text-2xl font-extrabold text-white mt-0.5">R$ 291.000,00</h3>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-semibold text-emerald-400">Recurso Público Previsto</span>
+                  <span className="text-xs font-semibold text-emerald-400">Estimativa acadêmica</span>
                   <p className="text-[11px] text-slate-300">2.400h Base + Ativos CAPEX</p>
                 </div>
               </div>
@@ -288,7 +298,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                 {/* Labor */}
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
                   <h5 className="font-bold text-slate-900 text-xs flex items-center justify-between">
-                    <span>1. Mão de Obra (Técnica e Gestão)</span>
+                    <span>1. Mão de obra e reservas</span>
                     <span className="text-slate-900 font-extrabold">R$ 276.000,00</span>
                   </h5>
                   <p className="text-[11px] text-slate-500">
@@ -409,7 +419,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                     <span className="text-[10px] px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-bold">Requisitos & Prazos</span>
                   </h5>
                   <p className="text-xs text-slate-600 mt-1">
-                    Definição de requisitos de sincronização em tempo real, equipe multidisciplinar, prazo de 6 meses e alocação de recursos públicos.
+                    Definição de requisitos, operação local e sincronização posterior, equipe de três pessoas, prazo de 24 semanas e infraestrutura sujeita à validação institucional.
                   </p>
                 </div>
 
@@ -464,7 +474,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                     Problemas em câmeras ou catracas mecânicas.
                   </p>
                   <div className="text-[11px] text-slate-700 bg-white/80 p-2 rounded-lg border border-red-100">
-                    <strong>Mitigação:</strong> Manutenção preventiva e redundância de métodos (RFID, QR Code, Biometria e Liberação Manual).
+                    <strong>Mitigação:</strong> Manutenção preventiva e procedimento alternativo controlado. QR Code depende de aprovação institucional; RFID e biometria digital são propostas fora da linha de base.
                   </div>
                 </div>
 
@@ -477,7 +487,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                     Quedas de conexão à internet ou instabilidade de servidor.
                   </p>
                   <div className="text-[11px] text-slate-700 bg-white/80 p-2 rounded-lg border border-amber-100">
-                    <strong>Mitigação:</strong> Armazenamento local em buffer para sincronização assíncrona automática assim que a rede restabelecer.
+                    <strong>Mitigação:</strong> Identificação e registro no servidor local durante falhas de internet; fila de eventos e sincronização posterior, com possível atraso de notificações externas.
                   </div>
                 </div>
 
@@ -490,7 +500,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                     Vulnerabilidades ou vazamento de dados pessoais de estudantes.
                   </p>
                   <div className="text-[11px] text-slate-700 bg-white/80 p-2 rounded-lg border border-purple-100">
-                    <strong>Mitigação:</strong> Criptografia ponta a ponta, processamento biométrico local seguro e conformidade rigorosa com a LGPD.
+                    <strong>Mitigação:</strong> Processamento local, proteção dos vetores biométricos, autorização no backend por perfil e vínculo familiar, auditoria e governança institucional; medidas ainda não implementadas neste protótipo.
                   </div>
                 </div>
 
@@ -503,7 +513,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                     Dificuldade de adaptação dos responsáveis ou operadores de portaria.
                   </p>
                   <div className="text-[11px] text-slate-700 bg-white/80 p-2 rounded-lg border border-blue-100">
-                    <strong>Mitigação:</strong> Interfaces simplificadas e intuitivas, notificações diretas no WhatsApp e capacitações práticas.
+                    <strong>Mitigação:</strong> Informação e capacitação, procedimento alternativo para estudantes sem biometria e canal de notificação sujeito à aprovação institucional.
                   </div>
                 </div>
 

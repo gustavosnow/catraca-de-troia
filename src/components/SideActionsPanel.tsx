@@ -224,7 +224,7 @@ export const SideActionsPanel: React.FC<SideActionsPanelProps> = ({
           </h3>
           <span className="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
             <Wifi className="w-3 h-3 text-emerald-600" />
-            4 Online (Uptime &gt; 99.9%)
+            {turnstiles.filter(t => t.status === 'Online').length}/{turnstiles.length} online (simulado)
           </span>
         </div>
 

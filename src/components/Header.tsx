@@ -387,7 +387,7 @@ export const Header: React.FC<HeaderProps> = ({
                         <BadgeCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                         <span className="font-semibold">Sessão Autenticada</span>
                       </div>
-                      <span className="text-[10px] text-emerald-400 font-mono">Uptime 99.9%</span>
+                      <span className="text-[10px] text-emerald-400 font-mono">Meta: disponibilidade ≥ 99%</span>
                     </div>
 
                     {onOpenAuthModal && (

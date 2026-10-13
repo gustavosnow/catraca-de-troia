@@ -1,114 +1,105 @@
-# Projeto: Catraca de Tróia – Controle de Acesso Inteligente
+# Catraca de Troia — Controle de Acesso Inteligente
 
-## 1. Justificativa
-Controle de acesso ineficiente para o registro de entrada e saída de alunos no ensino fundamental da rede pública de ensino.
+Consolidação técnica consultada em **13/10/2026**. Referências acadêmicas revisadas em outubro de 2026; entregas e metas planejadas, sem homologação comprovada neste protótipo.
 
----
+## Fontes de referência
 
-## 2. Objetivos SMART
+- [Atividade 01 — Ciclo de Vida](https://docs.google.com/document/d/1eYtvWycQ0RY8AZVUsdvft_6PcsAiU6WM-Qp0A1GZnhA/edit).
+- [Termo de Abertura do Projeto](https://docs.google.com/document/d/123CtOo0_VU80zlFWrm8pKOE5eh1VWj38N-YrP_6kH2U/edit).
+- [Dicionário da EAP — versão 1.2](https://docs.google.com/document/d/1oiOUK3fTjjsJNeXXXpx0q8YL7LK9P8CJ/edit).
+- [Mapeamento e Plano de Resposta a Riscos em TI](https://docs.google.com/document/d/1btSlX5aFU_2gdUn7JFvTXXJ90HBENuXh_d514wiCOHE/edit).
 
-* **S (Específico)**: Desenvolver e implementar uma plataforma de controle de acesso inteligente integrada a hardware (câmeras e catracas) para registrar automaticamente os horários de entrada e saída de alunos, permitindo que pais e responsáveis visualizem esses registros em tempo real.
-* **M (Mensurável)**: O sucesso será medido através de indicadores como:
-  - Taxa de precisão do reconhecimento facial;
-  - Tempo médio de disponibilidade do sistema (uptime);
-  - Tempo de resposta nas notificações para os pais;
-  - Número de registros processados por minuto.
-* **A (Atingível)**: O projeto dispõe de uma equipe definida (back-end, front-end, design, testes) e utilizará recursos públicos (computadores, servidores, hardware de portaria) e tecnologias estabelecidas (Python, HTML, CSS, JavaScript, visão computacional) para alcançar a entrega.
-* **R (Relevante)**: O projeto atende à necessidade de modernizar o controle de acesso ineficiente na rede pública e oferece maior transparência e segurança aos pais e responsáveis, além de auxiliar a gestão escolar.
-* **T (Temporal)**: O projeto tem um prazo definido de 6 meses para ser concluído, desde o início do planejamento até a implantação e entrega da plataforma funcional.
+Esses documentos prevalecem sobre textos herdados do AI Studio. A consolidação não substitui os documentos originais nem comprova aprovação de novas funcionalidades.
 
----
+## Problema, objetivo e limites
 
-## 3. Orçamento Preliminar
+O registro ineficiente de entrada e saída dificulta o acompanhamento pela gestão escolar e a consulta pelos responsáveis. O projeto prevê um piloto em **uma escola pública de ensino fundamental**, com **duas catracas eletrônicas**, câmeras, servidor local, reconhecimento facial, backend e banco de dados.
 
-### 3.1. Estimativa de Mão de Obra (Técnica e Gestão)
-Baseado em uma equipe de 3 pessoas trabalhando durante 24 semanas (2.880h de capacidade total, com 2.400h alocadas produtivamente para o projeto):
-* **Custo Base (2.400h estimadas a R$ 100,00/h)**: R$ 240.000,00
-* **Reserva de Contingência (10%)**: R$ 24.000,00
-* **Reserva Gerencial (5%)**: R$ 12.000,00
-* **Subtotal Mão de Obra**: R$ 276.000,00
+Cada evento deve identificar aluno, data, hora e entrada ou saída. A gestão terá painel web; responsáveis terão portal responsivo com acesso somente aos alunos vinculados. Também fazem parte do escopo histórico, notificações, avisos, justificativas, cadastro e gestão biométrica, autenticação, autorização, testes, implantação e treinamento.
 
-### 3.2. Estimativa de Hardware (Investimento em Ativos - CAPEX)
-* **Câmeras (Reconhecimento/Segurança)**: R$ 2.000,00
-* **Catracas Eletrônicas (2 unidades)**: R$ 8.000,00
-* **Servidor/Infraestrutura de Processamento**: R$ 5.000,00
-* **Subtotal Hardware**: R$ 15.000,00
+A extensão para outras escolas não integra a entrega-piloto. RFID, biometria digital, integração com diário pedagógico e acompanhamento de aulas não são entregas aprovadas. A carteirinha visual existente é recurso demonstrativo adicional, sem comprovar QR Code seguro ou mecanismo de autorização.
 
-### 3.3. Orçamento Global Consolidado
-**Total Geral do Projeto**: **R$ 291.000,00**
+## App dos responsáveis e painel escolar
 
----
+A decisão de trabalho desta conversa é evoluir o portal para experiência de app, preservando a interface React/TypeScript. O painel escolar permanece web. Ambos devem consumir os mesmos serviços e regras, com permissões distintas.
 
-## 4. Distribuição de Horas e Custos por Etapa
+A embalagem Android/iOS com Capacitor e a distribuição como PWA são **propostas técnicas**. Publicação em lojas, serviços push e novas dependências devem ser detalhados em controle de mudanças e refletidos nos documentos acadêmicos antes de serem tratados como obrigações do piloto. Nenhum APK ou PWA instalável foi entregue nesta revisão.
 
-| Etapa do Projeto | Horas Estimadas | Custo Estimado (R$) |
-| :--- | :--- | :--- |
-| **Iniciação e Planejamento** | 300h | R$ 30.000,00 |
-| **Execução** | 1.200h | R$ 120.000,00 |
-| **Testes e Segurança** | 400h | R$ 40.000,00 |
-| **Monitoramento** | 300h | R$ 30.000,00 |
-| **Encerramento** | 200h | R$ 20.000,00 |
-| **Total (Base)** | **2.400h** | **R$ 240.000,00** |
+O protótipo atual alterna os perfis na mesma aplicação para demonstração. Essa alternância não é autorização. A estrutura ainda não fornece sincronização real entre dispositivos, nem API ou banco compartilhado.
 
----
+## Arquitetura prevista e continuidade
 
-## 5. Etapas do Ciclo de Vida do Projeto
+- Servidor local: identificação facial Python/OpenCV, aplicação das regras de acesso, registro persistente e integração física das duas catracas.
+- Fila local: preservar eventos durante falhas de conexão e sincronizar depois, sem duplicação ou perda.
+- Backend/API: autenticação, sessão, perfis, vínculos familiares validados, avisos, justificativas e auditoria.
+- Notificações: canal aprovado, fila, novas tentativas e estados distintos de processamento, envio, entrega e falha.
+- Interfaces: painel escolar e portal/app dos responsáveis com acesso restrito.
 
-### 5.1. Iniciação
-* **Problema**: Controle de acesso para o registro de entrada e saída de alunos no ensino fundamental da rede pública.
-* **Objetivo**: Permitir maior transparência aos pais e/ou responsáveis de alunos, que poderão visualizar, por meio de uma plataforma, os horários de entrada e saída do(s) aluno(s) sob sua custódia.
-* **Usuários**: Gestão escolar (diretoria, coordenação, portaria) e pais e/ou responsáveis dos alunos.
+A queda da internet não deve interromper identificação e registro locais. Notificações externas e consulta remota podem atrasar. Cache offline da interface não substitui a operação local da portaria. A stack do backend e da fila deve ser detalhada na implementação; SQLite/RabbitMQ aparecem como referências no plano de riscos.
 
-### 5.2. Planejamento
-* **Requisitos**: Sincronização em tempo real dos registros; registrar entradas e saídas de aluno com nome, dia e horário, responsável (caso haja); painel contendo histórico dos registros; quadro de avisos com justificativas declaradas pela gestão escolar.
-* **Equipe**: Time de desenvolvimento com funções bem definidas (back-end, front-end, design, testes).
-* **Prazo**: 6 meses (24 semanas).
-* **Recursos**: Recursos oriundos do investimento público (computadores, servidores, câmeras, catracas para representar a portaria, profissionais de TI).
+## Critérios quantitativos de homologação
 
-### 5.3. Execução
-* **Desenvolvimento**: VS Code como IDE; uso de Python, integrado com HTML, CSS e JavaScript; visão computacional.
-* **Testes**: Testes de segurança/autenticação para evitar vazamento de dados; testes de integração para verificar se a sincronização dos registros ocorre como esperado; teste de carga.
-* **Implantação**: Plataforma integrada com a portaria construída, cujo funcionamento ocorre por meio da inteligência computacional para o reconhecimento de pessoas; servidor configurado com a plataforma on-line e operante.
+| Indicador | Meta oficial | Condição |
+|---|---|---|
+| Acurácia facial | Pelo menos 95% | Condições de homologação previstas |
+| Inferência facial | Até 500 ms em pelo menos 95% das tentativas | Ambiente e carga homologados |
+| Notificações | Pelo menos 95% processadas para envio em até 5s | Conectividade prevista; não garantia de entrega ao celular em 5s |
+| Disponibilidade | Pelo menos 99% | Horário escolar no período definido |
+| Segurança | Ausência de vulnerabilidades críticas/altas | Após correções e novos testes |
+| Segregação de dados | 100% dos testes aprovados | Consulta restrita aos vínculos autorizados |
+| Carga | Taxa de erro inferior a 1% sob pico aprovado | Carga definida no plano de testes |
+| Cobertura crítica | Superior a 80% | Serviços e rotinas críticas, conforme EAP |
 
-### 5.4. Monitoramento
-* **Indicadores (KPIs)**:
-  - Taxa de precisão do reconhecimento facial;
-  - Tempo médio de disponibilidade do sistema (uptime);
-  - Tempo de resposta na notificação para os pais;
-  - Número de registros processados por minuto.
-* **Riscos**: Falhas técnicas no hardware (câmera/catraca); quedas de conexão ou servidor; vulnerabilidades de segurança; resistência de usuários.
-* **Acompanhamento**: Reuniões quinzenais de status; análise semanal dos logs de sistema; feedback contínuo dos usuários.
+O cenário de até 30 passagens/min mencionado em R06 orienta testes. Não há meta aprovada de 45 passagens/min nem resultados de desempenho aferidos no protótipo.
 
-### 5.5. Encerramento
-* **Entrega**: Encerramento do desenvolvimento e entrega da plataforma funcional integrada a câmeras e catracas, pronta para comportar o cadastro de pais e gestores escolares.
-* **Treinamento**: Orientações para o cadastro e acompanhamento por parte dos usuários.
-* **Documentação**: Registro formal do desenvolvimento do projeto, contendo prazos, pessoas envolvidas e recursos utilizados, além de manual de utilização e manutenção.
+## Prazo, equipe e orçamento
 
----
+Prazo estimado: **24 semanas**, aproximadamente seis meses. Três pessoas, capacidade total de 2.880 horas e 2.400 horas produtivas alocadas.
 
-## 6. Marcos do Projeto
-1. **Planejamento**: Definição de requisitos e alocação de equipe.
-2. **Desenvolvimento**: Codificação da plataforma (Python, HTML, CSS, JavaScript) e implementação da visão computacional.
-3. **Testes**: Validação de segurança, autenticação, integração e testes de carga.
-4. **Implantação**: Integração da plataforma com o hardware (câmeras/catracas) e servidor configurado.
-5. **Encerramento**: Entrega da plataforma funcional, treinamento de usuários e documentação (manual de uso e manutenção).
+| Componente | Valor estimado |
+|---|---:|
+| Mão de obra — 2.400h a R$ 100/h | R$ 240.000,00 |
+| Contingência — 10% da mão de obra | R$ 24.000,00 |
+| Câmeras | R$ 2.000,00 |
+| Duas catracas | R$ 8.000,00 |
+| Servidor local | R$ 5.000,00 |
+| Linha de base, incluindo contingência e hardware | **R$ 279.000,00** |
+| Reserva gerencial, fora da linha de base | R$ 12.000,00 |
+| Orçamento global | **R$ 291.000,00** |
 
----
+Estimativas acadêmicas; não representam despesas realizadas ou financiamento assegurado. Alocação de horas: iniciação/planejamento 300h; execução 1.200h; testes/segurança 400h; monitoramento 300h; encerramento 200h.
 
-## 7. Matriz de Riscos e Mitigações
+## Governança e controle de acesso
 
-| Risco Identificado | Categoria | Impacto | Estratégia de Mitigação |
-| :--- | :--- | :--- | :--- |
-| **Falhas Técnicas** | Hardware | Alto | Manutenção preventiva das catracas e câmeras; múltiplos métodos de contingência (RFID, QR Code, Biometria, Liberação Manual). |
-| **Infraestrutura** | Redes / Servidor | Médio-Alto | Arquitetura com buffer offline local e reconexão automática com a nuvem; monitoramento de Uptime. |
-| **Segurança** | Dados / LGPD | Crítico | Criptografia ponta a ponta, dados biométricos processados localmente e trilhas de auditoria protegidas. |
-| **Adoção** | Usuários | Médio | Interface intuitiva com onboarding para pais, notificações diretas via WhatsApp/App e treinamentos práticos para a portaria. |
+O backend deve validar o usuário, seu perfil e o vínculo autorizado com cada estudante em toda consulta ou alteração. Cadastro público não pode autorizar automaticamente acesso ao histórico de um aluno. Seleção de dependentes na interface é apenas demonstração.
 
----
+O tratamento biométrico de menores depende de validação institucional de necessidade, proporcionalidade, base jurídica, minimização, retenção, direitos e resposta a incidentes. Vetores faciais também são dados biométricos sensíveis. Preferências de notificação não autorizam automaticamente biometria nem condicionam frequência escolar.
 
-## 8. Identidade Visual
-* **Conceito**: Linhas de conexão entre o hardware físico (catraca giratória de acesso) e os pontos biométricos de visão computacional (reconhecimento facial).
-* **Paleta de Cores Oficial**:
-  - **Azul Marinho Tecnológico**: `#0B192C` / `#1E293B` (Representa solidez, segurança e estabilidade pública).
-  - **Laranja Vibrante / Ação**: `#EA580C` / `#F97316` / `#FF6500` (Representa energia, calor humano e alertas em tempo real).
-  - **Neutros de Suporte**: `#F8FAFC` (Slate Claro) e `#FFFFFF`.
+Procedimentos alternativos de entrada precisam ser aprovados e testados, incluindo segurança física, inclusão e rastreabilidade. O QR Code provisório de R07 depende dessa aprovação. Liberação manual deve registrar operador e justificativa. Bloqueios acadêmicos ou disciplinares não devem virar regras de entrada sem decisão institucional documentada.
+
+## Riscos R01–R08
+
+| ID | Evento | P × I | Classe oficial |
+|---|---|---:|---|
+| R01 | Exposição de biometria ou cadastro de menores | 10 | Médio |
+| R02 | Consulta indevida ao histórico / comprometimento de sessão | 10 | Médio |
+| R03 | Falha da internet | 16 | Alto |
+| R04 | Falha elétrica ou mecânica de catraca | 6 | Baixo |
+| R05 | Acurácia facial inferior a 95% | 12 | Médio |
+| R06 | Gargalo e inferência superior a 500 ms | 16 | Alto |
+| R07 | Resistência ou baixa adesão ao cadastro | 16 | Alto |
+| R08 | Indisponibilidade de integrante essencial | 12 | Médio |
+
+Consulte gatilhos, responsáveis e respostas no plano oficial. A classificação numérica não reduz a prioridade de incidentes graves envolvendo menores ou segurança física. Criptografia, auditoria, backups, fila local e testes são requisitos previstos, ainda não demonstrados pelo frontend.
+
+## Ciclo de vida e aceite
+
+Iniciação e planejamento formalizam escopo, requisitos, EAP, custos, cronograma e riscos. Desenvolvimento abrange os pacotes 1.3.1–1.3.8. QA inclui integração, autorização, carga, segurança, recuperação e contingência. Implantação configura servidor, instala duas catracas e capacita usuários. Reuniões quinzenais e análise semanal de logs acompanham a execução.
+
+Encerramento exige evidências dos fluxos completos, continuidade local, sincronização, rastreabilidade, procedimentos alternativos, resultados de testes, manuais, lições aprendidas e aceite formal.
+
+## Estado atual e mudanças
+
+Veja `ALINHAMENTO_E_RASTREABILIDADE.md` para o mapeamento entre EAP e código e `CONTROLE_DE_MUDANCAS.md` para as decisões desta revisão. O frontend demonstra parte das jornadas; backend, biometria, hardware e homologação estão pendentes.
+
+Identidade visual preservada: azul-marinho `#0B192C`/`#1E293B` e laranja `#EA580C`/`#F97316`/`#FF6500`, com os ativos existentes.

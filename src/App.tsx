@@ -1,3 +1,4 @@
+import { DemoNotice } from './components/DemoNotice';
 import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { MetricCards } from './components/MetricCards';
@@ -89,7 +90,7 @@ export default function App() {
           name: user.name,
           phone: user.phone || '(11) 98765-4321',
           relation: user.guardianRelation || 'Responsável',
-          childrenIds: user.childrenIds || ['std-1'],
+          childrenIds: user.childrenIds || [],
         };
         setGuardiansList(prev => [matchedGuardian!, ...prev]);
       }
@@ -143,12 +144,11 @@ export default function App() {
     const student = customStudent || students[studentPoolIndex.current % students.length];
     studentPoolIndex.current += 1;
 
-    const turnstile = turnstiles[Math.floor(Math.random() * (turnstiles.length - 1))];
+    const turnstile = turnstiles[Math.floor(Math.random() * turnstiles.length)];
     const now = new Date();
     const exactTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     
-    const methods: Array<'Facial' | 'RFID' | 'QR Code' | 'Biometria'> = ['Facial', 'RFID', 'QR Code', 'Biometria'];
-    const selectedMethod = methods[Math.floor(Math.random() * methods.length)];
+    const selectedMethod = 'Facial' as const;
 
     const newLog: AccessLog = {
       id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
@@ -400,6 +400,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-orange-500 selection:text-white">
+      <DemoNotice />
       
       {/* Streamlined Unified Header (Navigation, Brand, Status & Actions in one place) */}
       <Header

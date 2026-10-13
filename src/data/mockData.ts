@@ -383,24 +383,6 @@ export const INITIAL_TURNSTILES: Turnstile[] = [
     ipAddress: '192.168.10.102',
     lastPing: 'Agora (4ms)',
   },
-  {
-    id: 'cat-03',
-    name: 'Catraca 03 - Acesso Transporte Escolar / Vans',
-    location: 'Pátio Norte (Embarque e Desembarque)',
-    status: 'Online',
-    passesToday: 138,
-    ipAddress: '192.168.10.103',
-    lastPing: 'Agora (5ms)',
-  },
-  {
-    id: 'cat-04',
-    name: 'Catraca 04 - Acesso Refeitório / Quadra Poliesportiva',
-    location: 'Área Pedagógica Integrada',
-    status: 'Online',
-    passesToday: 55,
-    ipAddress: '192.168.10.104',
-    lastPing: 'Agora (12ms)',
-  },
 ];
 
 export const INITIAL_ACCESS_LOGS: AccessLog[] = [
@@ -440,7 +422,7 @@ export const INITIAL_ACCESS_LOGS: AccessLog[] = [
     turnstileId: 'cat-02',
     turnstileName: 'Catraca 02 (Fund. I & II)',
     status: 'Autorizado',
-    method: 'RFID',
+    method: 'Facial',
     notification: {
       whatsapp: 'Entregue',
       pushApp: 'Entregue',
@@ -459,8 +441,8 @@ export const INITIAL_ACCESS_LOGS: AccessLog[] = [
     timestamp: new Date(Date.now() - 1000 * 140).toISOString(),
     exactTime: '07:26:49',
     relativeTime: 'Há 2m',
-    turnstileId: 'cat-03',
-    turnstileName: 'Catraca 03 (Transporte Escolar)',
+    turnstileId: 'cat-02',
+    turnstileName: 'Catraca 02 (Portão Principal)',
     status: 'Autorizado',
     method: 'Facial',
     notification: {
@@ -484,7 +466,7 @@ export const INITIAL_ACCESS_LOGS: AccessLog[] = [
     turnstileName: 'Catraca 01 (Portão Principal)',
     relativeTime: 'Há 3m',
     status: 'Tolerância',
-    method: 'QR Code',
+    method: 'Manual',
     notification: {
       whatsapp: 'Entregue',
       pushApp: 'Entregue',
@@ -507,7 +489,7 @@ export const INITIAL_ACCESS_LOGS: AccessLog[] = [
     turnstileId: 'cat-02',
     turnstileName: 'Catraca 02 (Fundamental I)',
     status: 'Autorizado',
-    method: 'Biometria',
+    method: 'Facial',
     notification: {
       whatsapp: 'Lido',
       pushApp: 'Entregue',
@@ -840,7 +822,7 @@ export const getStudentWeeklyAccess = (studentId: string): WeeklyAccessDay[] => 
       entryTime: '07:22:45',
       exitTime: '12:02:10',
       turnstileUsed: 'Catraca 02 - Portão Fundamental I',
-      method: 'RFID',
+      method: 'Facial',
       status: 'atraso_tolerado',
       durationHours: '4h 40min na escola (Atraso 7 min tolerado)',
       notificationDelivered: true,
@@ -967,7 +949,7 @@ export const INITIAL_PARENT_NOTIFICATIONS: ParentNotification[] = [
   {
     id: 'pn-gabriel-1',
     title: 'Entrada na Catraca 02 (7º Ano)',
-    message: 'Gabriel Henrique passou pela Catraca 02 via Crachá RFID.',
+    message: 'Gabriel Henrique passou pela Catraca 02 via Reconhecimento Facial.',
     timestamp: '07:28 - Hoje',
     type: 'entry',
     studentName: 'Gabriel Henrique Oliveira',
@@ -1007,7 +989,7 @@ export const INITIAL_PARENT_NOTIFICATIONS: ParentNotification[] = [
   {
     id: 'pn-lucas-1',
     title: 'Entrada com tolerância (8º Ano B)',
-    message: 'Lucas Ferreira passou na Catraca 01 às 07:25 via QR Code.',
+    message: 'Lucas Ferreira passou na Catraca 01 às 07:25 por procedimento manual demonstrativo.',
     timestamp: '07:25 - Hoje',
     type: 'entry',
     studentName: 'Lucas Ferreira Santos',

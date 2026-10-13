@@ -1,3 +1,4 @@
+import { DemoNotice } from '../DemoNotice';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Smartphone, 
@@ -214,8 +215,18 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
     }, 5000);
   };
 
+  if (myChildren.length === 0 || !myChildren.some(child => child.id === selectedStudent.id)) {
+    return <div className="min-h-screen bg-slate-950 text-white p-6">
+      <DemoNotice />
+      <h1 className="text-xl font-bold mt-6">Nenhum estudante vinculado</h1>
+      <p className="mt-3">Solicite à escola a validação do vínculo antes de consultar registros.</p>
+      <button className="mt-4 underline" onClick={() => onOpenAuthModal?.('login')}>Trocar conta de demonstração</button>
+    </div>;
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-orange-500 selection:text-white">
+      <DemoNotice />
       
       {/* Top Navigation / Perspective Bar */}
       <header className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 sticky top-0 z-40">
