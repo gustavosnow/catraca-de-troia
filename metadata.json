@@ -1,0 +1,6 @@
+{
+  "name": "Catraca de Troia - Controle de Acesso Inteligente",
+  "description": "Painel de monitoramento e gestão escolar em tempo real com controle de catracas inteligentes e aplicativo mobile para pais com notificações nativas, linha do tempo e justificativa de faltas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
