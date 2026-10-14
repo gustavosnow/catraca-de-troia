@@ -1,4 +1,4 @@
-# Controle de mudanças — 13/10/2026
+# Controle de mudanças — atualizado em 14/10/2026
 
 ## MC-001 — Alinhamento da base técnica
 
@@ -37,3 +37,25 @@ Solicitação: manter a alternância entre painel escolar e portal dos responsá
 Ajustes: os cabeçalhos foram reorganizados em grades responsivas; as quatro seções do painel ocupam uma faixa própria em telas menores, e os botões de troca de perspectiva permanecem visíveis na primeira faixa. A logo oficial em PNG continua inalterada e passou a respeitar sua proporção horizontal dentro de uma moldura adequada ao fundo do cabeçalho.
 
 Limites: os ativos da identidade visual não foram redesenhados ou substituídos. A validação automatizada cobre compilação e build; a conferência visual deve considerar os navegadores e aparelhos definidos futuramente no plano de testes.
+
+## MC-006 — Integração das justificativas com a API
+
+Solicitação: avançar os serviços compartilhados antes de transformar o portal dos responsáveis em app.
+
+Ajustes: o React passou a listar, criar e analisar justificativas pela API Express/SQLite. O frontend traduz os contratos sem duplicar regras de autorização, exibe indisponibilidade de sincronização, usa chave de idempotência na criação e envia a versão esperada na análise. O operador de portaria não recebe comandos habilitados de aprovação; Coordenação e Direção continuam validadas no servidor. A demonstração inicial foi semeada no banco local padrão.
+
+Limites: `X-Demo-User-Id` continua sendo autenticação estritamente demonstrativa. Eventos, avisos e notificações permanecem em memória. Somente o nome do anexo é persistido; não há upload, antivírus, retenção ou armazenamento do documento.
+
+## MC-007 — PWA e base Capacitor para responsáveis
+
+Solicitação: evoluir o portal dos responsáveis até o ponto de app, em paralelo ao painel escolar.
+
+Ajustes: criado manifesto PWA com entrada em `/#/responsaveis`, cache apenas do shell estático, convite de instalação e orientação para iOS. Foram adicionados projetos Capacitor 8 para Android e iOS, build dedicado que oculta o painel escolar, sincronização automatizada e configuração externa da URL da API. O service worker não é registrado dentro do contêiner nativo. Os ícones quadrados apenas centralizam a logo PNG oficial, preservada sem redesenho ou substituição.
+
+Limites: `com.gustavosnow.catracatroia` é provisório. Não foram produzidos APK/IPA, assinatura, publicação em loja, push nativo ou homologação em dispositivo. O computador atual não possui Android SDK e, por ser Linux, não compila iOS; esses passos dependem dos ambientes oficiais e de decisões institucionais.
+
+## MC-008 — Higiene de dependências
+
+Durante a preparação móvel, a auditoria apontou alertas altos em Firebase/Firestore. Firebase e Google GenAI não eram importados pelo código e foram removidos como resíduos da exportação do AI Studio. A auditoria das dependências de produção passou sem vulnerabilidades conhecidas no registro consultado em 14/10/2026.
+
+Limite: a auditoria completa ainda reporta três alertas moderados transitivos na ferramenta de desenvolvimento `@capacitor/cli`; a correção automática propõe mudança de versão e não foi aplicada sem validação de compatibilidade.

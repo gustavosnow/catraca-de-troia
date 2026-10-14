@@ -93,6 +93,19 @@ const seed = `
     ('guardian-2', 'std-2', 'APPROVED', '2026-10-13T12:00:00.000Z', 'staff-2');
 `;
 
+const demoWorkflowSeed = `
+  INSERT OR IGNORE INTO justifications (
+    id, school_id, student_id, submitted_by, absence_start_date, reason_category,
+    description, attachment_name, status, submitted_at, reviewed_at, reviewed_by,
+    version, idempotency_key, request_hash
+  ) VALUES (
+    'abs-1', 'school-1', 'std-1', 'guardian-1', '2026-08-24', 'MEDICAL',
+    'Consulta pediátrica de rotina na UBS do bairro com atestado médico demonstrativo.',
+    'atestado_pediatria_2408.pdf', 'APPROVED', '2026-08-24T14:20:00.000Z',
+    '2026-08-25T12:00:00.000Z', 'staff-2', 2, 'seed-abs-1', 'seed'
+  );
+`;
+
 export interface DatabaseOptions {
   filename?: string;
   seedDemoData?: boolean;
@@ -107,6 +120,9 @@ export const createDatabase = (options: DatabaseOptions = {}) => {
   if (filename !== ':memory:') database.pragma('journal_mode = WAL');
   database.exec(schema);
   if (options.seedDemoData ?? true) database.exec(seed);
+  if ((options.seedDemoData ?? true) && options.filename === undefined) {
+    database.exec(demoWorkflowSeed);
+  }
   return database;
 };
 

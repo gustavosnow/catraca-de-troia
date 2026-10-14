@@ -31,6 +31,7 @@ import { SchoolNoticesSection } from './SchoolNoticesSection';
 import { AbsenceJustificationModal } from './AbsenceJustificationModal';
 import { StudentDigitalBadgeModal } from './StudentDigitalBadgeModal';
 import { InAppNotificationDrawer } from './InAppNotificationDrawer';
+import { InstallAppBanner } from './InstallAppBanner';
 import { 
   Student, 
   DayTimelineEvent, 
@@ -70,7 +71,9 @@ interface ParentAppViewProps {
   sharedAccessLogs: AccessLog[];
   onSimulateAccess: (studentId: string, direction: AccessDirection) => void;
   sharedJustifications: AbsenceJustification[];
-  onSubmitJustification: (justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) => void;
+  onSubmitJustification: (justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) => Promise<void>;
+  justificationsState: 'loading' | 'persistent' | 'unavailable';
+  justificationsError?: string;
 }
 
 export const ParentAppView: React.FC<ParentAppViewProps> = ({ 
@@ -88,6 +91,8 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   onSimulateAccess,
   sharedJustifications,
   onSubmitJustification,
+  justificationsState,
+  justificationsError,
 }) => {
   // Current logged in guardian (Default: Claudia Mendes or external)
   const [internalGuardian, setInternalGuardian] = useState<ParentAccount>(guardiansList[0] || PARENT_ACCOUNTS[0]);
@@ -173,9 +178,8 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   const unreadCount = parentNotifications.filter(n => !n.isRead).length;
 
   // Handler for adding a new absence justification
-  const handleAddJustification = (newJust: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) => {
+  const handleAddJustification = (newJust: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) =>
     onSubmitJustification(newJust);
-  };
 
   const handleMarkNoticeAsRead = (id: string) => {
     setNotices(notices.map(n => n.id === id ? { ...n, isUnread: false } : n));
@@ -215,6 +219,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   if (myChildren.length === 0 || !myChildren.some(child => child.id === selectedStudent.id)) {
     return <div className="min-h-screen bg-slate-950 text-white p-6">
       <DemoNotice />
+      <InstallAppBanner />
       <h1 className="text-xl font-bold mt-6">Nenhum estudante vinculado</h1>
       <p className="mt-3">Solicite à escola a validação do vínculo antes de consultar registros.</p>
       <button className="mt-4 underline" onClick={() => onOpenAuthModal?.('login')}>Trocar conta de demonstração</button>
@@ -371,6 +376,20 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             activeTab={activeTab}
             onOpenAuthModal={onOpenAuthModal}
           />
+
+          <div className={`px-4 py-2 border-b text-[11px] ${
+            justificationsState === 'persistent'
+              ? 'bg-emerald-950/40 border-emerald-900 text-emerald-200'
+              : justificationsState === 'loading'
+                ? 'bg-blue-950/40 border-blue-900 text-blue-200'
+                : 'bg-amber-950/50 border-amber-900 text-amber-200'
+          }`}>
+            {justificationsState === 'persistent'
+              ? 'Justificativas sincronizadas com a API local demonstrativa.'
+              : justificationsState === 'loading'
+                ? 'Sincronizando justificativas…'
+                : `Sem sincronização: ${justificationsError || 'API local indisponível.'}`}
+          </div>
 
           {/* Quick Absence Shortcut Bar on Home */}
           {activeTab === 'home' && (

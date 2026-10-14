@@ -137,6 +137,7 @@ export interface AbsenceJustification {
   status: 'Em Análise' | 'Aprovado pela Coordenação' | 'Recusado';
   reviewedAt?: string;
   reviewedBy?: string;
+  version?: number;
 }
 
 export type UserRole = 'parent' | 'staff';
@@ -167,4 +168,3 @@ export interface StaffAccount {
   schoolUnit: string;
   avatar?: string;
 }
-

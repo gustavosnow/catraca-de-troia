@@ -23,9 +23,9 @@ A extensão para outras escolas não integra a entrega-piloto. RFID, biometria d
 
 A decisão de trabalho desta conversa é evoluir o portal para experiência de app, preservando a interface React/TypeScript. O painel escolar permanece web. Ambos devem consumir os mesmos serviços e regras, com permissões distintas.
 
-A embalagem Android/iOS com Capacitor e a distribuição como PWA são **propostas técnicas**. Publicação em lojas, serviços push e novas dependências devem ser detalhados em controle de mudanças e refletidos nos documentos acadêmicos antes de serem tratados como obrigações do piloto. Nenhum APK ou PWA instalável foi entregue nesta revisão.
+A distribuição PWA e a base de empacotamento Android/iOS com Capacitor foram implementadas como **corte técnico demonstrativo**. Publicação em lojas, assinatura, serviços push, infraestrutura externa e critérios de aceite móveis devem ser detalhados e refletidos nos documentos acadêmicos antes de serem tratados como obrigações do piloto. Não há APK, build iOS, publicação ou homologação em aparelhos nesta revisão.
 
-O protótipo atual oferece entradas demonstrativas por hash para responsáveis e escola e permite alternar os perfis na mesma aplicação. Essa separação visual não é autorização. Eventos e justificativas compartilham apenas o estado em memória da sessão; a estrutura ainda não fornece sincronização real entre dispositivos, nem API ou banco compartilhado.
+O protótipo oferece entradas por hash para responsáveis e escola e permite alternar os perfis na versão web. O build móvel dedicado abre somente a experiência dos responsáveis. Essa separação visual não é autorização. Justificativas consomem a API Express/SQLite local com vínculo e papéis demonstrativos; eventos, avisos e notificações ainda usam estado em memória e não fornecem sincronização real entre dispositivos.
 
 ## Arquitetura prevista e continuidade
 
@@ -100,6 +100,6 @@ Encerramento exige evidências dos fluxos completos, continuidade local, sincron
 
 ## Estado atual e mudanças
 
-Veja `ALINHAMENTO_E_RASTREABILIDADE.md` para o mapeamento entre EAP e código e `CONTROLE_DE_MUDANCAS.md` para as decisões desta revisão. O frontend demonstra parte das jornadas; backend, biometria, hardware e homologação estão pendentes.
+Veja `ALINHAMENTO_E_RASTREABILIDADE.md` para o mapeamento entre EAP e código e `CONTROLE_DE_MUDANCAS.md` para as decisões desta revisão. O frontend demonstra parte das jornadas; somente o corte de justificativas possui backend local. Biometria, hardware, autenticação real, demais serviços e homologação estão pendentes.
 
 Identidade visual preservada: azul-marinho `#0B192C`/`#1E293B` e laranja `#EA580C`/`#F97316`/`#FF6500`, com os ativos existentes.

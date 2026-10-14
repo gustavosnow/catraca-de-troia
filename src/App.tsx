@@ -28,6 +28,8 @@ import {
 } from './data/mockData';
 import { AccessDirection, AccessLog, Shift, Student, Turnstile, SecurityAlert, SchoolNotice, ParentNotification, AuthUser, AbsenceJustification } from './types';
 import { soundManager } from './utils/sound';
+import { isParentOnlyBuild } from './config/runtime';
+import { justificationsApi } from './services/justificationsApi';
 
 import { 
   Bell, 
@@ -47,7 +49,7 @@ import {
 type ViewMode = 'parent_app' | 'management_dashboard';
 
 const getViewModeFromHash = (): ViewMode =>
-  window.location.hash === '#/escola' ? 'management_dashboard' : 'parent_app';
+  !isParentOnlyBuild && window.location.hash === '#/escola' ? 'management_dashboard' : 'parent_app';
 
 export default function App() {
   // Perspective Mode: 'parent_app' (Requested mobile app for parents) vs 'management_dashboard' (School portal)
@@ -63,6 +65,7 @@ export default function App() {
   }, []);
 
   const navigateToView = (mode: ViewMode) => {
+    if (isParentOnlyBuild && mode === 'management_dashboard') return;
     window.location.hash = mode === 'management_dashboard' ? '/escola' : '/responsaveis';
     setViewMode(mode);
   };
@@ -135,6 +138,30 @@ export default function App() {
   const [notices, setNotices] = useState<SchoolNotice[]>(INITIAL_SCHOOL_NOTICES);
   const [notifications, setNotifications] = useState<ParentNotification[]>(INITIAL_PARENT_NOTIFICATIONS);
   const [justifications, setJustifications] = useState<AbsenceJustification[]>(INITIAL_ABSENCE_JUSTIFICATIONS);
+  const [justificationsState, setJustificationsState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
+  const [justificationsError, setJustificationsError] = useState<string>();
+
+  useEffect(() => {
+    let active = true;
+    setJustificationsState('loading');
+    setJustificationsError(undefined);
+
+    const load = viewMode === 'parent_app'
+      ? justificationsApi.listForGuardian(currentGuardian.id)
+      : justificationsApi.listForSchool(currentStaffUser.id);
+
+    load.then((records) => {
+      if (!active) return;
+      setJustifications(records);
+      setJustificationsState('persistent');
+    }).catch((error: unknown) => {
+      if (!active) return;
+      setJustificationsState('unavailable');
+      setJustificationsError(error instanceof Error ? error.message : 'API de justificativas indisponível.');
+    });
+
+    return () => { active = false; };
+  }, [currentGuardian.id, currentStaffUser.id, viewMode]);
 
   // Real-time live simulation state
   const [isSimulating, setIsSimulating] = useState<boolean>(true);
@@ -397,16 +424,13 @@ export default function App() {
     setNotifications(prev => [newNotif, ...prev]);
   };
 
-  const handleAddJustification = (
+  const handleAddJustification = async (
     justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
   ) => {
-    const created: AbsenceJustification = {
-      ...justification,
-      id: `abs-${Date.now()}`,
-      submittedAt: `Hoje às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
-      status: 'Em Análise',
-    };
+    const created = await justificationsApi.create(currentGuardian.id, justification);
     setJustifications((current) => [created, ...current]);
+    setJustificationsState('persistent');
+    setJustificationsError(undefined);
 
     setNotifications((current) => [{
       id: `pn-justification-${Date.now()}`,
@@ -420,19 +444,19 @@ export default function App() {
     }, ...current]);
   };
 
-  const handleUpdateJustificationStatus = (
+  const handleUpdateJustificationStatus = async (
     id: string,
     status: Extract<AbsenceJustification['status'], 'Aprovado pela Coordenação' | 'Recusado'>,
   ) => {
     const justification = justifications.find((item) => item.id === id);
     if (!justification) return;
 
-    const reviewedAt = `Hoje às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+    const updated = await justificationsApi.review(currentStaffUser.id, justification, status);
     setJustifications((current) => current.map((item) =>
-      item.id === id
-        ? { ...item, status, reviewedAt, reviewedBy: currentStaffUser.name }
-        : item,
+      item.id === id ? { ...updated, reviewedBy: currentStaffUser.name } : item,
     ));
+    setJustificationsState('persistent');
+    setJustificationsError(undefined);
     setNotifications((current) => [{
       id: `pn-review-${Date.now()}`,
       title: status === 'Aprovado pela Coordenação' ? 'Justificativa aprovada' : 'Justificativa não aprovada',
@@ -455,7 +479,7 @@ export default function App() {
     return (
       <>
         <ParentAppView 
-          onSwitchToManagement={() => navigateToView('management_dashboard')}
+          onSwitchToManagement={isParentOnlyBuild ? undefined : () => navigateToView('management_dashboard')}
           sharedNotices={notices}
           onUpdateSharedNotices={setNotices}
           sharedNotifications={notifications}
@@ -472,6 +496,8 @@ export default function App() {
           }}
           sharedJustifications={justifications}
           onSubmitJustification={handleAddJustification}
+          justificationsState={justificationsState}
+          justificationsError={justificationsError}
         />
 
         <AuthModal
@@ -589,6 +615,9 @@ export default function App() {
             <JustificationsManager
               justifications={justifications}
               onUpdateStatus={handleUpdateJustificationStatus}
+              persistenceState={justificationsState}
+              persistenceError={justificationsError}
+              canReview={['Coordenação Pedagógica', 'Direção Escolar'].includes(currentStaffUser.staffRole || '')}
             />
           </div>
         )}

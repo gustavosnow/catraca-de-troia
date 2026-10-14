@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Catraca de Tróia — Responsáveis</string>
+    <string name="title_activity_main">Catraca de Tróia — Responsáveis</string>
+    <string name="package_name">com.gustavosnow.catracatroia</string>
+    <string name="custom_url_scheme">com.gustavosnow.catracatroia</string>
+</resources>

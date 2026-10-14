@@ -20,7 +20,7 @@ interface AbsenceJustificationModalProps {
   onClose: () => void;
   student: Student;
   existingJustifications: AbsenceJustification[];
-  onSubmitJustification: (justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) => void;
+  onSubmitJustification: (justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) => Promise<void>;
 }
 
 export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps> = ({
@@ -37,16 +37,18 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'nova' | 'historico'>('nova');
+  const [submitError, setSubmitError] = useState<string>();
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description.trim()) return;
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      onSubmitJustification({
+    setSubmitError(undefined);
+    try {
+      await onSubmitJustification({
         studentId: student.id,
         studentName: student.name,
         date,
@@ -54,7 +56,6 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
         description,
         attachmentName: attachedFile || undefined,
       });
-      setIsSubmitting(false);
       setSuccessMessage(true);
       setTimeout(() => {
         setSuccessMessage(false);
@@ -62,7 +63,11 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
         setAttachedFile(null);
         setActiveTab('historico');
       }, 1500);
-    }, 600);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Não foi possível enviar a justificativa.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSimulateFileUpload = () => {
@@ -144,6 +149,11 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
             </div>
           ) : activeTab === 'nova' ? (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {submitError && (
+                <div role="alert" className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">
+                  {submitError}
+                </div>
+              )}
               {/* Student info preview */}
               <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
                 <img
@@ -252,7 +262,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 flex items-start gap-2">
                 <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <span>
-                  O envio da justificativa cancela os alertas automáticos de falta na catraca e registra protocolo formal para abono de avaliações.
+                  Este fluxo é demonstrativo. O envio registra a solicitação para análise; não cancela alertas nem garante abono de avaliações.
                 </span>
               </div>
 

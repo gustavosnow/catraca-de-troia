@@ -7,15 +7,38 @@ interface JustificationsManagerProps {
   onUpdateStatus: (
     id: string,
     status: Extract<AbsenceJustification['status'], 'Aprovado pela Coordenação' | 'Recusado'>,
-  ) => void;
+  ) => Promise<void>;
+  persistenceState: 'loading' | 'persistent' | 'unavailable';
+  persistenceError?: string;
+  canReview: boolean;
 }
 
 export const JustificationsManager: React.FC<JustificationsManagerProps> = ({
   justifications,
   onUpdateStatus,
+  persistenceState,
+  persistenceError,
+  canReview,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'Todas' | AbsenceJustification['status']>('Todas');
+  const [updatingId, setUpdatingId] = useState<string>();
+  const [actionError, setActionError] = useState<string>();
+
+  const updateStatus = async (
+    justification: AbsenceJustification,
+    status: Extract<AbsenceJustification['status'], 'Aprovado pela Coordenação' | 'Recusado'>,
+  ) => {
+    setUpdatingId(justification.id);
+    setActionError(undefined);
+    try {
+      await onUpdateStatus(justification.id, status);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Não foi possível analisar a justificativa.');
+    } finally {
+      setUpdatingId(undefined);
+    }
+  };
 
   const filtered = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase('pt-BR');
@@ -82,6 +105,11 @@ export const JustificationsManager: React.FC<JustificationsManagerProps> = ({
       </div>
 
       <div className="space-y-3">
+        {actionError && (
+          <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+            {actionError}
+          </div>
+        )}
         {filtered.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center text-sm text-slate-500">
             Nenhuma justificativa corresponde aos filtros.
@@ -130,14 +158,16 @@ export const JustificationsManager: React.FC<JustificationsManagerProps> = ({
                 {justification.status === 'Em Análise' && (
                   <div className="flex gap-2 shrink-0">
                     <button
-                      onClick={() => onUpdateStatus(justification.id, 'Aprovado pela Coordenação')}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold"
+                      onClick={() => updateStatus(justification, 'Aprovado pela Coordenação')}
+                      disabled={!canReview || updatingId === justification.id || persistenceState !== 'persistent'}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold"
                     >
                       <CheckCircle2 className="w-4 h-4" /> Aprovar
                     </button>
                     <button
-                      onClick={() => onUpdateStatus(justification.id, 'Recusado')}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold"
+                      onClick={() => updateStatus(justification, 'Recusado')}
+                      disabled={!canReview || updatingId === justification.id || persistenceState !== 'persistent'}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-rose-50 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed border border-rose-200 text-rose-700 text-xs font-bold"
                     >
                       <XCircle className="w-4 h-4" /> Recusar
                     </button>
@@ -149,9 +179,21 @@ export const JustificationsManager: React.FC<JustificationsManagerProps> = ({
         )}
       </div>
 
-      <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900">
+      <div className={`flex items-start gap-2 p-3 rounded-xl border text-xs ${
+        persistenceState === 'persistent'
+          ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+          : 'bg-amber-50 border-amber-200 text-amber-900'
+      }`}>
         <Clock3 className="w-4 h-4 shrink-0 mt-0.5" />
-        <p>Os dados permanecem somente na memória desta demonstração. Nenhuma análise ou anexo é persistido.</p>
+        <p>
+          {persistenceState === 'persistent'
+            ? canReview
+              ? 'Dados persistidos na API local demonstrativa. O conteúdo do arquivo anexo ainda não é enviado; somente o nome é registrado.'
+              : 'Dados persistidos na API local. A análise é restrita às contas demonstrativas de Coordenação e Direção.'
+            : persistenceState === 'loading'
+              ? 'Carregando justificativas da API local…'
+              : `API local indisponível. ${persistenceError || ''}`}
+        </p>
       </div>
     </section>
   );

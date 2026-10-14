@@ -7,10 +7,10 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 | 1.1.1–1.1.4 | TAP, custos, riscos, acompanhamento e encerramento | Consolidação e links das fontes | Documentação acadêmica existente; aceite e encerramento pendentes |
 | 1.2.1 | Requisitos funcionais e não funcionais | Linha de base e metas centralizadas em `projectBaseline.ts` | Refinar histórias e plano de aceite |
 | 1.2.2–1.2.3 | Jornadas e protótipo de alta fidelidade | React: painel e `ParentAppView` | Demonstração; formalizar fluxogramas |
-| 1.3.1 | Backend e banco | API Express/SQLite isolada para justificativas; frontend ainda usa estados React e `mockData.ts` | Corte inicial implementado; integrar interfaces e expandir persistência para eventos |
+| 1.3.1 | Backend e banco | API Express/SQLite consumida pelo fluxo de justificativas | Corte inicial integrado; expandir persistência para eventos, avisos e notificações |
 | 1.3.2 | Reconhecimento facial | Passagens geradas por simulação | Pendente: Python/OpenCV e homologação |
-| 1.3.3 | Painel escolar | `Header`, `LiveStreamFeed`, cadastros, avisos e fila de justificativas | Interface demonstrativa com estado compartilhado em memória; faltam API e dados reais |
-| 1.3.4 | Portal responsivo dos responsáveis | `ParentAppView`, histórico, notificações e justificativas | Demonstrativo; eventos e justificativas compartilham o estado da sessão com o painel; app móvel proposto como evolução |
+| 1.3.3 | Painel escolar | `Header`, `LiveStreamFeed`, cadastros, avisos e fila de justificativas | Justificativas usam API local; demais áreas continuam demonstrativas em memória |
+| 1.3.4 | Portal responsivo dos responsáveis | `ParentAppView`, PWA e projetos Capacitor Android/iOS | Shell instalável e empacotamento-base implementados; homologação móvel, API remota e publicação pendentes |
 | 1.3.5 | Integração e acionamento | Duas catracas em `mockData.ts`, liberação manual visual | Pendente: hardware, operador validado e auditoria persistente |
 | 1.3.6 | Notificações | Estados e alertas visuais simulados | Pendente: serviço real, canais aprovados, fila e retentativas |
 | 1.3.7 | Gestão biométrica | Cadastro visual e ficha do aluno | Pendente: ciclo de dados biométricos e proteção institucional |
@@ -36,17 +36,19 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 
 - A linha do tempo do portal foi limitada aos eventos simulados de entrada e saída; uma agenda pedagógica futura exigirá fonte e escopo próprios.
 - Painel e portal usam um fluxo comum em memória para simular entrada/saída e derivar o histórico. Persistência, API, idempotência e sincronização entre aparelhos continuam pendentes.
-- No frontend, justificativas ainda usam estado compartilhado na sessão. A API local já persiste justificativas e sua auditoria em SQLite, com idempotência, controle otimista, papéis e vínculos demonstrativos, mas o React ainda não a consome; `X-Demo-User-Id` não é autenticação real, e anexos continuam simulados.
+- Justificativas já são lidas, criadas e analisadas pelo React por meio da API local, com idempotência, controle otimista, auditoria, papéis e vínculos demonstrativos. `X-Demo-User-Id` não é autenticação real, e anexos continuam restritos ao nome fictício do arquivo.
+- A PWA armazena somente o shell estático. Cache da interface não substitui a continuidade do servidor escolar; a API não possui fila/sincronização para operação móvel desconectada.
+- Os projetos Capacitor foram gerados e sincronizados, mas ainda exigem URL HTTPS de API acessível ao aparelho, identificador institucional definitivo, SDKs, assinatura, testes em dispositivos e decisão formal de distribuição.
 - Cadastro demonstrativo ainda permite selecionar alunos para explorar a interface; substituir por solicitação de vínculo e aprovação escolar no serviço real.
 - QR da carteirinha é ilustrativo; tokens seguros, validade e procedimento de contingência exigem especificação e aprovação.
-- WhatsApp/push, anexos, câmeras, biometria, persistência, filas e auditoria não estão conectados a serviços reais.
+- WhatsApp/push, conteúdo de anexos, câmeras e biometria não estão conectados a serviços reais. Persistência e auditoria existem somente no corte local de justificativas; filas e sincronização continuam pendentes.
 - Nenhum resultado de acurácia, latência, disponibilidade, segurança ou carga foi medido.
 
 ## Próxima sequência de desenvolvimento
 
-1. Evoluir as entradas demonstrativas `#/responsaveis` e `#/escola` para pontos de implantação separados quando a arquitetura de hospedagem for definida.
-2. Implementar backend com perfis e vínculos validados pela escola; testar acesso cruzado e contas sem vínculo.
-3. Persistir o fluxo comum de eventos e justificativas, com idempotência, auditoria, operação local, fila e sincronização.
-4. Integrar canal de notificação aprovado e gestão real de anexos.
-5. Preparar portal instalável e empacotamento Android, registrando a extensão nos documentos impactados.
+1. Definir autenticação/sessão reais e substituir `X-Demo-User-Id`, preservando os testes de vínculo e segregação.
+2. Levar eventos de entrada/saída e o histórico derivado para a API comum, com idempotência, auditoria, fila local e sincronização.
+3. Definir hospedagem/HTTPS e configuração por ambiente para painel, PWA e aparelhos móveis.
+4. Integrar canal de notificação aprovado e gestão real de anexos, com retenção e proteção definidas.
+5. Confirmar identificador institucional, estratégia de distribuição e critérios móveis; testar PWA/Android e executar iOS em macOS/Xcode.
 6. Integrar hardware e reconhecimento facial, executar homologação e produzir evidências da EAP.
