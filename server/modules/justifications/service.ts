@@ -9,6 +9,7 @@ import {
 } from '../../../shared/contracts/justifications';
 import { AppDatabase } from '../../db';
 import { conflict, forbidden, notFound } from '../../errors';
+import { notifyUser } from '../communications/notificationWriter';
 
 interface StudentRow {
   id: string;
@@ -189,6 +190,17 @@ export class JustificationService {
           previous_state, new_state, occurred_at
         ) VALUES (?, ?, ?, 'JUSTIFICATION', ?, 'CREATED', NULL, 'PENDING', ?)
       `).run(randomUUID(), actor.schoolId, actor.id, id, timestamp);
+      notifyUser(this.database, actor.id, {
+        schoolId: actor.schoolId,
+        type: 'ABSENCE',
+        title: 'Justificativa registrada no portal',
+        message: `A justificativa para ${request.absenceStartDate} foi protocolada para análise.`,
+        studentId,
+        contextLabel: 'Secretaria Escolar',
+        sourceType: 'JUSTIFICATION_CREATED',
+        sourceId: id,
+        createdAt: timestamp,
+      });
     });
     transaction();
 
@@ -249,6 +261,17 @@ export class JustificationService {
         request.status,
         timestamp,
       );
+      notifyUser(this.database, existing.submitted_by, {
+        schoolId: actor.schoolId,
+        type: 'ABSENCE',
+        title: request.status === 'APPROVED' ? 'Justificativa aprovada' : 'Justificativa não aprovada',
+        message: `A justificativa para ${existing.absence_start_date} foi ${request.status === 'APPROVED' ? 'aprovada' : 'recusada'} pela escola.`,
+        studentId: existing.student_id,
+        contextLabel: 'Coordenação Escolar',
+        sourceType: 'JUSTIFICATION_REVIEWED',
+        sourceId: justificationId,
+        createdAt: timestamp,
+      });
     });
     transaction();
 

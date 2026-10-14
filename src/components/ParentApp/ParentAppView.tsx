@@ -31,6 +31,7 @@ import { AbsenceJustificationModal } from './AbsenceJustificationModal';
 import { StudentDigitalBadgeModal } from './StudentDigitalBadgeModal';
 import { InAppNotificationDrawer } from './InAppNotificationDrawer';
 import { InstallAppBanner } from './InstallAppBanner';
+import { ParentDataStatus } from './ParentDataStatus';
 import { 
   Student, 
   DayTimelineEvent, 
@@ -59,6 +60,8 @@ interface ParentAppViewProps {
   onUpdateSharedNotices?: (notices: SchoolNotice[]) => void;
   sharedNotifications?: ParentNotification[];
   onUpdateSharedNotifications?: (notifications: ParentNotification[]) => void;
+  onMarkNoticeRead?: (id: string) => Promise<void>;
+  onMarkAllNotificationsRead?: () => Promise<void>;
   guardiansList?: ParentAccount[];
   currentGuardianExternal?: ParentAccount;
   onSelectGuardianExternal?: (guardian: ParentAccount) => void;
@@ -71,6 +74,11 @@ interface ParentAppViewProps {
   justificationsError?: string;
   accessEventsState: 'loading' | 'persistent' | 'unavailable';
   accessEventsError?: string;
+  communicationsState: 'loading' | 'persistent' | 'unavailable';
+  communicationsError?: string;
+  isOnline: boolean;
+  dataUpdatedAt?: string;
+  onRefreshData: () => void;
   onLogout?: () => void;
 }
 
@@ -80,6 +88,8 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   onUpdateSharedNotices,
   sharedNotifications,
   onUpdateSharedNotifications,
+  onMarkNoticeRead,
+  onMarkAllNotificationsRead,
   guardiansList = PARENT_ACCOUNTS,
   currentGuardianExternal,
   onSelectGuardianExternal,
@@ -92,6 +102,11 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   justificationsError,
   accessEventsState,
   accessEventsError,
+  communicationsState,
+  communicationsError,
+  isOnline,
+  dataUpdatedAt,
+  onRefreshData,
   onLogout,
 }) => {
   // Current logged in guardian (Default: Claudia Mendes or external)
@@ -177,11 +192,19 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   const handleAddJustification = (newJust: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) =>
     onSubmitJustification(newJust);
 
-  const handleMarkNoticeAsRead = (id: string) => {
+  const handleMarkNoticeAsRead = async (id: string) => {
+    if (onMarkNoticeRead) {
+      await onMarkNoticeRead(id);
+      return;
+    }
     setNotices(notices.map(n => n.id === id ? { ...n, isUnread: false } : n));
   };
 
-  const handleMarkAllNotificationsAsRead = () => {
+  const handleMarkAllNotificationsAsRead = async () => {
+    if (onMarkAllNotificationsRead) {
+      await onMarkAllNotificationsRead();
+      return;
+    }
     const childrenNames = myChildren.map(c => c.name);
     setAllNotifications(allNotifications.map(n => {
       if (n.studentName === 'Geral' || (n.studentName && childrenNames.includes(n.studentName))) {
@@ -316,33 +339,13 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             onLogout={onLogout}
           />
 
-          <div className={`px-4 py-2 border-b text-[11px] ${
-            justificationsState === 'persistent'
-              ? 'bg-emerald-950/40 border-emerald-900 text-emerald-200'
-              : justificationsState === 'loading'
-                ? 'bg-blue-950/40 border-blue-900 text-blue-200'
-                : 'bg-amber-950/50 border-amber-900 text-amber-200'
-          }`}>
-            {justificationsState === 'persistent'
-              ? 'Justificativas sincronizadas com a API local demonstrativa.'
-              : justificationsState === 'loading'
-                ? 'Sincronizando justificativas…'
-                : `Sem sincronização: ${justificationsError || 'API local indisponível.'}`}
-          </div>
-
-          <div className={`px-4 py-2 border-b text-[11px] ${
-            accessEventsState === 'persistent'
-              ? 'bg-emerald-950/40 border-emerald-900 text-emerald-200'
-              : accessEventsState === 'loading'
-                ? 'bg-blue-950/40 border-blue-900 text-blue-200'
-                : 'bg-amber-950/50 border-amber-900 text-amber-200'
-          }`}>
-            {accessEventsState === 'persistent'
-              ? 'Entradas, saídas e histórico sincronizados com a API local demonstrativa.'
-              : accessEventsState === 'loading'
-                ? 'Sincronizando histórico de acesso…'
-                : `Histórico sem sincronização: ${accessEventsError || 'API local indisponível.'}`}
-          </div>
+          <ParentDataStatus
+            isOnline={isOnline}
+            states={[accessEventsState, justificationsState, communicationsState]}
+            updatedAt={dataUpdatedAt}
+            errors={[accessEventsError, justificationsError, communicationsError]}
+            onRefresh={onRefreshData}
+          />
 
           {/* Quick Absence Shortcut Bar on Home */}
           {activeTab === 'home' && (
@@ -350,7 +353,9 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
               <button
                 id="btn-parent-open-absence-modal"
                 onClick={() => setIsAbsenceModalOpen(true)}
-                className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-98 cursor-pointer"
+                disabled={!isOnline}
+                title={isOnline ? 'Enviar justificativa' : 'Reconecte-se para enviar uma justificativa'}
+                className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-98 cursor-pointer disabled:cursor-not-allowed disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-400"
               >
                 <FileText className="w-4 h-4" />
                 <span>Notificar Falta / Enviar Atestado</span>
@@ -378,6 +383,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
                 <SchoolNoticesSection
                   notices={notices}
                   onMarkAsRead={handleMarkNoticeAsRead}
+                  canMarkAsRead={isOnline}
                 />
               </>
             )}
@@ -397,6 +403,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
               <SchoolNoticesSection
                 notices={notices}
                 onMarkAsRead={handleMarkNoticeAsRead}
+                canMarkAsRead={isOnline}
               />
             )}
           </div>
@@ -448,7 +455,9 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             <button
               id="tab-parent-absence"
               onClick={() => setIsAbsenceModalOpen(true)}
-              className="flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl text-slate-400 hover:text-slate-200 transition-all cursor-pointer"
+              disabled={!isOnline}
+              title={isOnline ? 'Enviar justificativa' : 'Reconecte-se para enviar uma justificativa'}
+              className="flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl text-slate-400 hover:text-slate-200 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
             >
               <FileText className="w-5 h-5 text-amber-400" />
               <span className="text-[10px]">Justificar</span>
@@ -487,6 +496,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
               onClose={() => setIsNotificationsOpen(false)}
               notifications={parentNotifications}
               onMarkAllAsRead={handleMarkAllNotificationsAsRead}
+              canMarkAsRead={isOnline}
             />
           )}
         </div>

@@ -7,6 +7,7 @@ import type { AccessEventSyncPayload } from '../../../shared/contracts/accessEve
 import type { DemoActor } from '../../../shared/contracts/justifications';
 import type { AppDatabase } from '../../db';
 import { conflict, forbidden, notFound } from '../../errors';
+import { notifyStudentGuardians } from '../communications/notificationWriter';
 
 interface AccessEventRow {
   id: string;
@@ -183,6 +184,19 @@ export class AccessEventService {
           previous_state, new_state, occurred_at
         ) VALUES (?, ?, ?, 'ACCESS_EVENT', ?, 'CREATED', NULL, ?, ?)
       `).run(randomUUID(), actor.schoolId, actor.id, id, request.direction, timestamp);
+      const student = this.database.prepare('SELECT name FROM students WHERE id = ?')
+        .get(studentId) as { name: string };
+      notifyStudentGuardians(this.database, studentId, {
+        schoolId: actor.schoolId,
+        type: request.direction,
+        title: request.direction === 'ENTRY' ? 'Entrada registrada' : 'Saída registrada',
+        message: `${student.name} teve ${request.direction === 'ENTRY' ? 'entrada' : 'saída'} registrada em ${request.turnstileName.trim()}.`,
+        studentId,
+        contextLabel: request.turnstileName.trim(),
+        sourceType: 'ACCESS_EVENT',
+        sourceId: id,
+        createdAt: timestamp,
+      });
     });
     transaction();
 

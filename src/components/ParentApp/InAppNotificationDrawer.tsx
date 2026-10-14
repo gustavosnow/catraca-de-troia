@@ -20,6 +20,7 @@ interface InAppNotificationDrawerProps {
   onClose: () => void;
   notifications: ParentNotification[];
   onMarkAllAsRead: () => void;
+  canMarkAsRead?: boolean;
   onSelectNotification?: (notif: ParentNotification) => void;
 }
 
@@ -28,6 +29,7 @@ export const InAppNotificationDrawer: React.FC<InAppNotificationDrawerProps> = (
   onClose,
   notifications,
   onMarkAllAsRead,
+  canMarkAsRead = true,
   onSelectNotification,
 }) => {
   const [filter, setFilter] = useState<'all' | 'access' | 'notices'>('all');
@@ -105,7 +107,9 @@ export const InAppNotificationDrawer: React.FC<InAppNotificationDrawerProps> = (
 
           <button
             onClick={onMarkAllAsRead}
-            className="text-xs text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+            disabled={!canMarkAsRead}
+            className="text-xs text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1 cursor-pointer transition-colors disabled:cursor-not-allowed disabled:text-slate-600"
+            title={canMarkAsRead ? 'Marcar todas como lidas' : 'Reconecte-se para registrar a leitura'}
           >
             <CheckCheck className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Marcar todas como lidas</span>

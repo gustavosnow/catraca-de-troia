@@ -27,6 +27,7 @@ export interface AccessEventSyncReceipt {
 }
 
 export interface AccessEventSyncStatus {
+  configured: boolean;
   pending: number;
   processing: number;
   synced: number;
@@ -34,4 +35,3 @@ export interface AccessEventSyncStatus {
   lastSyncedAt?: string;
   nextAttemptAt?: string;
 }
-

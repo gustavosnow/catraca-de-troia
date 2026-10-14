@@ -70,6 +70,7 @@ export class AccessEventSyncService {
     private readonly database: AppDatabase,
     private readonly transport: AccessEventSyncTransport,
     private readonly now: () => string = () => new Date().toISOString(),
+    private readonly configured = true,
   ) {}
 
   status(actor: DemoActor): AccessEventSyncStatus {
@@ -85,6 +86,7 @@ export class AccessEventSyncService {
       FROM access_event_sync_queue WHERE school_id = ?
     `).get(actor.schoolId) as Record<string, number | string | null>;
     return {
+      configured: this.configured,
       pending: Number(counts.pending || 0),
       processing: Number(counts.processing || 0),
       synced: Number(counts.synced || 0),
@@ -280,4 +282,3 @@ export class HttpAccessEventSyncTransport implements AccessEventSyncTransport {
     };
   }
 }
-

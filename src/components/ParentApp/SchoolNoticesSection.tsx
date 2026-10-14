@@ -16,17 +16,19 @@ import { SchoolNotice } from '../../types';
 interface SchoolNoticesSectionProps {
   notices: SchoolNotice[];
   onMarkAsRead: (id: string) => void;
+  canMarkAsRead?: boolean;
 }
 
 export const SchoolNoticesSection: React.FC<SchoolNoticesSectionProps> = ({
   notices,
   onMarkAsRead,
+  canMarkAsRead = true,
 }) => {
   const [selectedNotice, setSelectedNotice] = useState<SchoolNotice | null>(null);
 
   const handleOpenNotice = (notice: SchoolNotice) => {
     setSelectedNotice(notice);
-    if (notice.isUnread) {
+    if (notice.isUnread && canMarkAsRead) {
       onMarkAsRead(notice.id);
     }
   };
@@ -174,7 +176,8 @@ export const SchoolNoticesSection: React.FC<SchoolNoticesSectionProps> = ({
 
             <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
               <span className="text-xs text-slate-500 flex items-center gap-1">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Leitura registrada no app
+                <CheckCircle2 className={`w-4 h-4 ${canMarkAsRead ? 'text-emerald-600' : 'text-amber-600'}`} />
+                {canMarkAsRead ? 'Leitura registrada no app' : 'Reconecte-se para registrar a leitura'}
               </span>
               <button
                 onClick={() => setSelectedNotice(null)}

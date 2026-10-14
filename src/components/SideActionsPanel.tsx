@@ -11,10 +11,14 @@ import {
   Shield,
   Zap,
   SlidersHorizontal,
-  Wifi
+  Wifi,
+  Database,
+  AlertTriangle,
+  CloudOff,
 } from 'lucide-react';
 import { Shift, Student, Turnstile } from '../types';
 import { TURMAS_LIST } from '../data/mockData';
+import type { AccessEventSyncStatus } from '../../shared/contracts/accessEventSync';
 
 interface SideActionsPanelProps {
   onOpenManualRelease: () => void;
@@ -26,6 +30,12 @@ interface SideActionsPanelProps {
   selectedTurma: string;
   onSelectTurma: (turma: string) => void;
   onTriggerManualTap: () => void;
+  syncStatus: AccessEventSyncStatus | null;
+  syncStatusState: 'loading' | 'available' | 'unavailable';
+  syncStatusError?: string;
+  canRetrySyncConflicts: boolean;
+  isRetryingSyncConflicts: boolean;
+  onRetrySyncConflicts: () => void;
 }
 
 export const SideActionsPanel: React.FC<SideActionsPanelProps> = ({
@@ -38,6 +48,12 @@ export const SideActionsPanel: React.FC<SideActionsPanelProps> = ({
   selectedTurma,
   onSelectTurma,
   onTriggerManualTap,
+  syncStatus,
+  syncStatusState,
+  syncStatusError,
+  canRetrySyncConflicts,
+  isRetryingSyncConflicts,
+  onRetrySyncConflicts,
 }) => {
   const [studentSearch, setStudentSearch] = useState('');
 
@@ -215,7 +231,98 @@ export const SideActionsPanel: React.FC<SideActionsPanelProps> = ({
 
       </div>
 
-      {/* 4. Hardware Status (Catracas Físicas Conectadas) */}
+      {/* 4. Local event queue and synchronization status */}
+      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+        <div className="flex items-start justify-between gap-3 mb-3.5">
+          <div>
+            <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <Database className="w-4 h-4 text-orange-600" />
+              Fila Local de Eventos
+            </h3>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Continuidade do servidor escolar demonstrativo
+            </p>
+          </div>
+          {syncStatusState === 'loading' && !syncStatus ? (
+            <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 rounded-full px-2 py-1">
+              Consultando
+            </span>
+          ) : syncStatusState === 'unavailable' ? (
+            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-full px-2 py-1">
+              Indisponível
+            </span>
+          ) : syncStatus && !syncStatus.configured ? (
+            <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-1 flex items-center gap-1">
+              <CloudOff className="w-3 h-3" /> Local
+            </span>
+          ) : syncStatus?.configured ? (
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-1">
+              Destino ativo
+            </span>
+          ) : null}
+        </div>
+
+        {syncStatusState === 'loading' && !syncStatus ? (
+          <p className="text-xs text-slate-500">Consultando a fila…</p>
+        ) : syncStatusState === 'unavailable' ? (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+            {syncStatusError || 'Não foi possível consultar a fila local.'}
+          </div>
+        ) : syncStatus && (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                ['Pendentes', syncStatus.pending, 'text-amber-700 bg-amber-50 border-amber-200'],
+                ['Processando', syncStatus.processing, 'text-blue-700 bg-blue-50 border-blue-200'],
+                ['Sincronizados', syncStatus.synced, 'text-emerald-700 bg-emerald-50 border-emerald-200'],
+                ['Conflitos', syncStatus.conflicts, 'text-rose-700 bg-rose-50 border-rose-200'],
+              ].map(([label, value, color]) => (
+                <div key={String(label)} className={`rounded-xl border p-2.5 ${color}`}>
+                  <strong className="block text-lg leading-none">{value}</strong>
+                  <span className="text-[10px] font-bold uppercase tracking-wide">{label}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-3 text-[11px] text-slate-600 space-y-1">
+              <p>
+                {syncStatus.configured
+                  ? 'O trabalhador tenta enviar automaticamente quando há conectividade.'
+                  : 'Sem destino configurado: os eventos permanecem preservados neste SQLite.'}
+              </p>
+              <p>
+                Última sincronização: {syncStatus.lastSyncedAt
+                  ? new Date(syncStatus.lastSyncedAt).toLocaleString('pt-BR')
+                  : 'nenhuma nesta base'}
+              </p>
+            </div>
+
+            {syncStatus.conflicts > 0 && (
+              <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3">
+                <p className="text-[11px] text-rose-800 flex items-start gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                  Conteúdo divergente foi isolado e não sobrescreveu o destino.
+                </p>
+                {canRetrySyncConflicts ? (
+                  <button
+                    onClick={onRetrySyncConflicts}
+                    disabled={isRetryingSyncConflicts}
+                    className="mt-2 w-full py-2 rounded-lg bg-rose-700 hover:bg-rose-600 disabled:opacity-60 text-white text-[11px] font-bold transition-colors cursor-pointer"
+                  >
+                    {isRetryingSyncConflicts ? 'Reenfileirando…' : 'Reenfileirar conflitos'}
+                  </button>
+                ) : (
+                  <p className="text-[10px] text-rose-700 mt-2">
+                    Coordenação ou Direção deve revisar e reenfileirar.
+                  </p>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* 5. Hardware Status (Catracas Físicas Conectadas) */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-3.5">
           <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">

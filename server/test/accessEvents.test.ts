@@ -60,7 +60,22 @@ test('eventos respeitam vínculo e somente perfis escolares registram passagem',
 
   result = await request(api.baseUrl, '/api/v1/access-events/sync/status', 'staff-1');
   assert.equal(result.response.status, 200);
+  assert.equal(result.body.data.configured, false);
   assert.equal(result.body.data.pending, 1);
+
+  api.database.prepare(`
+    UPDATE access_event_sync_queue SET state = 'CONFLICT' WHERE event_id = ?
+  `).run(eventId);
+  result = await request(api.baseUrl, '/api/v1/access-events/sync/retry-conflicts', 'staff-1', {
+    method: 'POST',
+  });
+  assert.equal(result.response.status, 403);
+
+  result = await request(api.baseUrl, '/api/v1/access-events/sync/retry-conflicts', 'staff-2', {
+    method: 'POST',
+  });
+  assert.equal(result.response.status, 200);
+  assert.equal(result.body.data.requeued, 1);
 
   result = await request(api.baseUrl, '/api/v1/access-events/sync/status', 'guardian-1');
   assert.equal(result.response.status, 403);

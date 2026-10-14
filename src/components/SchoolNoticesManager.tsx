@@ -26,10 +26,13 @@ import { SchoolNotice } from '../types';
 
 interface SchoolNoticesManagerProps {
   notices: SchoolNotice[];
-  onAddNotice: (notice: Omit<SchoolNotice, 'id'>) => void;
-  onUpdateNotice: (notice: SchoolNotice) => void;
-  onDeleteNotice: (id: string) => void;
-  onBroadcastPush: (notice: SchoolNotice) => void;
+  onAddNotice: (notice: Omit<SchoolNotice, 'id'>, notifyGuardians: boolean) => Promise<void>;
+  onUpdateNotice: (notice: SchoolNotice) => Promise<void>;
+  onDeleteNotice: (id: string) => Promise<void>;
+  onBroadcastPush: (notice: SchoolNotice) => Promise<void>;
+  canManage: boolean;
+  persistenceState: 'loading' | 'persistent' | 'unavailable';
+  persistenceError?: string;
 }
 
 export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
@@ -38,6 +41,9 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
   onUpdateNotice,
   onDeleteNotice,
   onBroadcastPush,
+  canManage,
+  persistenceState,
+  persistenceError,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
@@ -59,6 +65,8 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
   const [fullContent, setFullContent] = useState('');
   const [attachmentName, setAttachmentName] = useState('');
   const [autoBroadcast, setAutoBroadcast] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [operationError, setOperationError] = useState<string>();
 
   // Open composer for new notice
   const handleOpenNew = () => {
@@ -91,7 +99,7 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
   };
 
   // Save notice (create or update)
-  const handleSaveNotice = (e: React.FormEvent) => {
+  const handleSaveNotice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !summary.trim() || !fullContent.trim()) return;
 
@@ -99,6 +107,9 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
     const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     const dateStr = 'Hoje, ' + timeStr;
 
+    setIsSaving(true);
+    setOperationError(undefined);
+    try {
     if (editingNotice) {
       const updated: SchoolNotice = {
         ...editingNotice,
@@ -111,7 +122,7 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
         fullContent,
         attachmentName: attachmentName.trim() || undefined,
       };
-      onUpdateNotice(updated);
+      await onUpdateNotice(updated);
     } else {
       const newNotice: Omit<SchoolNotice, 'id'> = {
         title,
@@ -126,16 +137,26 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
         isUnread: true,
         attachmentName: attachmentName.trim() || undefined,
       };
-      onAddNotice(newNotice);
+      await onAddNotice(newNotice, autoBroadcast);
     }
 
     setIsComposerOpen(false);
+    } catch (error) {
+      setOperationError(error instanceof Error ? error.message : 'Não foi possível salvar o comunicado.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleTriggerBroadcast = (notice: SchoolNotice) => {
-    onBroadcastPush(notice);
-    setBroadcastSuccess(notice.id);
-    setTimeout(() => setBroadcastSuccess(null), 3000);
+  const handleTriggerBroadcast = async (notice: SchoolNotice) => {
+    setOperationError(undefined);
+    try {
+      await onBroadcastPush(notice);
+      setBroadcastSuccess(notice.id);
+      setTimeout(() => setBroadcastSuccess(null), 3000);
+    } catch (error) {
+      setOperationError(error instanceof Error ? error.message : 'Não foi possível gerar as notificações internas.');
+    }
   };
 
   // Filter notices
@@ -176,14 +197,14 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
 
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Taxa de Leitura</span>
+            <span className="text-xs font-semibold text-slate-500">Persistência</span>
             <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <CheckCheck className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-slate-900">94.8%</span>
-            <span className="text-xs text-emerald-600 font-semibold">no app</span>
+            <span className="text-sm font-bold text-slate-900">SQLite</span>
+            <span className="text-xs text-emerald-600 font-semibold">API local</span>
           </div>
         </div>
 
@@ -202,14 +223,14 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
 
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Canais Ativos</span>
+            <span className="text-xs font-semibold text-slate-500">Canal Implementado</span>
             <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center">
               <Smartphone className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-sm font-bold text-slate-900">App + WhatsApp</span>
-            <span className="text-xs text-orange-600 font-semibold">100% alcance</span>
+            <span className="text-sm font-bold text-slate-900">Interno no app</span>
+            <span className="text-xs text-slate-500 font-semibold">demonstrativo</span>
           </div>
         </div>
 
@@ -226,14 +247,14 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <button
+            {canManage && <button
               id="btn-create-school-notice"
               onClick={handleOpenNew}
               className="px-3.5 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Novo Comunicado</span>
-            </button>
+            </button>}
           </div>
         </div>
 
@@ -285,6 +306,16 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
 
         </div>
       </div>
+
+      {(persistenceState !== 'persistent' || operationError) && (
+        <div className={`rounded-xl border px-4 py-3 text-xs ${
+          persistenceState === 'loading' && !operationError
+            ? 'border-blue-200 bg-blue-50 text-blue-800'
+            : 'border-amber-200 bg-amber-50 text-amber-900'
+        }`}>
+          {operationError || persistenceError || 'Carregando comunicados persistidos…'}
+        </div>
+      )}
 
       {/* Notices Grid / List */}
       <div className="space-y-3.5">
@@ -377,9 +408,9 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
 
                 {/* Actions on this Notice */}
                 <div className="flex items-center gap-2 self-end md:self-center shrink-0">
-                  <button
+                  {canManage && <button
                     onClick={() => handleTriggerBroadcast(item)}
-                    title="Reenviar notificação Push para os responsáveis"
+                    title="Gerar notificações internas para os responsáveis"
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                       broadcastSuccess === item.id
                         ? 'bg-emerald-600 text-white'
@@ -389,23 +420,23 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
                     {broadcastSuccess === item.id ? (
                       <>
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Push Enviado!</span>
+                        <span>Notificações geradas</span>
                       </>
                     ) : (
                       <>
                         <Smartphone className="w-3.5 h-3.5" />
-                        <span>Disparar Push</span>
+                        <span>Notificar no app</span>
                       </>
                     )}
-                  </button>
+                  </button>}
 
-                  <button
+                  {canManage && <button
                     onClick={() => setPreviewNotice(item)}
                     title="Visualizar comunicado completo"
                     className="p-2 rounded-xl text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors"
                   >
                     <Eye className="w-4 h-4" />
-                  </button>
+                  </button>}
 
                   <button
                     onClick={() => handleOpenEdit(item)}
@@ -415,17 +446,21 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
                     <Edit3 className="w-4 h-4" />
                   </button>
 
-                  <button
-                    onClick={() => {
+                  {canManage && <button
+                    onClick={async () => {
                       if (confirm(`Deseja realmente remover o comunicado "${item.title}"?`)) {
-                        onDeleteNotice(item.id);
+                        try {
+                          await onDeleteNotice(item.id);
+                        } catch (error) {
+                          setOperationError(error instanceof Error ? error.message : 'Não foi possível remover o comunicado.');
+                        }
                       }
                     }}
                     title="Excluir comunicado"
                     className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
-                  </button>
+                  </button>}
                 </div>
               </div>
             );
@@ -549,7 +584,7 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
               {/* Summary */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Resumo Breve (Exibido no Push e na lista) *
+                  Resumo Breve (Exibido na notificação interna e na lista) *
                 </label>
                 <input
                   type="text"
@@ -597,13 +632,13 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
               <div className="flex items-center gap-2 text-xs font-medium text-slate-700 pt-1">
                 <input
                   type="checkbox"
-                  id="chk-auto-push"
+                  id="chk-auto-notification"
                   checked={autoBroadcast}
                   onChange={(e) => setAutoBroadcast(e.target.checked)}
                   className="rounded text-orange-600 focus:ring-orange-500 w-4 h-4 cursor-pointer"
                 />
-                <label htmlFor="chk-auto-push" className="cursor-pointer">
-                  Disparar <strong>Notificação Push imediata no App dos Pais</strong> ao publicar este comunicado
+                <label htmlFor="chk-auto-notification" className="cursor-pointer">
+                  Gerar <strong>notificação interna no app dos responsáveis</strong> ao publicar este comunicado
                 </label>
               </div>
 
@@ -618,10 +653,11 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
                 </button>
                 <button
                   type="submit"
+                  disabled={isSaving}
                   className="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>{editingNotice ? 'Atualizar Comunicado' : 'Publicar Comunicado'}</span>
+                  <span>{isSaving ? 'Salvando…' : editingNotice ? 'Atualizar Comunicado' : 'Publicar Comunicado'}</span>
                 </button>
               </div>
 

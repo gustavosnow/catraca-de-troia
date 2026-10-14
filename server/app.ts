@@ -14,6 +14,8 @@ import {
 import { createAccessEventSyncReceiverRouter } from './modules/accessEvents/syncRoutes';
 import { createAuthRouter } from './modules/auth/routes';
 import { AuthService } from './modules/auth/service';
+import { createCommunicationRouter } from './modules/communications/routes';
+import { CommunicationService } from './modules/communications/service';
 
 export interface AppOptions {
   /** @deprecated Mantido temporariamente para compatibilidade dos chamadores. */
@@ -49,6 +51,10 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
     '/api/v1',
     createJustificationRouter(new JustificationService(database, options.now)),
   );
+  app.use(
+    '/api/v1',
+    createCommunicationRouter(new CommunicationService(database, options.now)),
+  );
   const disabledTransport: AccessEventSyncTransport = {
     send: async () => ({
       kind: 'retry',
@@ -60,7 +66,7 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
     '/api/v1',
     createAccessEventRouter(
       new AccessEventService(database, options.now),
-      options.syncService || new AccessEventSyncService(database, disabledTransport, options.now),
+      options.syncService || new AccessEventSyncService(database, disabledTransport, options.now, false),
     ),
   );
 

@@ -111,6 +111,7 @@ export interface SchoolNotice {
   priority: 'urgent' | 'important' | 'info';
   isUnread: boolean;
   attachmentName?: string;
+  version?: number;
 }
 
 export interface ParentNotification {

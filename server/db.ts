@@ -122,6 +122,63 @@ const schema = `
   CREATE INDEX IF NOT EXISTS idx_access_event_sync_school
     ON access_event_sync_queue(school_id, state, updated_at DESC);
 
+  CREATE TABLE IF NOT EXISTS school_notices (
+    id TEXT PRIMARY KEY,
+    school_id TEXT NOT NULL REFERENCES schools(id),
+    title TEXT NOT NULL,
+    category TEXT NOT NULL CHECK (category IN ('GENERAL', 'PEDAGOGICAL', 'SECURITY', 'EVENTS', 'ON_CALL')),
+    priority TEXT NOT NULL CHECK (priority IN ('URGENT', 'IMPORTANT', 'INFO')),
+    author_label TEXT NOT NULL,
+    role_label TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    content TEXT NOT NULL,
+    attachment_name TEXT,
+    created_by TEXT NOT NULL REFERENCES users(id),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    deleted_at TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_school_notices_school_time
+    ON school_notices(school_id, created_at DESC);
+
+  CREATE TABLE IF NOT EXISTS school_notice_reads (
+    notice_id TEXT NOT NULL REFERENCES school_notices(id) ON DELETE CASCADE,
+    guardian_user_id TEXT NOT NULL REFERENCES users(id),
+    read_at TEXT NOT NULL,
+    PRIMARY KEY (notice_id, guardian_user_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS notification_dispatches (
+    id TEXT PRIMARY KEY,
+    school_id TEXT NOT NULL REFERENCES schools(id),
+    notice_id TEXT NOT NULL REFERENCES school_notices(id),
+    requested_by TEXT NOT NULL REFERENCES users(id),
+    idempotency_key TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE (requested_by, idempotency_key)
+  );
+
+  CREATE TABLE IF NOT EXISTS in_app_notifications (
+    id TEXT PRIMARY KEY,
+    school_id TEXT NOT NULL REFERENCES schools(id),
+    recipient_user_id TEXT NOT NULL REFERENCES users(id),
+    type TEXT NOT NULL CHECK (type IN ('ENTRY', 'EXIT', 'NOTICE', 'ABSENCE', 'SECURITY')),
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    student_id TEXT REFERENCES students(id),
+    context_label TEXT,
+    source_type TEXT NOT NULL,
+    source_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    read_at TEXT,
+    UNIQUE (recipient_user_id, source_type, source_id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_in_app_notifications_recipient
+    ON in_app_notifications(recipient_user_id, created_at DESC);
+
   CREATE INDEX IF NOT EXISTS idx_access_events_school_time
     ON access_events(school_id, occurred_at DESC);
   CREATE INDEX IF NOT EXISTS idx_access_events_student_time
@@ -221,6 +278,23 @@ const demoWorkflowSeed = `
       'DEMO_SIMULATION', 'DELIVERED', 'DELIVERED', NULL, 'seed-event-3', 'seed');
 `;
 
+const communicationSeed = `
+  INSERT OR IGNORE INTO school_notices (
+    id, school_id, title, category, priority, author_label, role_label, summary,
+    content, attachment_name, created_by, created_at, updated_at, version
+  ) VALUES
+    ('notice-seed-1', 'school-1', 'Campanha de Vacinação Infantil nas Escolas (PSE / SUS)',
+      'GENERAL', 'URGENT', 'Diretoria Escolar & Secretaria de Saúde', 'Direção Escolar',
+      'Atualização da caderneta de vacinação infantil para alunos do 1º ao 9º Ano.',
+      'Em parceria com a Unidade Básica de Saúde, será realizada a verificação demonstrativa da caderneta de vacinação. Consulte o comunicado acadêmico antes de qualquer uso real.',
+      'autorizacao_vacinacao_escolar.pdf', 'staff-3', '2026-10-14T12:30:00.000Z', '2026-10-14T12:30:00.000Z', 1),
+    ('notice-seed-2', 'school-1', 'Reunião de Pais e Mestres do 3º Bimestre',
+      'PEDAGOGICAL', 'IMPORTANT', 'Coordenação Pedagógica', 'Coordenação Pedagógica',
+      'Entrega dos relatórios de desenvolvimento pedagógico e alinhamento das atividades com a família.',
+      'Comunicado demonstrativo sobre a reunião de responsáveis e equipe pedagógica.',
+      'cronograma_reuniao_3bim.pdf', 'staff-2', '2026-10-13T19:45:00.000Z', '2026-10-13T19:45:00.000Z', 1);
+`;
+
 export interface DatabaseOptions {
   filename?: string;
   seedDemoData?: boolean;
@@ -292,6 +366,7 @@ export const createDatabase = (options: DatabaseOptions = {}) => {
   if (options.seedDemoData ?? true) {
     database.exec(seed);
     seedDemoCredentials(database);
+    database.exec(communicationSeed);
   }
   if ((options.seedDemoData ?? true) && options.filename === undefined) {
     database.exec(demoWorkflowSeed);

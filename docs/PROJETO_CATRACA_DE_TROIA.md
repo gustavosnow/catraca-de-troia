@@ -25,7 +25,7 @@ A decisão de trabalho desta conversa é evoluir o portal para experiência de a
 
 A distribuição PWA e a base de empacotamento Android/iOS com Capacitor foram implementadas como **corte técnico demonstrativo**. Publicação em lojas, assinatura, serviços push, infraestrutura externa e critérios de aceite móveis devem ser detalhados e refletidos nos documentos acadêmicos antes de serem tratados como obrigações do piloto. Não há APK, build iOS, publicação ou homologação em aparelhos nesta revisão.
 
-O protótipo oferece entradas por hash para responsáveis e escola e permite alternar os perfis na versão web. O build móvel dedicado abre somente a experiência dos responsáveis. A API Express/SQLite valida credenciais fictícias, sessões opacas, papéis e vínculos; a troca de interface exige uma sessão do perfil correspondente. Justificativas e eventos de entrada/saída também usam idempotência e auditoria. Eventos novos são registrados com uma fila SQLite local e um trabalhador opcional de sincronização, com retentativas, retomada e isolamento de conflitos. Avisos e notificações ainda usam estado em memória; não há implantação remota nem sincronização homologada entre equipamentos.
+O protótipo oferece entradas por hash para responsáveis e escola e permite alternar os perfis na versão web. O build móvel dedicado abre somente a experiência dos responsáveis. A API Express/SQLite valida credenciais fictícias, sessões opacas, papéis e vínculos; a troca de interface exige uma sessão do perfil correspondente. Justificativas e eventos de entrada/saída também usam idempotência e auditoria. Eventos novos são registrados com uma fila SQLite local e um trabalhador opcional de sincronização, com retentativas, retomada e isolamento de conflitos. Avisos, leitura individual e notificações internas do portal são persistidos; não há canal push/WhatsApp real, implantação remota nem sincronização homologada entre equipamentos.
 
 ## Arquitetura prevista e continuidade
 
@@ -35,7 +35,7 @@ O protótipo oferece entradas por hash para responsáveis e escola e permite alt
 - Notificações: canal aprovado, fila, novas tentativas e estados distintos de processamento, envio, entrega e falha.
 - Interfaces: painel escolar e portal/app dos responsáveis com acesso restrito.
 
-A queda da internet não deve interromper identificação e registro locais. Notificações externas e consulta remota podem atrasar. Cache offline da interface não substitui a operação local da portaria. A stack do backend e da fila deve ser detalhada na implementação; SQLite/RabbitMQ aparecem como referências no plano de riscos.
+A queda da internet não deve interromper identificação e registro locais. Notificações externas e consulta remota podem atrasar. O portal já sinaliza perda de conexão, conserva em memória os dados carregados na sessão e retoma consultas ao reconectar, sem guardar respostas pessoais no cache da PWA ou aceitar escritas offline. Esse comportamento da interface não substitui a operação local da portaria. A stack do backend e da fila deve ser detalhada na implementação; SQLite/RabbitMQ aparecem como referências no plano de riscos.
 
 ## Critérios quantitativos de homologação
 

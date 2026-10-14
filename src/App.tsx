@@ -15,12 +15,8 @@ import { AuthModal } from './components/AuthModal';
 import { JustificationsManager } from './components/JustificationsManager';
 import { 
   STUDENTS_DATABASE, 
-  INITIAL_ACCESS_LOGS, 
   INITIAL_TURNSTILES, 
   INITIAL_ALERTS,
-  INITIAL_SCHOOL_NOTICES,
-  INITIAL_PARENT_NOTIFICATIONS,
-  INITIAL_ABSENCE_JUSTIFICATIONS,
   PARENT_ACCOUNTS,
   ParentAccount,
   STAFF_ACCOUNTS,
@@ -33,6 +29,9 @@ import { justificationsApi } from './services/justificationsApi';
 import { accessEventsApi } from './services/accessEventsApi';
 import { authApi } from './services/authApi';
 import { toAuthUser } from './services/authUserMapper';
+import { communicationsApi } from './services/communicationsApi';
+import { useConnectivity } from './hooks/useConnectivity';
+import type { AccessEventSyncStatus } from '../shared/contracts/accessEventSync';
 
 import { 
   Bell, 
@@ -55,6 +54,8 @@ const getViewModeFromHash = (): ViewMode =>
   !isParentOnlyBuild && window.location.hash === '#/escola' ? 'management_dashboard' : 'parent_app';
 
 export default function App() {
+  const isOnline = useConnectivity();
+  const [portalRefreshKey, setPortalRefreshKey] = useState(0);
   // Perspective Mode: 'parent_app' (Requested mobile app for parents) vs 'management_dashboard' (School portal)
   const [viewMode, setViewMode] = useState<ViewMode>(getViewModeFromHash);
   const [authenticatedUser, setAuthenticatedUser] = useState<AuthUser | null>(null);
@@ -117,9 +118,14 @@ export default function App() {
   const [authModalRole, setAuthModalRole] = useState<'parent' | 'staff'>('parent');
 
   const [students, setStudents] = useState<Student[]>(STUDENTS_DATABASE);
-  const [logs, setLogs] = useState<AccessLog[]>(INITIAL_ACCESS_LOGS);
+  const [logs, setLogs] = useState<AccessLog[]>([]);
   const [accessEventsState, setAccessEventsState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
   const [accessEventsError, setAccessEventsError] = useState<string>();
+  const [accessEventsUpdatedAt, setAccessEventsUpdatedAt] = useState<string>();
+  const [syncStatus, setSyncStatus] = useState<AccessEventSyncStatus | null>(null);
+  const [syncStatusState, setSyncStatusState] = useState<'loading' | 'available' | 'unavailable'>('loading');
+  const [syncStatusError, setSyncStatusError] = useState<string>();
+  const [isRetryingSyncConflicts, setIsRetryingSyncConflicts] = useState(false);
   const [turnstiles, setTurnstiles] = useState<Turnstile[]>(INITIAL_TURNSTILES);
   const [alerts, setAlerts] = useState<SecurityAlert[]>(INITIAL_ALERTS);
 
@@ -170,16 +176,25 @@ export default function App() {
 
   
   // Shared Notices and Notifications across Management and Parent App
-  const [notices, setNotices] = useState<SchoolNotice[]>(INITIAL_SCHOOL_NOTICES);
-  const [notifications, setNotifications] = useState<ParentNotification[]>(INITIAL_PARENT_NOTIFICATIONS);
-  const [justifications, setJustifications] = useState<AbsenceJustification[]>(INITIAL_ABSENCE_JUSTIFICATIONS);
+  const [notices, setNotices] = useState<SchoolNotice[]>([]);
+  const [notifications, setNotifications] = useState<ParentNotification[]>([]);
+  const [communicationsState, setCommunicationsState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
+  const [communicationsError, setCommunicationsError] = useState<string>();
+  const [communicationsUpdatedAt, setCommunicationsUpdatedAt] = useState<string>();
+  const [justifications, setJustifications] = useState<AbsenceJustification[]>([]);
   const [justificationsState, setJustificationsState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
   const [justificationsError, setJustificationsError] = useState<string>();
+  const [justificationsUpdatedAt, setJustificationsUpdatedAt] = useState<string>();
 
   useEffect(() => {
     if (!authenticatedUser) return;
     if (viewMode === 'parent_app' && authenticatedUser.role !== 'parent') return;
     if (viewMode === 'management_dashboard' && authenticatedUser.role !== 'staff') return;
+    if (!isOnline) {
+      setJustificationsState('unavailable');
+      setJustificationsError('Dispositivo sem conexão.');
+      return;
+    }
     let active = true;
     setJustificationsState('loading');
     setJustificationsError(undefined);
@@ -192,6 +207,7 @@ export default function App() {
       if (!active) return;
       setJustifications(records);
       setJustificationsState('persistent');
+      setJustificationsUpdatedAt(new Date().toISOString());
     }).catch((error: unknown) => {
       if (!active) return;
       setJustificationsState('unavailable');
@@ -199,12 +215,54 @@ export default function App() {
     });
 
     return () => { active = false; };
-  }, [authenticatedUser, currentGuardian.id, currentStaffUser.id, viewMode]);
+  }, [authenticatedUser, currentGuardian.id, currentStaffUser.id, isOnline, portalRefreshKey, viewMode]);
 
   useEffect(() => {
     if (!authenticatedUser) return;
     if (viewMode === 'parent_app' && authenticatedUser.role !== 'parent') return;
     if (viewMode === 'management_dashboard' && authenticatedUser.role !== 'staff') return;
+    if (!isOnline) {
+      setCommunicationsState('unavailable');
+      setCommunicationsError('Dispositivo sem conexão.');
+      return;
+    }
+    let active = true;
+    const loadCommunications = async () => {
+      try {
+        const [loadedNotices, loadedNotifications] = await Promise.all([
+          communicationsApi.listNotices(),
+          authenticatedUser.role === 'parent' ? communicationsApi.listNotifications() : Promise.resolve([]),
+        ]);
+        if (!active) return;
+        setNotices(loadedNotices);
+        setNotifications(loadedNotifications);
+        setCommunicationsState('persistent');
+        setCommunicationsError(undefined);
+        setCommunicationsUpdatedAt(new Date().toISOString());
+      } catch (error) {
+        if (!active) return;
+        setCommunicationsState('unavailable');
+        setCommunicationsError(error instanceof Error ? error.message : 'API de comunicados indisponível.');
+      }
+    };
+    setCommunicationsState('loading');
+    void loadCommunications();
+    const interval = window.setInterval(() => void loadCommunications(), 5000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [authenticatedUser, currentGuardian.id, currentStaffUser.id, isOnline, portalRefreshKey, viewMode]);
+
+  useEffect(() => {
+    if (!authenticatedUser) return;
+    if (viewMode === 'parent_app' && authenticatedUser.role !== 'parent') return;
+    if (viewMode === 'management_dashboard' && authenticatedUser.role !== 'staff') return;
+    if (!isOnline) {
+      setAccessEventsState('unavailable');
+      setAccessEventsError('Dispositivo sem conexão.');
+      return;
+    }
     let active = true;
 
     const loadAccessEvents = async (showLoading = false) => {
@@ -217,6 +275,7 @@ export default function App() {
         setLogs(records);
         setAccessEventsState('persistent');
         setAccessEventsError(undefined);
+        setAccessEventsUpdatedAt(new Date().toISOString());
       } catch (error) {
         if (!active) return;
         setAccessEventsState('unavailable');
@@ -230,7 +289,55 @@ export default function App() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [authenticatedUser, currentGuardian.id, currentStaffUser.id, students, viewMode]);
+  }, [authenticatedUser, currentGuardian.id, currentStaffUser.id, isOnline, portalRefreshKey, students, viewMode]);
+
+  useEffect(() => {
+    if (!authenticatedUser || authenticatedUser.role !== 'staff' || viewMode !== 'management_dashboard') {
+      setSyncStatus(null);
+      return;
+    }
+    if (!isOnline) {
+      setSyncStatusState('unavailable');
+      setSyncStatusError('Dispositivo sem conexão.');
+      return;
+    }
+    let active = true;
+    const loadSyncStatus = async () => {
+      try {
+        const status = await accessEventsApi.getSyncStatus();
+        if (!active) return;
+        setSyncStatus(status);
+        setSyncStatusState('available');
+        setSyncStatusError(undefined);
+      } catch (error) {
+        if (!active) return;
+        setSyncStatusState('unavailable');
+        setSyncStatusError(error instanceof Error ? error.message : 'Estado da fila indisponível.');
+      }
+    };
+    setSyncStatusState('loading');
+    void loadSyncStatus();
+    const interval = window.setInterval(() => void loadSyncStatus(), 5000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [authenticatedUser, currentStaffUser.id, isOnline, portalRefreshKey, viewMode]);
+
+  const handleRetrySyncConflicts = async () => {
+    setIsRetryingSyncConflicts(true);
+    try {
+      await accessEventsApi.retrySyncConflicts();
+      setSyncStatus(await accessEventsApi.getSyncStatus());
+      setSyncStatusState('available');
+      setSyncStatusError(undefined);
+    } catch (error) {
+      setSyncStatusState('unavailable');
+      setSyncStatusError(error instanceof Error ? error.message : 'Não foi possível reenfileirar os conflitos.');
+    } finally {
+      setIsRetryingSyncConflicts(false);
+    }
+  };
 
   // Real-time live simulation state
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
@@ -271,6 +378,7 @@ export default function App() {
       newLog = { ...newLog, relativeTime: 'Agora', isNew: true };
       setAccessEventsState('persistent');
       setAccessEventsError(undefined);
+      setAccessEventsUpdatedAt(new Date().toISOString());
     } catch (error) {
       setAccessEventsState('unavailable');
       setAccessEventsError(error instanceof Error ? error.message : 'Não foi possível registrar o evento.');
@@ -278,8 +386,6 @@ export default function App() {
     }
 
     const exactTime = newLog.exactTime;
-    const selectedMethod = newLog.method;
-
     // Play pleasant chime
     soundManager.playAccessGranted();
 
@@ -290,19 +396,6 @@ export default function App() {
     setTurnstiles((prev) => 
       prev.map(t => t.id === turnstile.id ? { ...t, passesToday: t.passesToday + 1 } : t)
     );
-
-    // Also push real-time event to parent app notifications
-    const parentNotif: ParentNotification = {
-      id: 'pn-' + Date.now(),
-      title: `${direction === 'entry' ? 'Entrada' : 'Saída'}: ${student.name.split(' ')[0]} passou na catraca`,
-      message: `${student.name} registrou ${direction === 'entry' ? 'entrada' : 'saída'} na ${newLog.turnstileName} via ${selectedMethod}.`,
-      timestamp: `${exactTime} - Agora`,
-      type: direction,
-      studentName: student.name,
-      turnstile: newLog.turnstileName,
-      isRead: false,
-    };
-    setNotifications((prev) => [parentNotif, ...prev]);
 
     // Show temporary live toast in dashboard
     setToastMessage({
@@ -413,6 +506,7 @@ export default function App() {
         };
         setAccessEventsState('persistent');
         setAccessEventsError(undefined);
+        setAccessEventsUpdatedAt(new Date().toISOString());
       } catch (error) {
         setAccessEventsState('unavailable');
         setAccessEventsError(error instanceof Error ? error.message : 'Não foi possível registrar a liberação.');
@@ -425,18 +519,6 @@ export default function App() {
       prev.map(t => t.id === turnstile.id ? { ...t, passesToday: t.passesToday + 1 } : t)
     );
 
-    if (data.studentId) {
-      setNotifications((current) => [{
-        id: `pn-manual-${Date.now()}`,
-        title: `Entrada assistida: ${studentName.split(' ')[0]}`,
-        message: `${studentName} teve uma entrada manual demonstrativa registrada na ${manualLog.turnstileName}.`,
-        timestamp: `${exactTime} - Agora`,
-        type: 'entry',
-        studentName,
-        turnstile: manualLog.turnstileName,
-        isRead: false,
-      }, ...current]);
-    }
   };
 
   const handleSelectStudent = (studentId: string) => {
@@ -466,54 +548,40 @@ export default function App() {
   };
 
   // Add Notice from Management Hub
-  const handleAddNotice = (noticeData: Omit<SchoolNotice, 'id'>) => {
-    const newNotice: SchoolNotice = {
-      ...noticeData,
-      id: 'notice-' + Date.now(),
-    };
-    setNotices([newNotice, ...notices]);
-
-    // Dispatch push notification to Parent App
-    const newNotif: ParentNotification = {
-      id: 'pn-notice-' + Date.now(),
-      title: `Novo Comunicado: ${newNotice.title}`,
-      message: newNotice.summary,
-      timestamp: 'Agora',
-      type: 'notice',
-      turnstile: 'Diretoria Escolar',
-      isRead: false,
-    };
-    setNotifications(prev => [newNotif, ...prev]);
+  const handleAddNotice = async (noticeData: Omit<SchoolNotice, 'id'>, notifyGuardians: boolean) => {
+    const newNotice = await communicationsApi.createNotice(noticeData, notifyGuardians);
+    setNotices((current) => [newNotice, ...current]);
+    setCommunicationsState('persistent');
+    setCommunicationsError(undefined);
+    setCommunicationsUpdatedAt(new Date().toISOString());
 
     // Show temporary toast
     setToastMessage({
       id: newNotice.id,
       title: 'Comunicado Publicado',
-      studentName: `${newNotice.title} (Enviado a todos os pais)`,
+      studentName: notifyGuardians
+        ? `${newNotice.title} (notificação interna gerada)`
+        : newNotice.title,
       time: newNotice.time,
       phone: 'Todos os Responsáveis',
     });
   };
 
-  const handleUpdateNotice = (updatedNotice: SchoolNotice) => {
-    setNotices(notices.map(n => n.id === updatedNotice.id ? updatedNotice : n));
+  const handleUpdateNotice = async (updatedNotice: SchoolNotice) => {
+    const persisted = await communicationsApi.updateNotice(updatedNotice);
+    setNotices((current) => current.map(n => n.id === persisted.id ? persisted : n));
+    setCommunicationsUpdatedAt(new Date().toISOString());
   };
 
-  const handleDeleteNotice = (id: string) => {
-    setNotices(notices.filter(n => n.id !== id));
+  const handleDeleteNotice = async (id: string) => {
+    await communicationsApi.deleteNotice(id);
+    setNotices((current) => current.filter(n => n.id !== id));
+    setCommunicationsUpdatedAt(new Date().toISOString());
   };
 
-  const handleBroadcastPushNotice = (notice: SchoolNotice) => {
-    const newNotif: ParentNotification = {
-      id: 'pn-broadcast-' + Date.now(),
-      title: `Aviso Importante: ${notice.title}`,
-      message: notice.summary,
-      timestamp: 'Agora',
-      type: 'notice',
-      turnstile: 'Coordenação Escolar',
-      isRead: false,
-    };
-    setNotifications(prev => [newNotif, ...prev]);
+  const handleBroadcastPushNotice = async (notice: SchoolNotice) => {
+    await communicationsApi.broadcastNotice(notice.id);
+    setCommunicationsUpdatedAt(new Date().toISOString());
   };
 
   const handleAddJustification = async (
@@ -523,17 +591,10 @@ export default function App() {
     setJustifications((current) => [created, ...current]);
     setJustificationsState('persistent');
     setJustificationsError(undefined);
+    setJustificationsUpdatedAt(new Date().toISOString());
 
-    setNotifications((current) => [{
-      id: `pn-justification-${Date.now()}`,
-      title: 'Justificativa registrada no portal',
-      message: `A justificativa de ${created.studentName.split(' ')[0]} para ${created.date} foi protocolada para análise.`,
-      timestamp: 'Agora',
-      type: 'absence',
-      studentName: created.studentName,
-      turnstile: 'Secretaria Escolar',
-      isRead: false,
-    }, ...current]);
+    setNotifications(await communicationsApi.listNotifications());
+    setCommunicationsUpdatedAt(new Date().toISOString());
   };
 
   const handleUpdateJustificationStatus = async (
@@ -549,17 +610,28 @@ export default function App() {
     ));
     setJustificationsState('persistent');
     setJustificationsError(undefined);
-    setNotifications((current) => [{
-      id: `pn-review-${Date.now()}`,
-      title: status === 'Aprovado pela Coordenação' ? 'Justificativa aprovada' : 'Justificativa não aprovada',
-      message: `A justificativa de ${justification.studentName.split(' ')[0]} para ${justification.date} foi ${status === 'Aprovado pela Coordenação' ? 'aprovada' : 'recusada'} pela escola.`,
-      timestamp: 'Agora',
-      type: 'absence',
-      studentName: justification.studentName,
-      turnstile: 'Coordenação Escolar',
-      isRead: false,
-    }, ...current]);
+    setJustificationsUpdatedAt(new Date().toISOString());
   };
+
+  const handleMarkNoticeRead = async (id: string) => {
+    await communicationsApi.markNoticeRead(id);
+    setNotices((current) => current.map((notice) =>
+      notice.id === id ? { ...notice, isUnread: false } : notice,
+    ));
+    setCommunicationsUpdatedAt(new Date().toISOString());
+  };
+
+  const handleMarkAllNotificationsRead = async () => {
+    await communicationsApi.markAllNotificationsRead();
+    setNotifications((current) => current.map((notification) => ({ ...notification, isRead: true })));
+    setCommunicationsUpdatedAt(new Date().toISOString());
+  };
+
+  const parentDataUpdatedAt = [
+    accessEventsUpdatedAt,
+    justificationsUpdatedAt,
+    communicationsUpdatedAt,
+  ].filter((value): value is string => Boolean(value)).sort().at(-1);
 
   // Dynamic calculations for KPI cards
   const totalRegistered = 1240;
@@ -609,6 +681,8 @@ export default function App() {
           onUpdateSharedNotices={setNotices}
           sharedNotifications={notifications}
           onUpdateSharedNotifications={setNotifications}
+          onMarkNoticeRead={handleMarkNoticeRead}
+          onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
           guardiansList={[currentGuardian]}
           currentGuardianExternal={currentGuardian}
           onSelectGuardianExternal={setCurrentGuardian}
@@ -621,6 +695,11 @@ export default function App() {
           justificationsError={justificationsError}
           accessEventsState={accessEventsState}
           accessEventsError={accessEventsError}
+          communicationsState={communicationsState}
+          communicationsError={communicationsError}
+          isOnline={isOnline}
+          dataUpdatedAt={parentDataUpdatedAt}
+          onRefreshData={() => setPortalRefreshKey((current) => current + 1)}
           onLogout={handleLogout}
         />
 
@@ -716,6 +795,13 @@ export default function App() {
                   selectedTurma={selectedTurma}
                   onSelectTurma={setSelectedTurma}
                   onTriggerManualTap={() => triggerStudentAccess()}
+                  syncStatus={syncStatus}
+                  syncStatusState={syncStatusState}
+                  syncStatusError={syncStatusError}
+                  canRetrySyncConflicts={currentStaffUser.staffRole === 'Coordenação Pedagógica'
+                    || currentStaffUser.staffRole === 'Direção Escolar'}
+                  isRetryingSyncConflicts={isRetryingSyncConflicts}
+                  onRetrySyncConflicts={handleRetrySyncConflicts}
                 />
               </div>
 
@@ -732,6 +818,9 @@ export default function App() {
               onUpdateNotice={handleUpdateNotice}
               onDeleteNotice={handleDeleteNotice}
               onBroadcastPush={handleBroadcastPushNotice}
+              canManage={['Coordenação Pedagógica', 'Direção Escolar'].includes(currentStaffUser.staffRole || '')}
+              persistenceState={communicationsState}
+              persistenceError={communicationsError}
             />
           </div>
         )}

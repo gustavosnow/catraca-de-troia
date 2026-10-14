@@ -1,4 +1,5 @@
 import type { AccessEventRecord, CreateAccessEventRequest } from '../../shared/contracts/accessEvents';
+import type { AccessEventSyncStatus } from '../../shared/contracts/accessEventSync';
 import type { LinkedStudent } from '../../shared/contracts/justifications';
 import type { AccessDirection, AccessLog, Student, Turnstile } from '../types';
 import { authenticatedRequest } from './authApi';
@@ -40,6 +41,14 @@ const listLinkedStudents = () =>
   authenticatedRequest<LinkedStudent[]>('/api/v1/me/students');
 
 export const accessEventsApi = {
+  getSyncStatus: () =>
+    authenticatedRequest<AccessEventSyncStatus>('/api/v1/access-events/sync/status'),
+
+  retrySyncConflicts: () =>
+    authenticatedRequest<{ requeued: number }>('/api/v1/access-events/sync/retry-conflicts', {
+      method: 'POST',
+    }),
+
   listForGuardian: async (students: Student[]) => {
     const linkedStudents = await listLinkedStudents();
     const records = await Promise.all(linkedStudents.map((student) =>

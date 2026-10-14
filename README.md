@@ -2,7 +2,7 @@
 
 Protótipo acadêmico de controle de entrada e saída em uma escola pública de ensino fundamental. Painel web da gestão escolar e portal responsivo dos responsáveis, preparado para evolução móvel.
 
-**Estado: demonstração em evolução.** A API local já valida credenciais fictícias, emite sessões revogáveis e aplica perfil e vínculo no servidor. Eventos de entrada/saída e justificativas usam SQLite, idempotência e auditoria. Eventos novos também entram atomicamente em uma fila local durável, preparada para sincronizar com outra instância da API. A origem das passagens, notificações e anexos ainda é simulada. A experiência dos responsáveis também possui PWA instalável e projetos-base Capacitor; isso não equivale a identidade institucional, aplicativo publicado ou integração com hardware/serviços externos.
+**Estado: demonstração em evolução.** A API local já valida credenciais fictícias, emite sessões revogáveis e aplica perfil e vínculo no servidor. Eventos de entrada/saída, justificativas, avisos e notificações internas usam SQLite, idempotência ou controle de versão conforme o fluxo e auditoria das ações escolares. Eventos novos também entram atomicamente em uma fila local durável, preparada para sincronizar com outra instância da API. A origem das passagens, a entrega por canais externos e os anexos ainda são simulados. A experiência dos responsáveis também possui PWA instalável e projetos-base Capacitor; isso não equivale a identidade institucional, aplicativo publicado ou integração com hardware/serviços externos.
 
 ## Executar
 
@@ -15,7 +15,7 @@ npm run dev
 
 Abra `http://localhost:3000`. O comando inicia a API na porta `3001` e o Vite na porta `3000`; o proxy do Vite mantém as chamadas da interface no mesmo endereço. O portal inicia na visão dos responsáveis, e o botão de painel escolar permite explorar o outro perfil da demonstração.
 
-As interfaces também possuem entradas demonstrativas identificáveis: `http://localhost:3000/#/responsaveis` e `http://localhost:3000/#/escola`. Eventos de entrada/saída, histórico derivado e justificativas são persistidos pela API local; avisos e notificações visuais ainda permanecem somente na memória da página.
+As interfaces também possuem entradas demonstrativas identificáveis: `http://localhost:3000/#/responsaveis` e `http://localhost:3000/#/escola`. Eventos de entrada/saída, histórico derivado, justificativas, avisos e notificações internas são persistidos pela API local. A leitura dos avisos é individual por responsável; notificações de passagem e do fluxo de justificativas também aparecem na caixa interna do portal.
 
 ```bash
 npm run lint
@@ -25,7 +25,7 @@ npm run preview
 
 ## API local, autenticação e sessões
 
-O backend persiste sessões, justificativas e eventos em `.data/catraca-de-troia.sqlite`, valida vínculos no servidor, restringe revisões à Coordenação/Direção e registra auditoria. Os dados e as credenciais iniciais são fictícios.
+O backend persiste sessões, justificativas, eventos, avisos e notificações internas em `.data/catraca-de-troia.sqlite`, valida vínculos no servidor, restringe revisões e gestão de avisos à Coordenação/Direção e registra auditoria. Os dados e as credenciais iniciais são fictícios.
 
 ```bash
 npm run api:dev
@@ -57,11 +57,11 @@ SYNC_SHARED_SECRET=trocar-por-segredo-gerenciado
 npm run api:start
 ```
 
-Uma instância receptora precisa de `SYNC_SHARED_SECRET`, mesmo quando não possui `SYNC_REMOTE_URL`. Perfis escolares consultam `GET /api/v1/access-events/sync/status`; somente Coordenação/Direção pode reenfileirar conflitos por `POST /api/v1/access-events/sync/retry-conflicts`. A fila e os testes demonstram a semântica de continuidade, mas ainda não comprovam implantação em dois servidores, HTTPS, cofre de segredos, monitoramento, backup/restauração ou teste real de desconexão da escola.
+Uma instância receptora precisa de `SYNC_SHARED_SECRET`, mesmo quando não possui `SYNC_REMOTE_URL`. O painel escolar apresenta pendências, processamento, sincronizados, conflitos e última sincronização; somente Coordenação/Direção recebe a ação para reenfileirar conflitos. As mesmas operações estão disponíveis em `GET /api/v1/access-events/sync/status` e `POST /api/v1/access-events/sync/retry-conflicts`. A fila e os testes demonstram a semântica de continuidade, mas ainda não comprovam implantação em dois servidores, HTTPS, cofre de segredos, monitoramento, backup/restauração ou teste real de desconexão da escola.
 
 ## PWA e projetos móveis
 
-A entrada instalável abre em `/#/responsaveis`, possui manifesto e cache apenas do shell estático. Chamadas `/api`, envios e dados pessoais não são armazenados pelo service worker. Em navegadores compatíveis, use o convite **Instalar**; no Safari iOS, use **Compartilhar → Adicionar à Tela de Início**.
+A entrada instalável abre em `/#/responsaveis`, possui manifesto e cache apenas do shell estático. Chamadas `/api`, envios e dados pessoais não são armazenados pelo service worker. Durante uma queda de conexão com o portal já aberto, a interface identifica o estado offline e mantém somente em memória os últimos dados carregados naquela sessão; exibe a última atualização, bloqueia escritas e refaz as consultas ao reconectar. Em navegadores compatíveis, use o convite **Instalar**; no Safari iOS, use **Compartilhar → Adicionar à Tela de Início**.
 
 ```bash
 npm run build:parent
@@ -89,7 +89,7 @@ Linha de base: uma escola, duas catracas, processamento facial local, 24 semanas
 
 `src/components/ParentApp/` contém a experiência dos responsáveis. Os demais componentes compõem o painel escolar e as interfaces compartilhadas. `src/services/accessEventsApi.ts` integra o fluxo persistente, e `demoAccessService.ts` deriva linha do tempo e histórico desses registros. `src/data/mockData.ts` ainda reúne dados visuais fictícios; `projectBaseline.ts` centraliza metas e links das fontes.
 
-O corte atual entrega uma PWA instalável e estruturas Capacitor para Android/iOS, reaproveitando o mesmo React/TypeScript. Autenticação/sessão local, justificativas, eventos, histórico derivado e fila de saída dos eventos já usam serviços comuns. Identidade institucional, avisos, notificações, anexos, infraestrutura remota e validação ponta a ponta da sincronização ainda precisam de implementação real. Veja [o diagnóstico para o app dos responsáveis](docs/PROXIMOS_PASSOS_APP_RESPONSAVEIS.md).
+O corte atual entrega uma PWA instalável e estruturas Capacitor para Android/iOS, reaproveitando o mesmo React/TypeScript. Autenticação/sessão local, justificativas, eventos, histórico derivado, avisos, notificações internas e fila de saída dos eventos já usam serviços comuns. Identidade institucional, canal externo de notificações, conteúdo de anexos, infraestrutura remota e validação ponta a ponta da sincronização ainda precisam de implementação real. Veja [o diagnóstico para o app dos responsáveis](docs/PROXIMOS_PASSOS_APP_RESPONSAVEIS.md).
 
 Origem: [protótipo no Google AI Studio](https://ai.studio/apps/b85c5f96-392f-43b3-8272-31d8c99a8592). O primeiro commit de importação preserva essa versão; o seguinte registra o alinhamento documental.
 

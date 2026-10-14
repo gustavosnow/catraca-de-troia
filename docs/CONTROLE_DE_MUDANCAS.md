@@ -83,3 +83,27 @@ Solicitação: implementar o próximo marco de continuidade dos eventos, com ide
 Ajustes: cada novo evento e seu item de saída passaram a ser gravados na mesma transação SQLite. Foi criado trabalhador opcional com aquisição por lease, retentativa exponencial limitada, retomada de processamento interrompido e transporte HTTP configurável. O receptor autentica a integração por segredo configurado, deduplica pela identidade estável do nó/evento e rejeita conteúdo divergente como conflito sem sobrescrita. A API expõe contagem dos estados da fila a perfis escolares e permite que Coordenação/Direção reenfileire conflitos. Testes automatizados cobrem atomicidade, indisponibilidade/retorno, repetição, conflito e lease expirado. O diagnóstico do app foi registrado em `PROXIMOS_PASSOS_APP_RESPONSAVEIS.md`.
 
 Limites: a implementação foi validada localmente, sem implantação de um destino remoto, rede escolar, HTTPS, cofre de segredos, monitoramento, backup/restauração ou teste com catracas. O segredo compartilhado é um corte de integração e deve evoluir conforme a arquitetura institucional. A fila preserva eventos do servidor escolar; ela não oferece por si só operação offline no celular dos responsáveis. Conflitos ficam isolados para análise e reenfileiramento autorizado, sem resolução automática destrutiva.
+
+## MC-012 — Observabilidade da fila no painel escolar
+
+Solicitação: continuar a evolução funcional gratuita do trabalho acadêmico, sem publicação oficial ou infraestrutura produtiva.
+
+Ajustes: o painel escolar passou a consultar periodicamente o estado persistido da fila de eventos. A interface diferencia destino configurado de operação somente local, apresenta totais pendentes, em processamento, sincronizados e em conflito, além do instante da última sincronização. Conflitos exibem alerta sem sobrescrita e podem ser reenfileirados pela interface apenas por Coordenação ou Direção; a autorização continua aplicada no backend. Os contratos passaram a informar explicitamente se o trabalhador remoto está configurado.
+
+Limites: a observabilidade reflete a base SQLite demonstrativa e não equivale a monitoramento de infraestrutura real. Sem `SYNC_REMOTE_URL` e `SYNC_SHARED_SECRET`, itens pendentes permanecem preservados localmente, comportamento esperado no ambiente acadêmico.
+
+## MC-013 — Avisos e notificações internas persistentes
+
+Solicitação: seguir com o próximo incremento gratuito rumo ao aplicativo dos responsáveis, mantendo a solução acadêmica sem infraestrutura produtiva ou publicação oficial.
+
+Ajustes: avisos escolares passaram a usar a API Express/SQLite, com criação, edição, exclusão lógica e disparo restritos à Coordenação/Direção, controle otimista de versão, auditoria e leitura individual por responsável. Foi criada uma caixa de notificações internas persistente e segregada por vínculo aprovado. Eventos de entrada/saída, criação e análise de justificativas e avisos publicados alimentam essa caixa; o disparo de um aviso aceita chave de idempotência. Painel e portal consultam periodicamente a mesma fonte e exibem estados de carregamento e falha. Métricas fictícias de leitura e alcance foram removidas da tela de gestão.
+
+Limites: a notificação é interna ao aplicativo demonstrativo; não há push nativo, WhatsApp, e-mail, comprovação de entrega ao aparelho ou da meta temporal da EAP. Não foi criada fila de entrega para canal externo. Anexos de avisos e justificativas continuam limitados ao nome do arquivo, sem upload, antivírus, retenção ou descarte. Os dados semeados e as contas permanecem fictícios.
+
+## MC-014 — Estado de conectividade no portal dos responsáveis
+
+Solicitação: continuar os próximos passos do aplicativo sem contratar infraestrutura ou serviços externos.
+
+Ajustes: o portal passou a observar eventos de conexão do navegador, reunir o estado dos serviços de eventos, justificativas e comunicações, informar o instante da última consulta bem-sucedida e permitir atualização manual. Quando a conexão cai com a sessão aberta, os últimos dados permanecem apenas na memória da página; novas consultas são retomadas automaticamente no retorno da rede. Envio de justificativa e registros de leitura ficam bloqueados offline para não indicar uma persistência inexistente. Os dados pessoais semeados deixaram de ser usados como fallback inicial dos fluxos integrados.
+
+Limites: `navigator.onLine` é um sinal de conectividade e não prova disponibilidade da API; falhas das requisições continuam sendo tratadas separadamente. O service worker mantém somente o shell estático, sem respostas da API. Não há login offline, persistência pessoal no aparelho, fila de escritas do responsável ou resolução de conflitos móveis. Esses recursos dependem de decisão institucional e armazenamento protegido.
