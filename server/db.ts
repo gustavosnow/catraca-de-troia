@@ -101,6 +101,27 @@ const schema = `
     UNIQUE (created_by, idempotency_key)
   );
 
+  CREATE TABLE IF NOT EXISTS access_event_sync_queue (
+    event_id TEXT PRIMARY KEY REFERENCES access_events(id) ON DELETE CASCADE,
+    school_id TEXT NOT NULL REFERENCES schools(id),
+    state TEXT NOT NULL CHECK (state IN ('PENDING', 'PROCESSING', 'SYNCED', 'CONFLICT')),
+    attempt_count INTEGER NOT NULL DEFAULT 0,
+    available_at TEXT NOT NULL,
+    lease_expires_at TEXT,
+    last_attempt_at TEXT,
+    synced_at TEXT,
+    remote_event_id TEXT,
+    last_error_code TEXT,
+    last_error_message TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_access_event_sync_due
+    ON access_event_sync_queue(state, available_at);
+  CREATE INDEX IF NOT EXISTS idx_access_event_sync_school
+    ON access_event_sync_queue(school_id, state, updated_at DESC);
+
   CREATE INDEX IF NOT EXISTS idx_access_events_school_time
     ON access_events(school_id, occurred_at DESC);
   CREATE INDEX IF NOT EXISTS idx_access_events_student_time
@@ -250,6 +271,24 @@ export const createDatabase = (options: DatabaseOptions = {}) => {
   if (!accessEventColumns.some((column) => column.name === 'reason')) {
     database.exec('ALTER TABLE access_events ADD COLUMN reason TEXT');
   }
+  if (!accessEventColumns.some((column) => column.name === 'origin_node_id')) {
+    database.exec('ALTER TABLE access_events ADD COLUMN origin_node_id TEXT');
+  }
+  if (!accessEventColumns.some((column) => column.name === 'origin_event_id')) {
+    database.exec('ALTER TABLE access_events ADD COLUMN origin_event_id TEXT');
+  }
+  if (!accessEventColumns.some((column) => column.name === 'sync_payload_hash')) {
+    database.exec('ALTER TABLE access_events ADD COLUMN sync_payload_hash TEXT');
+  }
+  database.exec(`
+    UPDATE access_events
+    SET origin_node_id = COALESCE(origin_node_id, 'legacy-local'),
+        origin_event_id = COALESCE(origin_event_id, id),
+        sync_payload_hash = COALESCE(sync_payload_hash, request_hash)
+    WHERE origin_node_id IS NULL OR origin_event_id IS NULL OR sync_payload_hash IS NULL;
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_access_events_origin
+      ON access_events(origin_node_id, origin_event_id);
+  `);
   if (options.seedDemoData ?? true) {
     database.exec(seed);
     seedDemoCredentials(database);
@@ -257,6 +296,13 @@ export const createDatabase = (options: DatabaseOptions = {}) => {
   if ((options.seedDemoData ?? true) && options.filename === undefined) {
     database.exec(demoWorkflowSeed);
   }
+  database.exec(`
+    UPDATE access_events
+    SET origin_node_id = COALESCE(origin_node_id, 'legacy-local'),
+        origin_event_id = COALESCE(origin_event_id, id),
+        sync_payload_hash = COALESCE(sync_payload_hash, request_hash)
+    WHERE origin_node_id IS NULL OR origin_event_id IS NULL OR sync_payload_hash IS NULL
+  `);
   return database;
 };
 

@@ -58,6 +58,13 @@ test('eventos respeitam vínculo e somente perfis escolares registram passagem',
   assert.equal(result.response.status, 200);
   assert.equal(result.body.data[0].id, eventId);
 
+  result = await request(api.baseUrl, '/api/v1/access-events/sync/status', 'staff-1');
+  assert.equal(result.response.status, 200);
+  assert.equal(result.body.data.pending, 1);
+
+  result = await request(api.baseUrl, '/api/v1/access-events/sync/status', 'guardian-1');
+  assert.equal(result.response.status, 403);
+
   result = await request(api.baseUrl, '/api/v1/access-events', 'guardian-1');
   assert.equal(result.response.status, 403);
 

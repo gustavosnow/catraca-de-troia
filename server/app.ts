@@ -6,6 +6,12 @@ import { createJustificationRouter } from './modules/justifications/routes';
 import { JustificationService } from './modules/justifications/service';
 import { createAccessEventRouter } from './modules/accessEvents/routes';
 import { AccessEventService } from './modules/accessEvents/service';
+import {
+  AccessEventSyncReceiver,
+  AccessEventSyncService,
+  AccessEventSyncTransport,
+} from './modules/accessEvents/syncService';
+import { createAccessEventSyncReceiverRouter } from './modules/accessEvents/syncRoutes';
 import { createAuthRouter } from './modules/auth/routes';
 import { AuthService } from './modules/auth/service';
 
@@ -13,6 +19,8 @@ export interface AppOptions {
   /** @deprecated Mantido temporariamente para compatibilidade dos chamadores. */
   demoAuthEnabled?: boolean;
   now?: () => string;
+  syncSharedSecret?: string;
+  syncService?: AccessEventSyncService;
 }
 
 export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
@@ -24,6 +32,16 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
     response.json({ status: 'ok', persistence: 'sqlite' });
   });
 
+  if (options.syncSharedSecret) {
+    app.use(
+      '/api/v1',
+      createAccessEventSyncReceiverRouter(
+        new AccessEventSyncReceiver(database, options.now),
+        options.syncSharedSecret,
+      ),
+    );
+  }
+
   const authService = new AuthService(database, options.now);
   app.use('/api/v1', createAuthRouter(database, authService, options.now));
   app.use('/api/v1', createSessionAuth(database, options.now));
@@ -31,9 +49,19 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
     '/api/v1',
     createJustificationRouter(new JustificationService(database, options.now)),
   );
+  const disabledTransport: AccessEventSyncTransport = {
+    send: async () => ({
+      kind: 'retry',
+      code: 'SYNC_NOT_CONFIGURED',
+      message: 'Destino de sincronização não configurado.',
+    }),
+  };
   app.use(
     '/api/v1',
-    createAccessEventRouter(new AccessEventService(database, options.now)),
+    createAccessEventRouter(
+      new AccessEventService(database, options.now),
+      options.syncService || new AccessEventSyncService(database, disabledTransport, options.now),
+    ),
   );
 
   app.use((_request, _response, next) => next(new ApiError(404, 'NOT_FOUND', 'Rota não encontrada.')));

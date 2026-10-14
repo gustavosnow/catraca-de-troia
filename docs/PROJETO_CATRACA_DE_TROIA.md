@@ -25,12 +25,12 @@ A decisão de trabalho desta conversa é evoluir o portal para experiência de a
 
 A distribuição PWA e a base de empacotamento Android/iOS com Capacitor foram implementadas como **corte técnico demonstrativo**. Publicação em lojas, assinatura, serviços push, infraestrutura externa e critérios de aceite móveis devem ser detalhados e refletidos nos documentos acadêmicos antes de serem tratados como obrigações do piloto. Não há APK, build iOS, publicação ou homologação em aparelhos nesta revisão.
 
-O protótipo oferece entradas por hash para responsáveis e escola e permite alternar os perfis na versão web. O build móvel dedicado abre somente a experiência dos responsáveis. A API Express/SQLite valida credenciais fictícias, sessões opacas, papéis e vínculos; a troca de interface exige uma sessão do perfil correspondente. Justificativas e eventos de entrada/saída também usam idempotência e auditoria. Avisos e notificações ainda usam estado em memória, e não há fila/sincronização offline real entre dispositivos.
+O protótipo oferece entradas por hash para responsáveis e escola e permite alternar os perfis na versão web. O build móvel dedicado abre somente a experiência dos responsáveis. A API Express/SQLite valida credenciais fictícias, sessões opacas, papéis e vínculos; a troca de interface exige uma sessão do perfil correspondente. Justificativas e eventos de entrada/saída também usam idempotência e auditoria. Eventos novos são registrados com uma fila SQLite local e um trabalhador opcional de sincronização, com retentativas, retomada e isolamento de conflitos. Avisos e notificações ainda usam estado em memória; não há implantação remota nem sincronização homologada entre equipamentos.
 
 ## Arquitetura prevista e continuidade
 
 - Servidor local: identificação facial Python/OpenCV, aplicação das regras de acesso, registro persistente e integração física das duas catracas.
-- Fila local: preservar eventos durante falhas de conexão e sincronizar depois, sem duplicação ou perda.
+- Fila local: corte técnico em SQLite preserva eventos, sincroniza depois, deduplica repetições e isola conflitos; implantação e teste ponta a ponta continuam pendentes.
 - Backend/API: autenticação, sessão, perfis, vínculos familiares validados, avisos, justificativas e auditoria.
 - Notificações: canal aprovado, fila, novas tentativas e estados distintos de processamento, envio, entrega e falha.
 - Interfaces: painel escolar e portal/app dos responsáveis com acesso restrito.
@@ -100,6 +100,6 @@ Encerramento exige evidências dos fluxos completos, continuidade local, sincron
 
 ## Estado atual e mudanças
 
-Veja `ALINHAMENTO_E_RASTREABILIDADE.md` para o mapeamento entre EAP e código e `CONTROLE_DE_MUDANCAS.md` para as decisões desta revisão. O frontend demonstra parte das jornadas; autenticação/sessão, justificativas e eventos possuem backend local. Biometria, hardware, identidade institucional, demais serviços, sincronização e homologação estão pendentes.
+Veja `ALINHAMENTO_E_RASTREABILIDADE.md` para o mapeamento entre EAP e código e `CONTROLE_DE_MUDANCAS.md` para as decisões desta revisão. O frontend demonstra parte das jornadas; autenticação/sessão, justificativas, eventos e fila de saída possuem backend local. Biometria, hardware, identidade institucional, demais serviços, infraestrutura remota e homologação da sincronização estão pendentes.
 
 Identidade visual preservada: azul-marinho `#0B192C`/`#1E293B` e laranja `#EA580C`/`#F97316`/`#FF6500`, com os ativos existentes.

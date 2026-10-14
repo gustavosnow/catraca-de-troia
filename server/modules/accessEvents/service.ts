@@ -3,6 +3,7 @@ import type {
   AccessEventRecord,
   CreateAccessEventRequest,
 } from '../../../shared/contracts/accessEvents';
+import type { AccessEventSyncPayload } from '../../../shared/contracts/accessEventSync';
 import type { DemoActor } from '../../../shared/contracts/justifications';
 import type { AppDatabase } from '../../db';
 import { conflict, forbidden, notFound } from '../../errors';
@@ -25,7 +26,14 @@ interface AccessEventRow {
   push_status: AccessEventRecord['notification']['pushApp'];
   request_hash: string;
   reason: string | null;
+  origin_node_id: string;
+  origin_event_id: string;
+  sync_payload_hash: string;
 }
+
+export const hashSyncPayload = (payload: AccessEventSyncPayload) => createHash('sha256')
+  .update(JSON.stringify(payload))
+  .digest('hex');
 
 const selectEvent = `
   SELECT event.*, student.name AS student_name, student.enrollment
@@ -52,6 +60,7 @@ export class AccessEventService {
   constructor(
     private readonly database: AppDatabase,
     private readonly now: () => string = () => new Date().toISOString(),
+    private readonly nodeId = process.env.SYNC_NODE_ID || 'school-local-demo',
   ) {}
 
   private ensureAccessibleStudent(actor: DemoActor, studentId: string) {
@@ -118,13 +127,31 @@ export class AccessEventService {
 
     const id = randomUUID();
     const timestamp = this.now();
+    const syncPayload: AccessEventSyncPayload = {
+      sourceNodeId: this.nodeId,
+      sourceEventId: id,
+      schoolId: actor.schoolId,
+      studentId,
+      direction: request.direction,
+      occurredAt: timestamp,
+      turnstileId: request.turnstileId,
+      turnstileName: request.turnstileName.trim(),
+      status: request.status,
+      method: request.method,
+      createdById: actor.id,
+      source: 'DEMO_SIMULATION',
+      whatsappStatus: request.whatsappStatus,
+      pushStatus: request.pushStatus,
+      reason: request.reason?.trim() || undefined,
+    };
     const transaction = this.database.transaction(() => {
       this.database.prepare(`
         INSERT INTO access_events (
           id, school_id, student_id, direction, occurred_at, turnstile_id,
           turnstile_name, status, method, created_by, source, whatsapp_status,
-          push_status, reason, idempotency_key, request_hash
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'DEMO_SIMULATION', ?, ?, ?, ?, ?)
+          push_status, reason, idempotency_key, request_hash, origin_node_id,
+          origin_event_id, sync_payload_hash
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'DEMO_SIMULATION', ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         id,
         actor.schoolId,
@@ -141,7 +168,15 @@ export class AccessEventService {
         request.reason?.trim() || null,
         idempotencyKey,
         requestHash,
+        this.nodeId,
+        id,
+        hashSyncPayload(syncPayload),
       );
+      this.database.prepare(`
+        INSERT INTO access_event_sync_queue (
+          event_id, school_id, state, available_at, created_at, updated_at
+        ) VALUES (?, ?, 'PENDING', ?, ?, ?)
+      `).run(id, actor.schoolId, timestamp, timestamp, timestamp);
       this.database.prepare(`
         INSERT INTO audit_log (
           id, school_id, actor_id, aggregate_type, aggregate_id, action,

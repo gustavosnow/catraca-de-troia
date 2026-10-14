@@ -8,6 +8,7 @@ import {
 import { ActorRequest } from '../../auth/sessionAuth';
 import { invalidRequest } from '../../errors';
 import { AccessEventService } from './service';
+import { AccessEventSyncService } from './syncService';
 
 const actorFrom = (request: Request) => (request as ActorRequest).actor;
 
@@ -49,7 +50,10 @@ const parseCreateRequest = (body: unknown): CreateAccessEventRequest => {
   return value as CreateAccessEventRequest;
 };
 
-export const createAccessEventRouter = (service: AccessEventService) => {
+export const createAccessEventRouter = (
+  service: AccessEventService,
+  syncService: AccessEventSyncService,
+) => {
   const router = Router();
 
   router.get('/students/:studentId/access-events', (request, response) => {
@@ -64,6 +68,14 @@ export const createAccessEventRouter = (service: AccessEventService) => {
 
   router.get('/access-events', (request, response) => {
     response.json({ data: service.listForSchool(actorFrom(request), parseLimit(request.query.limit)) });
+  });
+
+  router.get('/access-events/sync/status', (request, response) => {
+    response.json({ data: syncService.status(actorFrom(request)) });
+  });
+
+  router.post('/access-events/sync/retry-conflicts', (request, response) => {
+    response.json({ data: { requeued: syncService.retryConflicts(actorFrom(request)) } });
   });
 
   router.post('/students/:studentId/access-events', (request, response) => {
