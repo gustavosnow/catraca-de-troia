@@ -1,13 +1,16 @@
 import express, { NextFunction, Request, Response } from 'express';
-import { createDemoAuth } from './auth/demoAuth';
+import { createSessionAuth } from './auth/sessionAuth';
 import { AppDatabase } from './db';
 import { ApiError } from './errors';
 import { createJustificationRouter } from './modules/justifications/routes';
 import { JustificationService } from './modules/justifications/service';
 import { createAccessEventRouter } from './modules/accessEvents/routes';
 import { AccessEventService } from './modules/accessEvents/service';
+import { createAuthRouter } from './modules/auth/routes';
+import { AuthService } from './modules/auth/service';
 
 export interface AppOptions {
+  /** @deprecated Mantido temporariamente para compatibilidade dos chamadores. */
   demoAuthEnabled?: boolean;
   now?: () => string;
 }
@@ -21,7 +24,9 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
     response.json({ status: 'ok', persistence: 'sqlite' });
   });
 
-  app.use('/api/v1', createDemoAuth(database, options.demoAuthEnabled ?? false));
+  const authService = new AuthService(database, options.now);
+  app.use('/api/v1', createAuthRouter(database, authService, options.now));
+  app.use('/api/v1', createSessionAuth(database, options.now));
   app.use(
     '/api/v1',
     createJustificationRouter(new JustificationService(database, options.now)),

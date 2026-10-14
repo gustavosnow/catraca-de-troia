@@ -5,7 +5,7 @@ import {
   ACCESS_STATUSES,
   CreateAccessEventRequest,
 } from '../../../shared/contracts/accessEvents';
-import { ActorRequest } from '../../auth/demoAuth';
+import { ActorRequest } from '../../auth/sessionAuth';
 import { invalidRequest } from '../../errors';
 import { AccessEventService } from './service';
 

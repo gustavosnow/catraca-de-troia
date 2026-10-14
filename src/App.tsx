@@ -31,6 +31,8 @@ import { soundManager } from './utils/sound';
 import { isParentOnlyBuild } from './config/runtime';
 import { justificationsApi } from './services/justificationsApi';
 import { accessEventsApi } from './services/accessEventsApi';
+import { authApi } from './services/authApi';
+import { toAuthUser } from './services/authUserMapper';
 
 import { 
   Bell, 
@@ -55,6 +57,8 @@ const getViewModeFromHash = (): ViewMode =>
 export default function App() {
   // Perspective Mode: 'parent_app' (Requested mobile app for parents) vs 'management_dashboard' (School portal)
   const [viewMode, setViewMode] = useState<ViewMode>(getViewModeFromHash);
+  const [authenticatedUser, setAuthenticatedUser] = useState<AuthUser | null>(null);
+  const [isRestoringSession, setIsRestoringSession] = useState(authApi.hasStoredSession());
 
   // School management sub-tab: 'catracas' | 'avisos' | 'alunos'
   const [managementTab, setManagementTab] = useState<'catracas' | 'avisos' | 'alunos' | 'justificativas'>('catracas');
@@ -63,6 +67,28 @@ export default function App() {
     const handleHashChange = () => setViewMode(getViewModeFromHash());
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  useEffect(() => {
+    const endSession = () => {
+      setAuthenticatedUser(null);
+      setIsAuthModalOpen(true);
+    };
+    window.addEventListener('catraca:session-ended', endSession);
+    if (!authApi.hasStoredSession()) {
+      setIsRestoringSession(false);
+      setIsAuthModalOpen(true);
+      return () => window.removeEventListener('catraca:session-ended', endSession);
+    }
+    authApi.restore()
+      .then((user) => handleLoginSuccess(toAuthUser(user)))
+      .catch(() => {
+        authApi.clear();
+        setAuthenticatedUser(null);
+        setIsAuthModalOpen(true);
+      })
+      .finally(() => setIsRestoringSession(false));
+    return () => window.removeEventListener('catraca:session-ended', endSession);
   }, []);
 
   const navigateToView = (mode: ViewMode) => {
@@ -106,6 +132,14 @@ export default function App() {
 
   // Handle successful login
   const handleLoginSuccess = (user: AuthUser) => {
+    if (isParentOnlyBuild && user.role === 'staff') {
+      void authApi.logout().catch(() => authApi.clear());
+      setAuthenticatedUser(null);
+      setAuthModalRole('parent');
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setAuthenticatedUser(user);
     if (user.role === 'parent') {
       let matchedGuardian = guardiansList.find(g => g.id === user.id);
       if (!matchedGuardian) {
@@ -126,14 +160,12 @@ export default function App() {
     }
   };
 
-  // Handle new parent registration
-  const handleRegisterParent = (newGuardian: ParentAccount) => {
-    setGuardiansList(prev => {
-      const exists = prev.some(g => g.id === newGuardian.id);
-      if (exists) return prev;
-      return [newGuardian, ...prev];
-    });
-    setCurrentGuardian(newGuardian);
+  const handleLogout = async () => {
+    await authApi.logout().catch(() => authApi.clear());
+    setAuthenticatedUser(null);
+    setAuthModalRole(viewMode === 'parent_app' ? 'parent' : 'staff');
+    setAuthModalMode('login');
+    setIsAuthModalOpen(true);
   };
 
   
@@ -145,13 +177,16 @@ export default function App() {
   const [justificationsError, setJustificationsError] = useState<string>();
 
   useEffect(() => {
+    if (!authenticatedUser) return;
+    if (viewMode === 'parent_app' && authenticatedUser.role !== 'parent') return;
+    if (viewMode === 'management_dashboard' && authenticatedUser.role !== 'staff') return;
     let active = true;
     setJustificationsState('loading');
     setJustificationsError(undefined);
 
     const load = viewMode === 'parent_app'
-      ? justificationsApi.listForGuardian(currentGuardian.id)
-      : justificationsApi.listForSchool(currentStaffUser.id);
+      ? justificationsApi.listForGuardian()
+      : justificationsApi.listForSchool();
 
     load.then((records) => {
       if (!active) return;
@@ -164,17 +199,20 @@ export default function App() {
     });
 
     return () => { active = false; };
-  }, [currentGuardian.id, currentStaffUser.id, viewMode]);
+  }, [authenticatedUser, currentGuardian.id, currentStaffUser.id, viewMode]);
 
   useEffect(() => {
+    if (!authenticatedUser) return;
+    if (viewMode === 'parent_app' && authenticatedUser.role !== 'parent') return;
+    if (viewMode === 'management_dashboard' && authenticatedUser.role !== 'staff') return;
     let active = true;
 
     const loadAccessEvents = async (showLoading = false) => {
       if (showLoading) setAccessEventsState('loading');
       try {
         const records = viewMode === 'parent_app'
-          ? await accessEventsApi.listForGuardian(currentGuardian.id, students)
-          : await accessEventsApi.listForSchool(currentStaffUser.id, students);
+          ? await accessEventsApi.listForGuardian(students)
+          : await accessEventsApi.listForSchool(students);
         if (!active) return;
         setLogs(records);
         setAccessEventsState('persistent');
@@ -192,7 +230,7 @@ export default function App() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [currentGuardian.id, currentStaffUser.id, students, viewMode]);
+  }, [authenticatedUser, currentGuardian.id, currentStaffUser.id, students, viewMode]);
 
   // Real-time live simulation state
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
@@ -225,7 +263,6 @@ export default function App() {
     let newLog: AccessLog;
     try {
       newLog = await accessEventsApi.create(
-        viewMode === 'parent_app' ? 'staff-1' : currentStaffUser.id,
         student,
         direction,
         turnstile,
@@ -354,7 +391,6 @@ export default function App() {
     if (foundStudent) {
       try {
         const persisted = await accessEventsApi.create(
-          currentStaffUser.id,
           foundStudent,
           'entry',
           turnstile,
@@ -483,7 +519,7 @@ export default function App() {
   const handleAddJustification = async (
     justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
   ) => {
-    const created = await justificationsApi.create(currentGuardian.id, justification);
+    const created = await justificationsApi.create(justification);
     setJustifications((current) => [created, ...current]);
     setJustificationsState('persistent');
     setJustificationsError(undefined);
@@ -507,7 +543,7 @@ export default function App() {
     const justification = justifications.find((item) => item.id === id);
     if (!justification) return;
 
-    const updated = await justificationsApi.review(currentStaffUser.id, justification, status);
+    const updated = await justificationsApi.review(justification, status);
     setJustifications((current) => current.map((item) =>
       item.id === id ? { ...updated, reviewedBy: currentStaffUser.name } : item,
     ));
@@ -531,6 +567,39 @@ export default function App() {
   const presenceRate = Math.min(100, (entriesCount / totalRegistered) * 100);
   const activeAlertsCount = alerts.filter(a => !a.resolved).length;
 
+  if (isRestoringSession) {
+    return <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center text-sm">
+      Restaurando sessão segura…
+    </div>;
+  }
+
+  if (!authenticatedUser) {
+    return <div className="min-h-screen bg-slate-950">
+      <AuthModal
+        isOpen
+        onClose={() => undefined}
+        initialMode="login"
+        initialRole={isParentOnlyBuild || viewMode === 'parent_app' ? 'parent' : 'staff'}
+        onLoginSuccess={handleLoginSuccess}
+        studentsDatabase={students}
+      />
+    </div>;
+  }
+
+  const requiredRole = viewMode === 'parent_app' ? 'parent' : 'staff';
+  if (authenticatedUser.role !== requiredRole) {
+    return <div className="min-h-screen bg-slate-950">
+      <AuthModal
+        isOpen
+        onClose={() => navigateToView(authenticatedUser.role === 'parent' ? 'parent_app' : 'management_dashboard')}
+        initialMode="login"
+        initialRole={requiredRole}
+        onLoginSuccess={handleLoginSuccess}
+        studentsDatabase={students}
+      />
+    </div>;
+  }
+
   if (viewMode === 'parent_app') {
     return (
       <>
@@ -540,22 +609,19 @@ export default function App() {
           onUpdateSharedNotices={setNotices}
           sharedNotifications={notifications}
           onUpdateSharedNotifications={setNotifications}
-          guardiansList={guardiansList}
+          guardiansList={[currentGuardian]}
           currentGuardianExternal={currentGuardian}
           onSelectGuardianExternal={setCurrentGuardian}
           onOpenAuthModal={(mode) => openAuthModal(mode, 'parent')}
           studentsList={students}
           sharedAccessLogs={logs}
-          onSimulateAccess={(studentId, direction) => {
-            const student = students.find((item) => item.id === studentId);
-            if (student) triggerStudentAccess(student, direction);
-          }}
           sharedJustifications={justifications}
           onSubmitJustification={handleAddJustification}
           justificationsState={justificationsState}
           justificationsError={justificationsError}
           accessEventsState={accessEventsState}
           accessEventsError={accessEventsError}
+          onLogout={handleLogout}
         />
 
         <AuthModal
@@ -565,7 +631,6 @@ export default function App() {
           initialRole={authModalRole}
           onLoginSuccess={handleLoginSuccess}
           studentsDatabase={students}
-          onRegisterParent={handleRegisterParent}
         />
       </>
     );
@@ -589,6 +654,7 @@ export default function App() {
         onSwitchToParentApp={() => navigateToView('parent_app')}
         currentStaffUser={currentStaffUser}
         onOpenAuthModal={(mode, role) => openAuthModal(mode, role)}
+        onLogout={handleLogout}
       />
 
       {/* Main Dashboard Container */}
@@ -756,7 +822,6 @@ export default function App() {
         initialRole={authModalRole}
         onLoginSuccess={handleLoginSuccess}
         studentsDatabase={students}
-        onRegisterParent={handleRegisterParent}
       />
 
     </div>

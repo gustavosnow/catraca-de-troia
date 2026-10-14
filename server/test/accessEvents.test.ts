@@ -3,12 +3,13 @@ import { AddressInfo } from 'node:net';
 import test from 'node:test';
 import { createApp } from '../app';
 import { createDatabase } from '../db';
+import { apiRequest as request } from './authTestUtils';
 
 const fixedNow = () => '2026-10-14T16:00:00.000Z';
 
 const startApi = async () => {
   const database = createDatabase({ filename: ':memory:' });
-  const server = createApp(database, { demoAuthEnabled: true, now: fixedNow }).listen(0, '127.0.0.1');
+  const server = createApp(database, { now: fixedNow }).listen(0, '127.0.0.1');
   await new Promise<void>((resolve) => server.once('listening', resolve));
   const address = server.address() as AddressInfo;
   return {
@@ -19,19 +20,6 @@ const startApi = async () => {
       error ? reject(error) : resolve();
     })),
   };
-};
-
-const request = async (
-  baseUrl: string,
-  pathname: string,
-  actorId: string,
-  init: RequestInit = {},
-) => {
-  const headers = new Headers(init.headers);
-  headers.set('X-Demo-User-Id', actorId);
-  if (init.body) headers.set('Content-Type', 'application/json');
-  const response = await fetch(`${baseUrl}${pathname}`, { ...init, headers });
-  return { response, body: await response.json() as Record<string, any> };
 };
 
 const accessEvent = {

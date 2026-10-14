@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   X, 
   Lock, 
@@ -25,8 +25,10 @@ import {
   Users
 } from 'lucide-react';
 import { AuthUser, Student } from '../types';
-import { PARENT_ACCOUNTS, ParentAccount, STAFF_ACCOUNTS, StaffAccount, STUDENTS_DATABASE } from '../data/mockData';
+import { PARENT_ACCOUNTS, STAFF_ACCOUNTS, STUDENTS_DATABASE } from '../data/mockData';
 import { CatracaTroiaLogo } from './CatracaTroiaLogo';
+import { authApi } from '../services/authApi';
+import { toAuthUser } from '../services/authUserMapper';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -35,7 +37,6 @@ interface AuthModalProps {
   initialRole?: 'parent' | 'staff';
   onLoginSuccess: (user: AuthUser) => void;
   studentsDatabase?: Student[];
-  onRegisterParent?: (newGuardian: ParentAccount, newStudent?: Student) => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -45,7 +46,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   initialRole = 'parent',
   onLoginSuccess,
   studentsDatabase = STUDENTS_DATABASE,
-  onRegisterParent,
 }) => {
   const [mode, setMode] = useState<'login' | 'register' | 'forgot_password'>(initialMode);
   const [role, setRole] = useState<'parent' | 'staff'>(initialRole);
@@ -57,6 +57,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [rememberMe, setRememberMe] = useState(true);
   const [loginError, setLoginError] = useState('');
   const [loginSuccess, setLoginSuccess] = useState('');
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   // Form states - Register Parent
   const [parentName, setParentName] = useState('');
@@ -84,6 +85,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [recoveryCode, setRecoveryCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setMode(initialMode);
+    setRole(initialRole);
+    setLoginError('');
+    setLoginSuccess('');
+  }, [initialMode, initialRole, isOpen]);
+
   if (!isOpen) return null;
 
   // Mask CPF
@@ -106,6 +115,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   // Handle Login Submit
+  const authenticate = async (identifier: string, password: string, expectedRole: 'parent' | 'staff') => {
+    setIsAuthenticating(true);
+    setLoginError('');
+    setLoginSuccess('Validando credenciais e criando sessão…');
+    try {
+      const session = await authApi.login({ identifier, password, rememberMe });
+      const authUser = toAuthUser(session.user);
+      if (authUser.role !== expectedRole) {
+        await authApi.logout();
+        throw new Error(expectedRole === 'parent'
+          ? 'Esta credencial pertence à equipe escolar.'
+          : 'Esta credencial pertence a um responsável.');
+      }
+      setLoginSuccess(`Sessão autorizada. Olá, ${authUser.name.split(' ')[0]}.`);
+      onLoginSuccess(authUser);
+      onClose();
+    } catch (error) {
+      setLoginSuccess('');
+      setLoginError(error instanceof Error ? error.message : 'Não foi possível autenticar.');
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
@@ -119,134 +152,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    if (role === 'parent') {
-      // Find matching parent account or create dynamic auth session
-      const cleanIdent = loginIdentifier.toLowerCase().replace(/\D/g, '');
-      const foundGuardian = PARENT_ACCOUNTS.find(g => 
-        g.phone.replace(/\D/g, '').includes(cleanIdent) ||
-        g.name.toLowerCase().includes(loginIdentifier.toLowerCase())
-      ) || PARENT_ACCOUNTS[0];
-
-      const authUser: AuthUser = {
-        id: foundGuardian.id,
-        name: foundGuardian.name,
-        email: loginIdentifier.includes('@') ? loginIdentifier : `${foundGuardian.name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
-        phone: foundGuardian.phone,
-        role: 'parent',
-        guardianRelation: foundGuardian.relation as any,
-        childrenIds: foundGuardian.childrenIds,
-        schoolUnit: 'EMEF Profª. Cecília Meireles',
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-      };
-
-      setLoginSuccess(`Login realizado com sucesso! Bem-vindo(a), ${authUser.name.split(' ')[0]}.`);
-      setTimeout(() => {
-        onLoginSuccess(authUser);
-        onClose();
-      }, 600);
-    } else {
-      // Staff login
-      const foundStaff = STAFF_ACCOUNTS.find(s => 
-        s.email.toLowerCase().includes(loginIdentifier.toLowerCase()) ||
-        s.functionalRegistry.toLowerCase().includes(loginIdentifier.toLowerCase())
-      ) || STAFF_ACCOUNTS[0];
-
-      const authUser: AuthUser = {
-        id: foundStaff.id,
-        name: foundStaff.name,
-        email: foundStaff.email,
-        phone: foundStaff.phone,
-        role: 'staff',
-        staffRole: foundStaff.role,
-        functionalRegistry: foundStaff.functionalRegistry,
-        schoolUnit: foundStaff.schoolUnit,
-        avatar: foundStaff.avatar,
-      };
-
-      setLoginSuccess(`Sessão autorizada! Olá, ${authUser.name}.`);
-      setTimeout(() => {
-        onLoginSuccess(authUser);
-        onClose();
-      }, 600);
-    }
+    void authenticate(loginIdentifier, loginPassword, role);
   };
 
   // Quick Demo Login Handler
   const handleQuickDemoLogin = (type: 'claudia' | 'rodrigo' | 'carlos' | 'mariana') => {
-    setLoginError('');
-    if (type === 'claudia') {
-      const g = PARENT_ACCOUNTS[0];
-      const authUser: AuthUser = {
-        id: g.id,
-        name: g.name,
-        email: 'claudia.mendes@gmail.com',
-        phone: g.phone,
-        role: 'parent',
-        guardianRelation: 'Mãe',
-        childrenIds: g.childrenIds,
-        schoolUnit: 'EMEF Profª. Cecília Meireles',
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-      };
-      setLoginSuccess('Acessando como Cláudia Mendes...');
-      setTimeout(() => {
-        onLoginSuccess(authUser);
-        onClose();
-      }, 400);
-    } else if (type === 'rodrigo') {
-      const g = PARENT_ACCOUNTS[1];
-      const authUser: AuthUser = {
-        id: g.id,
-        name: g.name,
-        email: 'rodrigo.oliveira@gmail.com',
-        phone: g.phone,
-        role: 'parent',
-        guardianRelation: 'Pai',
-        childrenIds: g.childrenIds,
-        schoolUnit: 'EMEF Profª. Cecília Meireles',
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-      };
-      setLoginSuccess('Acessando como Rodrigo Oliveira...');
-      setTimeout(() => {
-        onLoginSuccess(authUser);
-        onClose();
-      }, 400);
-    } else if (type === 'carlos') {
-      const s = STAFF_ACCOUNTS[0];
-      const authUser: AuthUser = {
-        id: s.id,
-        name: s.name,
-        email: s.email,
-        phone: s.phone,
-        role: 'staff',
-        staffRole: s.role,
-        functionalRegistry: s.functionalRegistry,
-        schoolUnit: s.schoolUnit,
-        avatar: s.avatar,
-      };
-      setLoginSuccess('Acessando como Carlos Mendes (Operador)...');
-      setTimeout(() => {
-        onLoginSuccess(authUser);
-        onClose();
-      }, 400);
-    } else if (type === 'mariana') {
-      const s = STAFF_ACCOUNTS[1];
-      const authUser: AuthUser = {
-        id: s.id,
-        name: s.name,
-        email: s.email,
-        phone: s.phone,
-        role: 'staff',
-        staffRole: s.role,
-        functionalRegistry: s.functionalRegistry,
-        schoolUnit: s.schoolUnit,
-        avatar: s.avatar,
-      };
-      setLoginSuccess('Acessando como Profª Mariana Costa...');
-      setTimeout(() => {
-        onLoginSuccess(authUser);
-        onClose();
-      }, 400);
-    }
+    const accounts = {
+      claudia: ['claudia.mendes@gmail.com', 'parent'],
+      rodrigo: ['rodrigo.oliveira@gmail.com', 'parent'],
+      carlos: ['carlos.mendes@emef.educacao.sp.gov.br', 'staff'],
+      mariana: ['mariana.costa@emef.educacao.sp.gov.br', 'staff'],
+    } as const;
+    const [identifier] = accounts[type];
+    void authenticate(identifier, 'Troia@2026', role);
   };
 
   // Handle Parent Registration Submit
@@ -275,38 +193,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    const newGuardianId = 'guardian-' + Date.now();
-    const formattedName = `${parentName} (${parentRelation})`;
-
-    const newGuardian: ParentAccount = {
-      id: newGuardianId,
-      name: formattedName,
-      phone: parentPhone,
-      relation: parentRelation,
-      childrenIds: selectedChildrenIds,
-    };
-
-    if (onRegisterParent) {
-      onRegisterParent(newGuardian);
-    }
-
-    const authUser: AuthUser = {
-      id: newGuardianId,
-      name: formattedName,
-      email: parentEmail || `${parentName.toLowerCase().replace(/\s+/g, '.')}@email.com`,
-      phone: parentPhone,
-      role: 'parent',
-      cpf: parentCpf,
-      guardianRelation: parentRelation,
-      childrenIds: selectedChildrenIds,
-      schoolUnit: 'EMEF Profª. Cecília Meireles',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    };
-
-    setLoginSuccess('Cadastro realizado com sucesso! Acessando sua conta...');
+    setLoginSuccess('Solicitação demonstrativa registrada. A escola ainda precisa validar o vínculo e criar a credencial no serviço de identidade.');
     setTimeout(() => {
-      onLoginSuccess(authUser);
-      onClose();
+      setMode('login');
+      setLoginSuccess('Use uma conta demonstrativa já validada para entrar.');
     }, 700);
   };
 
@@ -336,23 +226,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    const newStaffId = 'staff-' + Date.now();
-    const authUser: AuthUser = {
-      id: newStaffId,
-      name: staffName,
-      email: staffEmail,
-      phone: staffPhone || '(11) 98888-7766',
-      role: 'staff',
-      staffRole: staffRole,
-      functionalRegistry: staffMatricula.toUpperCase().startsWith('MAT-') ? staffMatricula.toUpperCase() : `MAT-2026/${staffMatricula}`,
-      schoolUnit: 'EMEF Profª. Cecília Meireles',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    };
-
-    setLoginSuccess('Credencial de funcionário cadastrada com sucesso! Bem-vindo à equipe.');
+    setLoginSuccess('Solicitação demonstrativa registrada. A credencial de equipe depende de aprovação institucional.');
     setTimeout(() => {
-      onLoginSuccess(authUser);
-      onClose();
+      setMode('login');
+      setLoginSuccess('Use uma conta demonstrativa já validada para entrar.');
     }, 700);
   };
 
@@ -457,7 +334,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Modal Body */}
         <div className="p-5 sm:p-6 relative z-10 max-h-[72vh] overflow-y-auto space-y-4 custom-scrollbar">
           
-          <p className="text-xs text-amber-200">Autenticação demonstrativa. O cadastro não valida vínculos ou autoriza biometria; esses controles deverão ser implementados no backend.</p>
+          <p className="text-xs text-amber-200">Sessão validada pela API local com contas fictícias. Cadastro, recuperação e integração com identidade institucional permanecem demonstrativos.</p>
           {/* Feedback Messages */}
           {loginError && (
             <div className="p-3 rounded-xl bg-red-950/70 border border-red-800/60 text-red-300 text-xs flex items-center gap-2.5 animate-in fade-in">
@@ -574,10 +451,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                 <button
                   type="submit"
+                  disabled={isAuthenticating}
                   className="w-full py-2.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs shadow-lg shadow-orange-950/40 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
                 >
                   <LogIn className="w-4 h-4" />
-                  <span>Entrar no Sistema</span>
+                  <span>{isAuthenticating ? 'Validando…' : 'Entrar no Sistema'}</span>
                 </button>
               </form>
 
@@ -585,7 +463,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="pt-3 border-t border-slate-800/80 space-y-2">
                 <div className="flex items-center justify-between text-[11px] text-slate-400">
                   <span className="font-bold uppercase tracking-wider text-orange-400/90">Acesso Rápido (Demonstração)</span>
-                  <span>1-Clique</span>
+                  <span>Senha: Troia@2026</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button

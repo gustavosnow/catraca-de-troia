@@ -13,7 +13,6 @@ import {
   CheckCircle2, 
   Clock, 
   ShieldCheck, 
-  Sparkles, 
   Send,
   AlertCircle,
   Maximize2,
@@ -39,7 +38,6 @@ import {
   SchoolNotice, 
   ParentNotification, 
   AbsenceJustification,
-  AccessDirection,
   AccessLog,
 } from '../../types';
 import { 
@@ -52,7 +50,6 @@ import {
 import {
   buildStudentAccessTimeline,
   buildWeeklyAccessFromLogs,
-  getNextAccessDirection,
   getStudentAccessLogs,
 } from '../../services/demoAccessService';
 
@@ -68,13 +65,13 @@ interface ParentAppViewProps {
   onOpenAuthModal?: (mode?: 'login' | 'register') => void;
   studentsList?: Student[];
   sharedAccessLogs: AccessLog[];
-  onSimulateAccess: (studentId: string, direction: AccessDirection) => void;
   sharedJustifications: AbsenceJustification[];
   onSubmitJustification: (justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) => Promise<void>;
   justificationsState: 'loading' | 'persistent' | 'unavailable';
   justificationsError?: string;
   accessEventsState: 'loading' | 'persistent' | 'unavailable';
   accessEventsError?: string;
+  onLogout?: () => void;
 }
 
 export const ParentAppView: React.FC<ParentAppViewProps> = ({ 
@@ -89,13 +86,13 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   onOpenAuthModal,
   studentsList = STUDENTS_DATABASE,
   sharedAccessLogs,
-  onSimulateAccess,
   sharedJustifications,
   onSubmitJustification,
   justificationsState,
   justificationsError,
   accessEventsState,
   accessEventsError,
+  onLogout,
 }) => {
   // Current logged in guardian (Default: Claudia Mendes or external)
   const [internalGuardian, setInternalGuardian] = useState<ParentAccount>(guardiansList[0] || PARENT_ACCOUNTS[0]);
@@ -147,7 +144,6 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   const latestAccess = selectedStudentLogs.at(-1);
   const latestEntry = [...selectedStudentLogs].reverse().find((log) => log.direction === 'entry');
   const isAtSchool = latestAccess?.direction === 'entry';
-  const nextAccessDirection = getNextAccessDirection(sharedAccessLogs, selectedStudent.id);
 
   const [internalNotices, setInternalNotices] = useState<SchoolNotice[]>(INITIAL_SCHOOL_NOTICES);
   const [internalNotifications, setInternalNotifications] = useState<ParentNotification[]>(INITIAL_PARENT_NOTIFICATIONS);
@@ -175,9 +171,6 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   // Device frame mode: 'mobile_frame' | 'full_canvas'
   const [deviceMode, setDeviceMode] = useState<'mobile_frame' | 'full_canvas'>('mobile_frame');
 
-  // Simulated live push notification banner
-  const [liveBanner, setLiveBanner] = useState<{ title: string; message: string; time: string } | null>(null);
-
   const unreadCount = parentNotifications.filter(n => !n.isRead).length;
 
   // Handler for adding a new absence justification
@@ -196,27 +189,6 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
       }
       return n;
     }));
-  };
-
-  // Simulate instant turnstile pass notification for the currently selected child
-  const handleSimulatePassNotification = () => {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const turnstileName = selectedStudent.stage === 'Fundamental I' ? 'Catraca 02 (Fundamental I)' : 'Catraca 01 (Portão Principal)';
-
-    const directionLabel = nextAccessDirection === 'entry' ? 'Entrada' : 'Saída';
-    const bannerInfo = {
-      title: 'Catraca de Tróia: Acesso Liberado',
-      message: `${directionLabel} de ${selectedStudent.name.split(' ')[0]} registrada na ${turnstileName} via Reconhecimento Facial.`,
-      time: timeStr,
-    };
-
-    setLiveBanner(bannerInfo);
-    onSimulateAccess(selectedStudent.id, nextAccessDirection);
-
-    setTimeout(() => {
-      setLiveBanner(null);
-    }, 5000);
   };
 
   if (myChildren.length === 0 || !myChildren.some(child => child.id === selectedStudent.id)) {
@@ -257,17 +229,6 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
 
           {/* Quick controls */}
           <div className="col-span-2 row-start-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:flex">
-            {/* Simulate pass notification */}
-            <button
-              id="btn-simulate-parent-push"
-              onClick={handleSimulatePassNotification}
-              className="min-w-0 px-2 sm:px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-xs"
-              title="Simular passagem instantânea na catraca para o filho selecionado"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="truncate">Simular {nextAccessDirection === 'entry' ? 'Entrada' : 'Saída'} <span className="hidden sm:inline">de {selectedStudent.name.split(' ')[0]}</span></span>
-            </button>
-
             {/* Frame mode switch */}
             <div className="bg-slate-800 p-0.5 rounded-xl border border-slate-700 flex items-center text-xs">
               <button
@@ -339,32 +300,6 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             </div>
           )}
 
-          {/* In-App Live Notification Toast Banner */}
-          {liveBanner && (
-            <div className="absolute top-12 left-4 right-4 z-50 animate-in slide-in-from-top-4 duration-300">
-              <div className="bg-slate-900/95 backdrop-blur-md text-white p-3.5 rounded-2xl border border-orange-500/50 shadow-2xl flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                  <Bell className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between text-[10px] text-orange-300 font-bold uppercase tracking-wider">
-                    <span>{liveBanner.title}</span>
-                    <span className="font-mono text-slate-400">{liveBanner.time}</span>
-                  </div>
-                  <p className="text-xs text-white font-medium mt-0.5 leading-snug">
-                    {liveBanner.message}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setLiveBanner(null)}
-                  className="text-slate-400 hover:text-white p-1 cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Parent App Header (With Child Cards & Guardian Switcher) */}
           <ParentHeader
             currentGuardian={currentGuardian}
@@ -378,6 +313,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             onOpenDigitalBadge={() => setIsBadgeModalOpen(true)}
             activeTab={activeTab}
             onOpenAuthModal={onOpenAuthModal}
+            onLogout={onLogout}
           />
 
           <div className={`px-4 py-2 border-b text-[11px] ${
@@ -433,7 +369,6 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
                   entryTime={latestEntry?.exactTime.slice(0, 5) || '—'}
                   turnstileName={latestAccess?.turnstileName || 'Sem passagem na sessão'}
                   timeline={timeline}
-                  onSimulateNewPass={handleSimulatePassNotification}
                   onViewTimelineDetails={(event) => {
                     alert(`Evento: ${event.title}\nHorário: ${event.time}\nLocal: ${event.location}\nDetalhes: ${event.detail}`);
                   }}

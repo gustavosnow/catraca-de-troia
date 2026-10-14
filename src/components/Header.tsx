@@ -37,6 +37,7 @@ interface HeaderProps {
   onSwitchToParentApp: () => void;
   currentStaffUser?: AuthUser;
   onOpenAuthModal?: (mode?: 'login' | 'register', role?: 'parent' | 'staff') => void;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -52,6 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSwitchToParentApp,
   currentStaffUser,
   onOpenAuthModal,
+  onLogout,
 }) => {
 
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -434,6 +436,18 @@ export const Header: React.FC<HeaderProps> = ({
                           <UserCheck className="w-4 h-4 text-slate-400" />
                           <span>Trocar Usuário / Fazer Login</span>
                         </button>
+                        {onLogout && (
+                          <button
+                            onClick={() => {
+                              setShowProfileMenu(false);
+                              onLogout();
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-xl text-xs text-red-300 hover:bg-red-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            <span>Encerrar sessão</span>
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

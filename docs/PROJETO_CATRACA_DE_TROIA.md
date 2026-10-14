@@ -25,7 +25,7 @@ A decisão de trabalho desta conversa é evoluir o portal para experiência de a
 
 A distribuição PWA e a base de empacotamento Android/iOS com Capacitor foram implementadas como **corte técnico demonstrativo**. Publicação em lojas, assinatura, serviços push, infraestrutura externa e critérios de aceite móveis devem ser detalhados e refletidos nos documentos acadêmicos antes de serem tratados como obrigações do piloto. Não há APK, build iOS, publicação ou homologação em aparelhos nesta revisão.
 
-O protótipo oferece entradas por hash para responsáveis e escola e permite alternar os perfis na versão web. O build móvel dedicado abre somente a experiência dos responsáveis. Essa separação visual não é autorização. Justificativas e eventos de entrada/saída consomem a API Express/SQLite local com vínculo, papéis, idempotência e auditoria demonstrativos. Avisos e notificações ainda usam estado em memória, e não há fila/sincronização offline real entre dispositivos.
+O protótipo oferece entradas por hash para responsáveis e escola e permite alternar os perfis na versão web. O build móvel dedicado abre somente a experiência dos responsáveis. A API Express/SQLite valida credenciais fictícias, sessões opacas, papéis e vínculos; a troca de interface exige uma sessão do perfil correspondente. Justificativas e eventos de entrada/saída também usam idempotência e auditoria. Avisos e notificações ainda usam estado em memória, e não há fila/sincronização offline real entre dispositivos.
 
 ## Arquitetura prevista e continuidade
 
@@ -71,7 +71,7 @@ Estimativas acadêmicas; não representam despesas realizadas ou financiamento a
 
 ## Governança e controle de acesso
 
-O backend deve validar o usuário, seu perfil e o vínculo autorizado com cada estudante em toda consulta ou alteração. Cadastro público não pode autorizar automaticamente acesso ao histórico de um aluno. Seleção de dependentes na interface é apenas demonstração.
+O backend valida a sessão, o perfil e o vínculo autorizado com cada estudante nas rotas implementadas de justificativas e eventos. Cadastro público não autoriza automaticamente acesso ao histórico de um aluno; a seleção de dependentes na interface continua apenas demonstrativa. O corte local usa scrypt com salt para as senhas fictícias, tokens opacos armazenados como hash, expiração, revogação e auditoria de criação/encerramento. Integração com identidade institucional, HTTPS, MFA, recuperação, política de senha, proteção nativa do token, limitação de tentativas e testes de segurança continuam pendentes.
 
 O tratamento biométrico de menores depende de validação institucional de necessidade, proporcionalidade, base jurídica, minimização, retenção, direitos e resposta a incidentes. Vetores faciais também são dados biométricos sensíveis. Preferências de notificação não autorizam automaticamente biometria nem condicionam frequência escolar.
 
@@ -100,6 +100,6 @@ Encerramento exige evidências dos fluxos completos, continuidade local, sincron
 
 ## Estado atual e mudanças
 
-Veja `ALINHAMENTO_E_RASTREABILIDADE.md` para o mapeamento entre EAP e código e `CONTROLE_DE_MUDANCAS.md` para as decisões desta revisão. O frontend demonstra parte das jornadas; justificativas e eventos possuem backend local. Biometria, hardware, autenticação real, demais serviços, sincronização e homologação estão pendentes.
+Veja `ALINHAMENTO_E_RASTREABILIDADE.md` para o mapeamento entre EAP e código e `CONTROLE_DE_MUDANCAS.md` para as decisões desta revisão. O frontend demonstra parte das jornadas; autenticação/sessão, justificativas e eventos possuem backend local. Biometria, hardware, identidade institucional, demais serviços, sincronização e homologação estão pendentes.
 
 Identidade visual preservada: azul-marinho `#0B192C`/`#1E293B` e laranja `#EA580C`/`#F97316`/`#FF6500`, com os ativos existentes.

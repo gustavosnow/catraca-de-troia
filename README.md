@@ -2,7 +2,7 @@
 
 Protótipo acadêmico de controle de entrada e saída em uma escola pública de ensino fundamental. Painel web da gestão escolar e portal responsivo dos responsáveis, preparado para evolução móvel.
 
-**Estado: demonstração em evolução.** Autenticação, origem das passagens, notificações e anexos ainda são simulados. Eventos de entrada/saída e justificativas já consomem uma API local com SQLite, vínculo, papéis, idempotência e auditoria demonstrativos. A experiência dos responsáveis também possui PWA instalável e projetos-base Capacitor; isso não equivale a autenticação real, aplicativo publicado ou integração com hardware/serviços externos.
+**Estado: demonstração em evolução.** A API local já valida credenciais fictícias, emite sessões revogáveis e aplica perfil e vínculo no servidor. Eventos de entrada/saída e justificativas usam SQLite, idempotência e auditoria. A origem das passagens, notificações e anexos ainda é simulada. A experiência dos responsáveis também possui PWA instalável e projetos-base Capacitor; isso não equivale a identidade institucional, aplicativo publicado ou integração com hardware/serviços externos.
 
 ## Executar
 
@@ -23,16 +23,22 @@ npm run build
 npm run preview
 ```
 
-## API local de justificativas e eventos
+## API local, autenticação e sessões
 
-O primeiro corte do backend persiste justificativas em `.data/catraca-de-troia.sqlite`, valida vínculos no servidor, restringe revisões à Coordenação/Direção e registra auditoria. Os dados iniciais são fictícios e coerentes com os identificadores da demonstração.
+O backend persiste sessões, justificativas e eventos em `.data/catraca-de-troia.sqlite`, valida vínculos no servidor, restringe revisões à Coordenação/Direção e registra auditoria. Os dados e as credenciais iniciais são fictícios.
 
 ```bash
 npm run api:dev
 npm run test:api
 ```
 
-A API inicia em `http://127.0.0.1:3001`. O script ativa `DEMO_AUTH=true`; envie o header `X-Demo-User-Id` com um ator fictício, como `guardian-1` ou `staff-2`. Esse mecanismo existe somente para desenvolvimento e não deve ser exposto como autenticação real.
+A API inicia em `http://127.0.0.1:3001`. Use os atalhos da tela de entrada ou uma das contas abaixo; a senha comum da demonstração é `Troia@2026`.
+
+- Responsável: `claudia.mendes@gmail.com` ou `(11) 98765-4321`.
+- Portaria: `carlos.mendes@emef.educacao.sp.gov.br` ou `MAT-2026/0481`.
+- Coordenação: `mariana.costa@emef.educacao.sp.gov.br` ou `MAT-2026/0129`.
+
+As senhas são derivadas com scrypt e salt; a API armazena somente o hash dos tokens opacos. Sessões expiram em 12 horas ou 30 dias quando “lembrar dispositivo” está ativo, podem ser restauradas e são revogadas no logout. Este é um corte funcional local: ainda faltam provedor institucional, HTTPS, proteção/armazenamento nativo dos tokens, política de senha, MFA, recuperação real, limitação de tentativas e testes formais de segurança.
 
 O React já consome essas rotas. Contas de Coordenação (`staff-2`) e Direção (`staff-3`) podem analisar justificativas; o operador de portaria (`staff-1`) pode consultar a fila, mas os comandos de análise permanecem bloqueados na interface e no servidor. Somente o nome de um anexo demonstrativo é armazenado.
 
@@ -68,10 +74,10 @@ Linha de base: uma escola, duas catracas, processamento facial local, 24 semanas
 
 `src/components/ParentApp/` contém a experiência dos responsáveis. Os demais componentes compõem o painel escolar e as interfaces compartilhadas. `src/services/accessEventsApi.ts` integra o fluxo persistente, e `demoAccessService.ts` deriva linha do tempo e histórico desses registros. `src/data/mockData.ts` ainda reúne dados visuais fictícios; `projectBaseline.ts` centraliza metas e links das fontes.
 
-O corte atual entrega uma PWA instalável e estruturas Capacitor para Android/iOS, reaproveitando o mesmo React/TypeScript. Justificativas, eventos e histórico derivado já usam a API comum; autenticação, avisos, notificações, anexos e sincronização offline ainda precisam de serviços compartilhados reais.
+O corte atual entrega uma PWA instalável e estruturas Capacitor para Android/iOS, reaproveitando o mesmo React/TypeScript. Autenticação/sessão local, justificativas, eventos e histórico derivado já usam a API comum; identidade institucional, avisos, notificações, anexos e sincronização offline ainda precisam de serviços compartilhados reais.
 
 Origem: [protótipo no Google AI Studio](https://ai.studio/apps/b85c5f96-392f-43b3-8272-31d8c99a8592). O primeiro commit de importação preserva essa versão; o seguinte registra o alinhamento documental.
 
 ## Limites
 
-Não utilizar a demonstração com dados reais de estudantes. Controles visuais não substituem autenticação, autorização, governança biométrica ou testes de segurança. Consulte a matriz de rastreabilidade para distinguir funcionalidades demonstrativas de entregas pendentes.
+Não utilizar a demonstração com dados reais de estudantes. A sessão local não substitui integração institucional, governança biométrica, HTTPS, armazenamento seguro em aparelho ou testes de segurança. Consulte a matriz de rastreabilidade para distinguir funcionalidades demonstrativas de entregas pendentes.

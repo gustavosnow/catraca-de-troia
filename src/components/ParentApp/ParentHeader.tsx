@@ -7,7 +7,8 @@ import {
   Check, 
   CalendarDays,
   Megaphone,
-  UserCheck
+  UserCheck,
+  LogOut,
 } from 'lucide-react';
 import { Student } from '../../types';
 import { ParentAccount } from '../../data/mockData';
@@ -25,6 +26,7 @@ interface ParentHeaderProps {
   onOpenDigitalBadge: () => void;
   activeTab: 'home' | 'history' | 'notices';
   onOpenAuthModal?: (mode?: 'login' | 'register') => void;
+  onLogout?: () => void;
 }
 
 export const ParentHeader: React.FC<ParentHeaderProps> = ({
@@ -39,6 +41,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
   onOpenDigitalBadge,
   activeTab,
   onOpenAuthModal,
+  onLogout,
 }) => {
 
   const [guardianDropdownOpen, setGuardianDropdownOpen] = useState(false);
@@ -295,6 +298,18 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
                             <span>Entrar com Outra Conta</span>
                           </button>
                         </div>
+                      )}
+                      {onLogout && (
+                        <button
+                          onClick={() => {
+                            setGuardianDropdownOpen(false);
+                            onLogout();
+                          }}
+                          className="mt-1 w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-red-300 hover:bg-red-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Encerrar sessão</span>
+                        </button>
                       )}
                     </div>
                   </>

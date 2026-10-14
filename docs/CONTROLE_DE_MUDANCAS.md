@@ -67,3 +67,11 @@ Solicitação: continuar a evolução até compartilhar entradas, saídas e hist
 Ajustes: criada API de eventos de acesso com SQLite, contratos compartilhados, idempotência e auditoria. Somente atores escolares podem registrar eventos; responsáveis consultam exclusivamente estudantes com vínculo aprovado. O painel e o app passaram a consultar a mesma fonte com atualização periódica, e presença, linha do tempo e histórico são derivados desses registros. A simulação automática passou a iniciar desligada para evitar gravações sem ação explícita. Liberações manuais vinculadas a estudantes persistem o motivo e o operador demonstrativo.
 
 Limites: as passagens continuam sendo simulações e não provêm de catracas ou reconhecimento facial. `X-Demo-User-Id` não é autenticação. Estados WhatsApp/push são valores fictícios; não há fila offline, sincronização entre servidor escolar e nuvem, criptografia/backup comprovados ou tratamento persistente de visitantes sem estudante.
+
+## MC-010 — Autenticação e sessões compartilhadas
+
+Solicitação: avançar o próximo item da sequência técnica, compartilhando autenticação e sessão entre painel escolar e app dos responsáveis.
+
+Ajustes: removido `X-Demo-User-Id`. A API agora valida identificador e senha fictícios, deriva senhas com scrypt e salt, emite token opaco cujo hash é persistido no SQLite, aplica expiração de 12 horas ou 30 dias, restaura a sessão e revoga o token no logout. Criação e revogação entram na auditoria. O React usa `Authorization: Bearer`, bloqueia conteúdo sem sessão ou com perfil incompatível e deixa de permitir que responsáveis simulem eventos com identidade escolar. Os testes cobrem login inválido, identidade/vínculos, token não persistido em claro, expiração e revogação.
+
+Limites: as contas e credenciais continuam fictícias e destinadas somente ao desenvolvimento. Cadastro e recuperação de senha não persistem alterações. Ainda faltam provedor institucional, HTTPS, política de senha/MFA, limitação de tentativas, gestão administrativa de contas, armazenamento seguro nativo, rotação de credenciais e testes formais de segurança. O uso de armazenamento web para “lembrar dispositivo” deve ser substituído ou validado na arquitetura definitiva.

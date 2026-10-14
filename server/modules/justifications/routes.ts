@@ -5,7 +5,7 @@ import {
   JUSTIFICATION_STATUSES,
   ReviewJustificationRequest,
 } from '../../../shared/contracts/justifications';
-import { ActorRequest } from '../../auth/demoAuth';
+import { ActorRequest } from '../../auth/sessionAuth';
 import { invalidRequest } from '../../errors';
 import { JustificationService } from './service';
 

@@ -14,7 +14,7 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 | 1.3.5 | Integração e acionamento | Duas catracas em `mockData.ts`, liberação manual visual | Pendente: hardware, operador validado e auditoria persistente |
 | 1.3.6 | Notificações | Estados e alertas visuais simulados | Pendente: serviço real, canais aprovados, fila e retentativas |
 | 1.3.7 | Gestão biométrica | Cadastro visual e ficha do aluno | Pendente: ciclo de dados biométricos e proteção institucional |
-| 1.3.8 | Autenticação e autorização | `AuthModal` simulada; APIs de eventos/justificativas validam papéis e vínculos fictícios | Segregação dos cortes testada; autenticação e sessão reais permanecem pendentes |
+| 1.3.8 | Autenticação e autorização | Login local, senha derivada com scrypt, sessão opaca expirada/revogável e APIs validando papéis/vínculos | Corte funcional testado com contas fictícias; integrar identidade institucional, HTTPS e controles de produção |
 | 1.4.1 | Plano e testes automatizados/manuais | Typecheck, build e verificação dos cenários desta revisão | Não equivale à cobertura funcional/QA da EAP |
 | 1.4.2–1.4.3 | Carga, segurança e correções | Sem resultados de homologação | Pendente: plano, execução, retestes e relatório |
 | 1.5.1 | Servidor, backup e continuidade local | Arquitetura documentada | Pendente: servidor, fila, sincronização e restauração |
@@ -28,7 +28,7 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 - Metas herdadas de 99,4%, 99,9%, 1,5s e 45 passagens/min foram substituídas pelas referências oficiais ou removidas.
 - Documentação interna esclarece linha de base de R$ 279.000 e reserva gerencial de R$ 12.000 fora dela; financiamento não é tratado como assegurado.
 - Simulação automática usa reconhecimento facial. Métodos adicionais não são apresentados como integrações aprovadas já implementadas.
-- Painel e portal indicam que são demonstrativos; a tela de autenticação informa seus limites.
+- Painel e portal indicam que são demonstrativos; a tela de autenticação diferencia a sessão funcional local dos fluxos de cadastro/recuperação ainda fictícios.
 - Conta sem vínculo não ganha automaticamente o primeiro estudante nem exibe sua ficha no portal. Isso é apenas uma correção da demonstração; autorização real depende do backend.
 - Preferência demonstrativa de notificações não vem marcada e não condiciona cadastro; não equivale a consentimento biométrico.
 
@@ -36,7 +36,7 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 
 - A linha do tempo do portal foi limitada aos eventos simulados de entrada e saída; uma agenda pedagógica futura exigirá fonte e escopo próprios.
 - Painel e portal consultam os mesmos eventos persistidos para formar feed, presença, linha do tempo e histórico. A origem ainda é simulada; hardware, fila local e sincronização offline continuam pendentes.
-- Justificativas já são lidas, criadas e analisadas pelo React por meio da API local, com idempotência, controle otimista, auditoria, papéis e vínculos demonstrativos. `X-Demo-User-Id` não é autenticação real, e anexos continuam restritos ao nome fictício do arquivo.
+- Justificativas já são lidas, criadas e analisadas pelo React por meio da API local, com idempotência, controle otimista, auditoria, papéis e vínculos. `X-Demo-User-Id` foi removido; a identidade agora deriva de sessão emitida após validação de credencial fictícia. Anexos continuam restritos ao nome fictício do arquivo.
 - A PWA armazena somente o shell estático. Cache da interface não substitui a continuidade do servidor escolar; a API não possui fila/sincronização para operação móvel desconectada.
 - Os projetos Capacitor foram gerados e sincronizados, mas ainda exigem URL HTTPS de API acessível ao aparelho, identificador institucional definitivo, SDKs, assinatura, testes em dispositivos e decisão formal de distribuição.
 - Cadastro demonstrativo ainda permite selecionar alunos para explorar a interface; substituir por solicitação de vínculo e aprovação escolar no serviço real.
@@ -46,9 +46,9 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 
 ## Próxima sequência de desenvolvimento
 
-1. Definir autenticação/sessão reais e substituir `X-Demo-User-Id`, preservando os testes de vínculo e segregação.
+1. Definir o provedor de identidade institucional, política de credenciais/MFA/recuperação, HTTPS e armazenamento seguro de sessão no app.
 2. Implementar fila local e sincronização dos eventos persistidos, incluindo conflitos, repetição e recuperação de conectividade.
-3. Definir hospedagem/HTTPS e configuração por ambiente para painel, PWA e aparelhos móveis.
+3. Definir hospedagem e configuração por ambiente para painel, PWA e aparelhos móveis.
 4. Integrar canal de notificação aprovado e gestão real de anexos, com retenção e proteção definidas.
 5. Confirmar identificador institucional, estratégia de distribuição e critérios móveis; testar PWA/Android e executar iOS em macOS/Xcode.
 6. Integrar hardware e reconhecimento facial, executar homologação e produzir evidências da EAP.

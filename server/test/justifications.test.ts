@@ -6,11 +6,12 @@ import path from 'node:path';
 import test from 'node:test';
 import { createApp } from '../app';
 import { AppDatabase, createDatabase } from '../db';
+import { apiRequest as request } from './authTestUtils';
 
 const fixedNow = () => '2026-10-14T15:30:00.000Z';
 
-const startApi = async (database: AppDatabase, demoAuthEnabled = true) => {
-  const server = createApp(database, { demoAuthEnabled, now: fixedNow }).listen(0, '127.0.0.1');
+const startApi = async (database: AppDatabase) => {
+  const server = createApp(database, { now: fixedNow }).listen(0, '127.0.0.1');
   await new Promise<void>((resolve) => server.once('listening', resolve));
   const address = server.address() as AddressInfo;
   return {
@@ -21,35 +22,18 @@ const startApi = async (database: AppDatabase, demoAuthEnabled = true) => {
   };
 };
 
-const request = async (
-  baseUrl: string,
-  pathname: string,
-  actorId?: string,
-  init: RequestInit = {},
-) => {
-  const headers = new Headers(init.headers);
-  if (actorId) headers.set('X-Demo-User-Id', actorId);
-  if (init.body) headers.set('Content-Type', 'application/json');
-  const response = await fetch(`${baseUrl}${pathname}`, { ...init, headers });
-  const body = await response.json() as Record<string, any>;
-  return { response, body };
-};
-
 const newJustification = {
   absenceStartDate: '2026-10-14',
   reasonCategory: 'MEDICAL',
   description: 'Consulta médica demonstrativa.',
 };
 
-test('DEMO_AUTH é explícito e vínculos são aplicados no backend', async () => {
+test('sessão é obrigatória e vínculos são aplicados no backend', async () => {
   const database = createDatabase({ filename: ':memory:' });
-  const disabledApi = await startApi(database, false);
-  let result = await request(disabledApi.baseUrl, '/api/v1/me', 'guardian-1');
-  assert.equal(result.response.status, 503);
-  assert.equal(result.body.error.code, 'DEMO_AUTH_DISABLED');
-  await disabledApi.close();
-
   const api = await startApi(database);
+  let result = await request(api.baseUrl, '/api/v1/me');
+  assert.equal(result.response.status, 401);
+
   result = await request(api.baseUrl, '/api/v1/me/students', 'guardian-1');
   assert.equal(result.response.status, 200);
   assert.deepEqual(result.body.data.map((student: { id: string }) => student.id).sort(), ['std-1', 'std-13']);
@@ -100,7 +84,9 @@ test('criação é idempotente, auditável e persiste após reabrir o SQLite', a
   assert.equal(result.body.error.code, 'IDEMPOTENCY_CONFLICT');
 
   assert.equal(
-    (database.prepare('SELECT COUNT(*) AS count FROM audit_log').get() as { count: number }).count,
+    (database.prepare(`
+      SELECT COUNT(*) AS count FROM audit_log WHERE aggregate_type = 'JUSTIFICATION'
+    `).get() as { count: number }).count,
     1,
   );
   await api.close();

@@ -8,7 +8,7 @@ export class ApiError extends Error {
   }
 }
 
-export const unauthorized = (message = 'Autenticação demonstrativa necessária.') =>
+export const unauthorized = (message = 'Autenticação necessária.') =>
   new ApiError(401, 'UNAUTHORIZED', message);
 
 export const forbidden = (message = 'O perfil não possui permissão para esta operação.') =>

@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import { randomBytes, scryptSync } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
@@ -12,8 +13,32 @@ const schema = `
     id TEXT PRIMARY KEY,
     school_id TEXT NOT NULL REFERENCES schools(id),
     name TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('GUARDIAN', 'STAFF_GATE', 'STAFF_COORDINATION', 'STAFF_DIRECTION'))
+    role TEXT NOT NULL CHECK (role IN ('GUARDIAN', 'STAFF_GATE', 'STAFF_COORDINATION', 'STAFF_DIRECTION')),
+    email TEXT,
+    phone TEXT,
+    functional_registry TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS auth_identities (
+    normalized_identifier TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id),
+    password_salt TEXT NOT NULL,
+    password_hash TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_auth_identities_user ON auth_identities(user_id);
+
+  CREATE TABLE IF NOT EXISTS auth_sessions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id),
+    token_hash TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    last_seen_at TEXT NOT NULL,
+    revoked_at TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions(user_id, expires_at DESC);
 
   CREATE TABLE IF NOT EXISTS students (
     id TEXT PRIMARY KEY,
@@ -98,16 +123,27 @@ const seed = `
   INSERT OR IGNORE INTO schools (id, name) VALUES
     ('school-1', 'EMEF Profª. Cecília Meireles');
 
-  INSERT OR IGNORE INTO users (id, school_id, name, role) VALUES
-    ('guardian-1', 'school-1', 'Claudia Mendes (Mãe)', 'GUARDIAN'),
-    ('guardian-2', 'school-1', 'Rodrigo Oliveira (Pai)', 'GUARDIAN'),
-    ('guardian-3', 'school-1', 'Silvia Ferreira (Mãe)', 'GUARDIAN'),
-    ('guardian-4', 'school-1', 'Carlos Costa (Pai)', 'GUARDIAN'),
-    ('guardian-5', 'school-1', 'Marilene Cavalcanti (Mãe)', 'GUARDIAN'),
-    ('guardian-empty', 'school-1', 'Responsável sem vínculo', 'GUARDIAN'),
-    ('staff-1', 'school-1', 'Carlos Mendes', 'STAFF_GATE'),
-    ('staff-2', 'school-1', 'Profª. Mariana Costa', 'STAFF_COORDINATION'),
-    ('staff-3', 'school-1', 'Diretor Valdemar Ramos', 'STAFF_DIRECTION');
+  INSERT OR IGNORE INTO users
+    (id, school_id, name, role, email, phone, functional_registry) VALUES
+    ('guardian-1', 'school-1', 'Claudia Mendes (Mãe)', 'GUARDIAN', 'claudia.mendes@gmail.com', '(11) 98765-4321', NULL),
+    ('guardian-2', 'school-1', 'Rodrigo Oliveira (Pai)', 'GUARDIAN', 'rodrigo.oliveira@gmail.com', '(11) 97654-1234', NULL),
+    ('guardian-3', 'school-1', 'Silvia Ferreira (Mãe)', 'GUARDIAN', 'silvia.ferreira@gmail.com', '(11) 98234-5566', NULL),
+    ('guardian-4', 'school-1', 'Carlos Costa (Pai)', 'GUARDIAN', 'carlos.costa@gmail.com', '(11) 97111-2233', NULL),
+    ('guardian-5', 'school-1', 'Marilene Cavalcanti (Mãe)', 'GUARDIAN', 'marilene.cavalcanti@gmail.com', '(11) 99123-8899', NULL),
+    ('guardian-empty', 'school-1', 'Responsável sem vínculo', 'GUARDIAN', 'sem.vinculo@gmail.com', '(11) 90000-0000', NULL),
+    ('staff-1', 'school-1', 'Carlos Mendes', 'STAFF_GATE', 'carlos.mendes@emef.educacao.sp.gov.br', '(11) 98111-4455', 'MAT-2026/0481'),
+    ('staff-2', 'school-1', 'Profª. Mariana Costa', 'STAFF_COORDINATION', 'mariana.costa@emef.educacao.sp.gov.br', '(11) 98222-3344', 'MAT-2026/0129'),
+    ('staff-3', 'school-1', 'Diretor Valdemar Ramos', 'STAFF_DIRECTION', 'valdemar.ramos@emef.educacao.sp.gov.br', '(11) 98333-7788', 'MAT-2026/0004');
+
+  UPDATE users SET email = 'claudia.mendes@gmail.com', phone = '(11) 98765-4321' WHERE id = 'guardian-1';
+  UPDATE users SET email = 'rodrigo.oliveira@gmail.com', phone = '(11) 97654-1234' WHERE id = 'guardian-2';
+  UPDATE users SET email = 'silvia.ferreira@gmail.com', phone = '(11) 98234-5566' WHERE id = 'guardian-3';
+  UPDATE users SET email = 'carlos.costa@gmail.com', phone = '(11) 97111-2233' WHERE id = 'guardian-4';
+  UPDATE users SET email = 'marilene.cavalcanti@gmail.com', phone = '(11) 99123-8899' WHERE id = 'guardian-5';
+  UPDATE users SET email = 'sem.vinculo@gmail.com', phone = '(11) 90000-0000' WHERE id = 'guardian-empty';
+  UPDATE users SET email = 'carlos.mendes@emef.educacao.sp.gov.br', phone = '(11) 98111-4455', functional_registry = 'MAT-2026/0481' WHERE id = 'staff-1';
+  UPDATE users SET email = 'mariana.costa@emef.educacao.sp.gov.br', phone = '(11) 98222-3344', functional_registry = 'MAT-2026/0129' WHERE id = 'staff-2';
+  UPDATE users SET email = 'valdemar.ramos@emef.educacao.sp.gov.br', phone = '(11) 98333-7788', functional_registry = 'MAT-2026/0004' WHERE id = 'staff-3';
 
   INSERT OR IGNORE INTO students (id, school_id, name, enrollment) VALUES
     ('std-1', 'school-1', 'Ana Clara de Souza Mendes', '2024-0891'),
@@ -169,6 +205,33 @@ export interface DatabaseOptions {
   seedDemoData?: boolean;
 }
 
+const demoIdentities = [
+  ['guardian-1', 'claudia.mendes@gmail.com'], ['guardian-1', '11987654321'],
+  ['guardian-2', 'rodrigo.oliveira@gmail.com'], ['guardian-2', '11976541234'],
+  ['guardian-3', 'silvia.ferreira@gmail.com'], ['guardian-4', 'carlos.costa@gmail.com'],
+  ['guardian-5', 'marilene.cavalcanti@gmail.com'], ['guardian-empty', 'sem.vinculo@gmail.com'],
+  ['staff-1', 'carlos.mendes@emef.educacao.sp.gov.br'], ['staff-1', 'mat-2026/0481'],
+  ['staff-2', 'mariana.costa@emef.educacao.sp.gov.br'], ['staff-2', 'mat-2026/0129'],
+  ['staff-3', 'valdemar.ramos@emef.educacao.sp.gov.br'], ['staff-3', 'mat-2026/0004'],
+] as const;
+
+const seedDemoCredentials = (database: Database.Database) => {
+  const insert = database.prepare(`
+    INSERT OR IGNORE INTO auth_identities
+      (normalized_identifier, user_id, password_salt, password_hash)
+    VALUES (?, ?, ?, ?)
+  `);
+  const transaction = database.transaction(() => {
+    for (const [userId, identifier] of demoIdentities) {
+      if (database.prepare('SELECT 1 FROM auth_identities WHERE normalized_identifier = ?').get(identifier)) continue;
+      const salt = randomBytes(16).toString('hex');
+      const passwordHash = scryptSync('Troia@2026', salt, 64).toString('hex');
+      insert.run(identifier, userId, salt, passwordHash);
+    }
+  });
+  transaction();
+};
+
 export const createDatabase = (options: DatabaseOptions = {}) => {
   const filename = options.filename ?? path.resolve('.data/catraca-de-troia.sqlite');
   if (filename !== ':memory:') mkdirSync(path.dirname(filename), { recursive: true });
@@ -177,11 +240,20 @@ export const createDatabase = (options: DatabaseOptions = {}) => {
   database.pragma('foreign_keys = ON');
   if (filename !== ':memory:') database.pragma('journal_mode = WAL');
   database.exec(schema);
+  const userColumns = database.prepare('PRAGMA table_info(users)').all() as Array<{ name: string }>;
+  for (const column of ['email', 'phone', 'functional_registry']) {
+    if (!userColumns.some((candidate) => candidate.name === column)) {
+      database.exec(`ALTER TABLE users ADD COLUMN ${column} TEXT`);
+    }
+  }
   const accessEventColumns = database.prepare('PRAGMA table_info(access_events)').all() as Array<{ name: string }>;
   if (!accessEventColumns.some((column) => column.name === 'reason')) {
     database.exec('ALTER TABLE access_events ADD COLUMN reason TEXT');
   }
-  if (options.seedDemoData ?? true) database.exec(seed);
+  if (options.seedDemoData ?? true) {
+    database.exec(seed);
+    seedDemoCredentials(database);
+  }
   if ((options.seedDemoData ?? true) && options.filename === undefined) {
     database.exec(demoWorkflowSeed);
   }
