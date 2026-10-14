@@ -4,6 +4,7 @@ import test from 'node:test';
 import { createApp } from '../app';
 import { createDatabase } from '../db';
 import { apiRequest as request, loginAs } from './authTestUtils';
+import { cleanupOrphanAttachments } from '../modules/attachments/service';
 
 const startApi = async () => {
   const database = createDatabase({ filename: ':memory:' });
@@ -100,6 +101,19 @@ test('upload rejeita assinatura incompatível e anexo não pode ser reutilizado'
     method: 'POST', headers: { 'Idempotency-Key': 'file-use-2' }, body: JSON.stringify(payload),
   });
   assert.equal(result.response.status, 404);
+
+  const staged = await uploadPdf(api.baseUrl, 'guardian-1');
+  assert.equal(cleanupOrphanAttachments(
+    api.database,
+    '2026-10-14T20:30:00.000Z',
+    '2026-10-14T21:00:00.000Z',
+  ), 1);
+  result = await request(api.baseUrl, `/api/v1/attachments/${staged.body.data.id}`, 'guardian-1');
+  assert.equal(result.response.status, 404);
+  assert.equal((api.database.prepare(`
+    SELECT COUNT(*) AS count FROM audit_log
+    WHERE aggregate_type = 'ATTACHMENT' AND action = 'ORPHAN_CLEANUP'
+  `).get() as { count: number }).count, 1);
 
   await api.close();
 });

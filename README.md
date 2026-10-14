@@ -58,7 +58,17 @@ SYNC_SHARED_SECRET=trocar-por-segredo-gerenciado
 npm run api:start
 ```
 
-Uma instância receptora precisa de `SYNC_SHARED_SECRET`, mesmo quando não possui `SYNC_REMOTE_URL`. O painel escolar apresenta pendências, processamento, sincronizados, conflitos e última sincronização; somente Coordenação/Direção recebe a ação para reenfileirar conflitos. As mesmas operações estão disponíveis em `GET /api/v1/access-events/sync/status` e `POST /api/v1/access-events/sync/retry-conflicts`. A fila e os testes demonstram a semântica de continuidade, mas ainda não comprovam implantação em dois servidores, HTTPS, cofre de segredos, monitoramento, backup/restauração ou teste real de desconexão da escola.
+Uma instância receptora precisa de `SYNC_SHARED_SECRET`, mesmo quando não possui `SYNC_REMOTE_URL`. O painel escolar apresenta pendências, processamento, sincronizados, conflitos e última sincronização; somente Coordenação/Direção recebe a ação para reenfileirar conflitos. As mesmas operações estão disponíveis em `GET /api/v1/access-events/sync/status` e `POST /api/v1/access-events/sync/retry-conflicts`. A fila e os testes demonstram a semântica de continuidade, e há backup/restauração local testado em arquivo separado; ainda não há implantação em dois servidores, HTTPS, cofre de segredos, monitoramento, cópia externa ou ensaio operacional de desconexão/restauração na escola.
+
+## Backup local do SQLite
+
+Com a API parada ou ativa, o mecanismo nativo de backup do SQLite cria uma cópia consistente e executa `integrity_check` antes de concluir:
+
+```bash
+npm run db:backup
+```
+
+Por padrão, a origem é `.data/catraca-de-troia.sqlite` e o destino é `.data/backups/`. `DATABASE_PATH` e `BACKUP_DIRECTORY` permitem caminhos alternativos. A rotina de restauração usada nos testes copia para um arquivo novo e recusa sobrescrita; a troca da base ativa continua sendo uma decisão operacional manual. Backups podem conter os mesmos dados sensíveis do banco e não devem ser versionados ou compartilhados. Uploads não vinculados são removidos após 24 horas pelo processo da API, com registro de auditoria.
 
 ## PWA e projetos móveis
 

@@ -8,6 +8,34 @@ import type { DemoActor } from '../../../shared/contracts/justifications';
 import type { AppDatabase } from '../../db';
 import { forbidden, invalidRequest, notFound } from '../../errors';
 
+export const cleanupOrphanAttachments = (
+  database: AppDatabase,
+  cutoffIso: string,
+  occurredAt: string = new Date().toISOString(),
+) => {
+  const rows = database.prepare(`
+    SELECT id, school_id, uploaded_by, file_name FROM attachments
+    WHERE aggregate_id IS NULL AND created_at < ?
+  `).all(cutoffIso) as Array<{
+    id: string; school_id: string; uploaded_by: string; file_name: string;
+  }>;
+  database.transaction(() => {
+    for (const row of rows) {
+      database.prepare('DELETE FROM attachments WHERE id = ? AND aggregate_id IS NULL').run(row.id);
+      database.prepare(`
+        INSERT INTO audit_log (
+          id, school_id, actor_id, aggregate_type, aggregate_id, action,
+          previous_state, new_state, occurred_at
+        ) VALUES (?, ?, ?, 'ATTACHMENT', ?, 'ORPHAN_CLEANUP', ?, '{}', ?)
+      `).run(
+        randomUUID(), row.school_id, row.uploaded_by, row.id,
+        JSON.stringify({ fileName: row.file_name }), occurredAt,
+      );
+    }
+  })();
+  return rows.length;
+};
+
 interface AttachmentRow {
   id: string;
   school_id: string;

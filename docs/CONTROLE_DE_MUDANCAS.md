@@ -131,3 +131,11 @@ Solicitação: continuar os controles gratuitos possíveis no ambiente acadêmic
 Ajustes: a API passou a enviar `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` e `Cache-Control: no-store`. Tentativas de login são limitadas por origem e identificador em janela de 15 minutos; um login válido limpa o contador. Solicitações de vínculo são limitadas por conta em janela de uma hora. A resposta usa HTTP 429 e código estável quando o limite é atingido. Testes automatizados cobrem cabeçalhos e bloqueio.
 
 Limites: os contadores ficam na memória do processo e são perdidos ao reiniciar; não coordenam múltiplas instâncias nem substituem proteção no provedor de identidade, proxy ou gateway. HTTPS, CSP da interface, gestão institucional de segredos, MFA, monitoração e testes formais de segurança continuam pendentes.
+
+## MC-018 — Backup verificado e limpeza de anexos órfãos
+
+Solicitação: continuar a continuidade operacional que pode ser demonstrada sem infraestrutura paga.
+
+Ajustes: adicionado comando `npm run db:backup`, que usa a API de backup do SQLite, grava em arquivo temporário, executa `integrity_check` e somente então publica a cópia final em `.data/backups`. A função de restauração aceita apenas um destino novo e também verifica a integridade, evitando sobrescrita automática da base ativa. Teste automatizado comprova que um estado removido da origem após o backup é recuperado na cópia restaurada. A API passou a remover de hora em hora uploads não vinculados com mais de 24 horas e registra a limpeza na auditoria.
+
+Limites: não há agendador externo, cópia fora do equipamento, criptografia, rotação/retenção dos backups, alerta de falha nem ensaio operacional sobre a base ativa. A restauração definitiva exige parada controlada, escolha explícita do arquivo e validação institucional. Backups contêm o mesmo conteúdo sensível do SQLite e devem permanecer fora do Git.

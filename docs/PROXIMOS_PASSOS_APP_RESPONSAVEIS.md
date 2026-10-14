@@ -31,6 +31,6 @@ A fila resolve a preservação dos eventos no servidor da escola quando o destin
 
 ## Próximo incremento recomendado
 
-Os incrementos de infraestrutura compartilhada, conectividade, vínculos, armazenamento local de anexos e endurecimento HTTP básico foram concluídos. Login e solicitação de vínculo agora possuem limitação local de tentativas, e a API impede cache e envia cabeçalhos defensivos. O próximo incremento gratuito recomendado é uma rotina testável de backup/restauração do SQLite e limpeza controlada de anexos órfãos. Antivírus homologado, HTTPS, limitação distribuída e criptografia em repouso dependem de ferramenta e decisão institucional.
+Os incrementos de infraestrutura compartilhada, conectividade, vínculos, anexos, endurecimento HTTP básico, backup verificado e limpeza de uploads órfãos foram concluídos. O próximo incremento gratuito recomendado é administrar vínculos existentes — consulta, revogação auditada e reflexo imediato nas sessões — e expor uma visão segura da auditoria para Coordenação/Direção. Antivírus homologado, HTTPS, limitação distribuída, criptografia em repouso e agenda externa de backups dependem de ferramenta e decisão institucional.
 
 Não entram automaticamente nesse incremento: reconhecimento facial, integração física das catracas, QR Code de contingência, WhatsApp, publicação em lojas ou uso de dados reais. Cada item depende das aprovações e controles descritos na consolidação do projeto.

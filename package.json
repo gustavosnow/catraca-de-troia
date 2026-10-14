@@ -12,6 +12,7 @@
     "api:dev": "tsx watch server/index.ts",
     "api:start": "tsx server/index.ts",
     "test:api": "tsx --test server/test/*.test.ts",
+    "db:backup": "tsx server/maintenance/runBackup.ts",
     "cap:sync": "npm run build:parent && cap sync",
     "cap:open:android": "cap open android",
     "cap:open:ios": "cap open ios",
