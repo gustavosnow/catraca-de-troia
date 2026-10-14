@@ -2,7 +2,7 @@
 
 Protótipo acadêmico de controle de entrada e saída em uma escola pública de ensino fundamental. Painel web da gestão escolar e portal responsivo dos responsáveis, preparado para evolução móvel.
 
-**Estado: demonstração em evolução.** A API local já valida credenciais fictícias, emite sessões revogáveis e aplica perfil e vínculo no servidor. Eventos de entrada/saída, justificativas, avisos, notificações internas e solicitações de vínculo usam SQLite, idempotência ou controle de versão conforme o fluxo e auditoria das ações escolares. Eventos novos também entram atomicamente em uma fila local durável, preparada para sincronizar com outra instância da API. Anexos novos de justificativas podem ser armazenados no SQLite com validação básica e autorização; anexos de avisos continuam apenas nominais. A origem das passagens e a entrega por canais externos ainda são simuladas. A experiência dos responsáveis também possui PWA instalável e projetos-base Capacitor; isso não equivale a identidade institucional, aplicativo publicado ou integração com hardware/serviços externos.
+**Estado: demonstração em evolução.** A API local já valida credenciais fictícias, emite sessões revogáveis e aplica perfil e vínculo no servidor. Eventos de entrada/saída, justificativas, avisos, notificações internas e solicitações de vínculo usam SQLite, idempotência ou controle de versão conforme o fluxo e auditoria das ações escolares. Coordenação/Direção também podem consultar e revogar vínculos, com bloqueio imediato no backend, revalidação posterior e visualização restrita dos metadados de auditoria. Eventos novos entram atomicamente em uma fila local durável, preparada para sincronizar com outra instância da API. Anexos novos de justificativas podem ser armazenados no SQLite com validação básica e autorização; anexos de avisos continuam apenas nominais. A origem das passagens e a entrega por canais externos ainda são simuladas. A experiência dos responsáveis também possui PWA instalável e projetos-base Capacitor; isso não equivale a identidade institucional, aplicativo publicado ou integração com hardware/serviços externos.
 
 ## Executar
 
@@ -25,7 +25,7 @@ npm run preview
 
 ## API local, autenticação e sessões
 
-O backend persiste sessões, justificativas, eventos, avisos, notificações internas e solicitações de vínculo em `.data/catraca-de-troia.sqlite`. Responsáveis solicitam vínculo pela matrícula; somente Coordenação/Direção pode analisar e a aprovação atualiza a autorização efetiva no backend. Os dados e as credenciais iniciais são fictícios.
+O backend persiste sessões, justificativas, eventos, avisos, notificações internas e solicitações de vínculo em `.data/catraca-de-troia.sqlite`. Responsáveis solicitam vínculo pela matrícula; somente Coordenação/Direção pode analisar, revogar vínculos ativos e consultar a trilha de auditoria. Aprovação ou revogação atualiza a autorização efetiva no backend. Os dados e as credenciais iniciais são fictícios.
 
 ```bash
 npm run api:dev

@@ -139,3 +139,11 @@ Solicitação: continuar a continuidade operacional que pode ser demonstrada sem
 Ajustes: adicionado comando `npm run db:backup`, que usa a API de backup do SQLite, grava em arquivo temporário, executa `integrity_check` e somente então publica a cópia final em `.data/backups`. A função de restauração aceita apenas um destino novo e também verifica a integridade, evitando sobrescrita automática da base ativa. Teste automatizado comprova que um estado removido da origem após o backup é recuperado na cópia restaurada. A API passou a remover de hora em hora uploads não vinculados com mais de 24 horas e registra a limpeza na auditoria.
 
 Limites: não há agendador externo, cópia fora do equipamento, criptografia, rotação/retenção dos backups, alerta de falha nem ensaio operacional sobre a base ativa. A restauração definitiva exige parada controlada, escolha explícita do arquivo e validação institucional. Backups contêm o mesmo conteúdo sensível do SQLite e devem permanecer fora do Git.
+
+## MC-019 — Revogação de vínculos e consulta restrita da auditoria
+
+Solicitação: seguir com o funcionamento completo possível sem custos, avançando a governança do portal dos responsáveis.
+
+Ajustes: Coordenação/Direção passaram a consultar vínculos existentes e revogá-los com motivo, confirmação, controle otimista de versão, notificação interna e registro de auditoria. A autorização é conferida nas chamadas seguintes, bloqueando imediatamente os dados do estudante; uma nova solicitação pode revalidar o vínculo revogado. O painel ganhou uma lista de vínculos ativos e uma aba restrita com ator, recurso, ação, referência e instante dos registros de auditoria, sem expor os estados internos armazenados. Migrações preservam bases SQLite existentes e testes cobrem papéis, revogação, bloqueio, repetição e revalidação.
+
+Limites: a conferência documental e o motivo são demonstrativos. A interface conectada consulta vínculos periodicamente, portanto pode levar até cinco segundos para refletir a revogação visualmente, embora o backend já bloqueie a chamada. Não há identidade institucional, encerramento administrativo de sessões, alerta externo, exportação assinada de auditoria ou política formal de retenção dos logs.

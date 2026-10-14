@@ -38,3 +38,20 @@ export interface ReviewGuardianLinkRequest {
   expectedVersion: number;
   reviewNote?: string;
 }
+
+export interface GuardianStudentLinkRecord {
+  guardian: GuardianSummary;
+  student: LinkedStudent;
+  status: 'APPROVED' | 'REVOKED';
+  approvedAt?: string;
+  approvedById?: string;
+  revokedAt?: string;
+  revokedById?: string;
+  revocationReason?: string;
+  version: number;
+}
+
+export interface RevokeGuardianLinkRequest {
+  expectedVersion: number;
+  reason: string;
+}

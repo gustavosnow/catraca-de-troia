@@ -1,6 +1,8 @@
 import type {
   CreateGuardianLinkRequest,
   GuardianLinkRequestRecord,
+  GuardianStudentLinkRecord,
+  RevokeGuardianLinkRequest,
   ReviewGuardianLinkRequest,
 } from '../../shared/contracts/linkRequests';
 import { authenticatedRequest } from './authApi';
@@ -22,4 +24,12 @@ export const linkRequestsApi = {
       method: 'PATCH',
       body: JSON.stringify(input),
     }),
+
+  listLinks: () => authenticatedRequest<GuardianStudentLinkRecord[]>('/api/v1/guardian-links'),
+
+  revoke: (guardianId: string, studentId: string, input: RevokeGuardianLinkRequest) =>
+    authenticatedRequest<GuardianStudentLinkRecord>(
+      `/api/v1/guardian-links/${guardianId}/${studentId}/revoke`,
+      { method: 'PATCH', body: JSON.stringify(input) },
+    ),
 };

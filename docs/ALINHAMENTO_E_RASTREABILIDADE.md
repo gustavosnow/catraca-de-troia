@@ -9,12 +9,12 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 | 1.2.2–1.2.3 | Jornadas e protótipo de alta fidelidade | React: painel e `ParentAppView` | Demonstração; formalizar fluxogramas |
 | 1.3.1 | Backend e banco | API Express/SQLite consumida por justificativas, eventos, avisos e notificações internas; fila de saída e receptor de sincronização | Corte integrado com idempotência, controle de versão, auditoria e retentativas; implantar destino remoto e ampliar os demais módulos |
 | 1.3.2 | Reconhecimento facial | Passagens geradas por simulação | Pendente: Python/OpenCV e homologação |
-| 1.3.3 | Painel escolar | `Header`, `LiveStreamFeed`, cadastros, avisos, fila de justificativas e estado da sincronização | Eventos, justificativas, avisos e observabilidade da fila usam API local; cadastros continuam demonstrativos |
+| 1.3.3 | Painel escolar | `Header`, `LiveStreamFeed`, cadastros, avisos, fila de justificativas, vínculos, auditoria e estado da sincronização | Fluxos integrados usam API local; cadastro geral de estudantes continua demonstrativo |
 | 1.3.4 | Portal responsivo dos responsáveis | `ParentAppView`, histórico pela API, PWA, estado offline e projetos Capacitor Android/iOS | Shell instalável, dados persistentes na API e retomada visual de conectividade; API remota, armazenamento seguro nativo, homologação móvel e publicação pendentes |
 | 1.3.5 | Integração e acionamento | Duas catracas em `mockData.ts`, liberação manual visual | Pendente: hardware, operador validado e auditoria persistente |
 | 1.3.6 | Notificações | Caixa interna persistente para passagens, justificativas e avisos | Corte local funcional; pendentes canal externo aprovado, fila de entrega, retentativas e comprovação da meta |
 | 1.3.7 | Gestão biométrica | Cadastro visual e ficha do aluno | Pendente: ciclo de dados biométricos e proteção institucional |
-| 1.3.8 | Autenticação e autorização | Login local, sessão opaca, APIs validando papéis/vínculos, fluxo auditado e limitação local de tentativas | Corte funcional testado com contas fictícias; integrar identidade institucional, HTTPS e controles distribuídos de produção |
+| 1.3.8 | Autenticação e autorização | Login local, sessão opaca, APIs validando papéis/vínculos, revogação/revalidação auditada e limitação local de tentativas | Corte funcional testado com contas fictícias; integrar identidade institucional, HTTPS e controles distribuídos de produção |
 | 1.4.1 | Plano e testes automatizados/manuais | Typecheck, build e verificação dos cenários desta revisão | Não equivale à cobertura funcional/QA da EAP |
 | 1.4.2–1.4.3 | Carga, segurança e correções | Sem resultados de homologação | Pendente: plano, execução, retestes e relatório |
 | 1.5.1 | Servidor, backup e continuidade local | Fila SQLite, retentativas, receptor idempotente, backup verificado e restauração testada em arquivo novo | Pendente: implantação em servidor escolar/destino, agenda e retenção operacional, monitoramento e teste real de desconexão/restauração |
@@ -43,15 +43,16 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 - Com o portal aberto, a perda de conexão preserva somente o estado já carregado em memória, informa a última atualização, bloqueia escritas e dispara nova consulta no retorno da rede. Uma abertura sem conexão ainda não restaura sessão nem dados pessoais, por decisão de minimização deste corte.
 - Os projetos Capacitor foram gerados e sincronizados, mas ainda exigem URL HTTPS de API acessível ao aparelho, identificador institucional definitivo, SDKs, assinatura, testes em dispositivos e decisão formal de distribuição.
 - O cadastro demonstrativo não lista mais estudantes. Responsáveis autenticados solicitam vínculo pela matrícula; pendências não revelam o nome do estudante, e somente Coordenação/Direção aprova ou rejeita com controle otimista e auditoria.
+- Coordenação/Direção consultam vínculos existentes, revogam com motivo e controle de versão e podem revalidar após nova solicitação. A revogação deixa de autorizar o responsável nas chamadas seguintes; a interface do responsável atualiza os dependentes em até cinco segundos enquanto estiver conectada. A visão de auditoria é restrita e não entrega os estados internos gravados no log.
 - QR da carteirinha é ilustrativo; tokens seguros, validade e procedimento de contingência exigem especificação e aprovação.
 - WhatsApp/push, antivírus, anexos de avisos, câmeras e biometria não estão conectados a serviços reais. Persistência e auditoria existem nos cortes locais de justificativas, anexos locais, eventos, avisos e notificações internas; a fila de eventos existe, mas o destino remoto e a sincronização implantada continuam pendentes.
 - Nenhum resultado de acurácia, latência, disponibilidade, segurança ou carga foi medido.
 
 ## Próxima sequência de desenvolvimento
 
-1. Definir o provedor de identidade institucional, política de credenciais/MFA/recuperação, HTTPS e armazenamento seguro de sessão no app.
+1. Completar a administração local de contas e sessões fictícias, incluindo bloqueio/desbloqueio, encerramento remoto de sessões e auditoria, sem confundir esse corte com identidade institucional.
 2. Implantar e observar a fila/sincronização já implementada entre servidor escolar e destino remoto, incluindo teste real de desconexão, conflito, backup e restauração.
-3. Definir hospedagem e configuração por ambiente para painel, PWA e aparelhos móveis.
+3. Modelar uma fila demonstrativa de entrega de notificações, com estados e retentativas, mantendo o canal externo simulado.
 4. Definir agenda, retenção, destino protegido e teste operacional dos backups; definir criptografia e verificação antimalware institucionais.
 5. Confirmar identificador institucional, estratégia de distribuição e critérios móveis; testar PWA/Android e executar iOS em macOS/Xcode.
 6. Integrar hardware e reconhecimento facial, executar homologação e produzir evidências da EAP.

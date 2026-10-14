@@ -14,6 +14,7 @@ import { StudentsManagementList } from './components/StudentsManagementList';
 import { AuthModal } from './components/AuthModal';
 import { JustificationsManager } from './components/JustificationsManager';
 import { LinkRequestsManager } from './components/LinkRequestsManager';
+import { AuditLogPanel } from './components/AuditLogPanel';
 import { 
   STUDENTS_DATABASE, 
   INITIAL_TURNSTILES, 
@@ -33,9 +34,12 @@ import { toAuthUser } from './services/authUserMapper';
 import { communicationsApi } from './services/communicationsApi';
 import { useConnectivity } from './hooks/useConnectivity';
 import { linkRequestsApi } from './services/linkRequestsApi';
+import { auditApi } from './services/auditApi';
+import type { AuditLogRecord } from '../shared/contracts/audit';
 import type { AccessEventSyncStatus } from '../shared/contracts/accessEventSync';
 import type {
   GuardianLinkRequestRecord,
+  GuardianStudentLinkRecord,
   GuardianRelationship,
   LinkReviewStatus,
 } from '../shared/contracts/linkRequests';
@@ -69,7 +73,7 @@ export default function App() {
   const [isRestoringSession, setIsRestoringSession] = useState(authApi.hasStoredSession());
 
   // School management sub-tab: 'catracas' | 'avisos' | 'alunos'
-  const [managementTab, setManagementTab] = useState<'catracas' | 'avisos' | 'alunos' | 'justificativas'>('catracas');
+  const [managementTab, setManagementTab] = useState<'catracas' | 'avisos' | 'alunos' | 'justificativas' | 'auditoria'>('catracas');
 
   useEffect(() => {
     const handleHashChange = () => setViewMode(getViewModeFromHash());
@@ -195,6 +199,11 @@ export default function App() {
   const [linkRequests, setLinkRequests] = useState<GuardianLinkRequestRecord[]>([]);
   const [linkRequestsState, setLinkRequestsState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
   const [linkRequestsError, setLinkRequestsError] = useState<string>();
+  const [guardianLinks, setGuardianLinks] = useState<GuardianStudentLinkRecord[]>([]);
+  const [auditRecords, setAuditRecords] = useState<AuditLogRecord[]>([]);
+  const [auditState, setAuditState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
+  const [auditError, setAuditError] = useState<string>();
+  const [auditRefreshKey, setAuditRefreshKey] = useState(0);
 
   const canReviewLinks = authenticatedUser?.role === 'staff'
     && ['Coordenação Pedagógica', 'Direção Escolar'].includes(currentStaffUser.staffRole || '');
@@ -216,14 +225,18 @@ export default function App() {
     setLinkRequestsState('loading');
     const load = async () => {
       try {
-        const [requests, linkedStudents] = await Promise.all([
+        const [requests, linkedStudents, managedLinks] = await Promise.all([
           linkRequestsApi.list(),
           authenticatedUser.role === 'parent'
             ? justificationsApi.listLinkedStudents()
             : Promise.resolve(undefined),
+          authenticatedUser.role === 'staff' && canReviewLinks
+            ? linkRequestsApi.listLinks()
+            : Promise.resolve(undefined),
         ]);
         if (!active) return;
         setLinkRequests(requests);
+        if (managedLinks) setGuardianLinks(managedLinks);
         if (linkedStudents) {
           const childrenIds = linkedStudents.map((student) => student.id);
           setCurrentGuardian((current) => ({ ...current, childrenIds }));
@@ -243,6 +256,28 @@ export default function App() {
       window.clearInterval(interval);
     };
   }, [authenticatedUser, canReviewLinks, isOnline, portalRefreshKey]);
+
+  useEffect(() => {
+    if (!authenticatedUser || !canReviewLinks || managementTab !== 'auditoria') return;
+    if (!isOnline) {
+      setAuditState('unavailable');
+      setAuditError('Dispositivo sem conexão.');
+      return;
+    }
+    let active = true;
+    setAuditState('loading');
+    auditApi.list().then((records) => {
+      if (!active) return;
+      setAuditRecords(records);
+      setAuditState('persistent');
+      setAuditError(undefined);
+    }).catch((error: unknown) => {
+      if (!active) return;
+      setAuditState('unavailable');
+      setAuditError(error instanceof Error ? error.message : 'Auditoria indisponível.');
+    });
+    return () => { active = false; };
+  }, [authenticatedUser, auditRefreshKey, canReviewLinks, isOnline, managementTab]);
 
   useEffect(() => {
     if (!authenticatedUser) return;
@@ -704,8 +739,25 @@ export default function App() {
       reviewNote,
     });
     setLinkRequests((current) => current.map((item) => item.id === reviewed.id ? reviewed : item));
+    if (status === 'APPROVED') setGuardianLinks(await linkRequestsApi.listLinks());
     setLinkRequestsState('persistent');
     setLinkRequestsError(undefined);
+    setAuditRefreshKey((current) => current + 1);
+  };
+
+  const handleRevokeLink = async (link: GuardianStudentLinkRecord, reason: string) => {
+    const revoked = await linkRequestsApi.revoke(link.guardian.id, link.student.id, {
+      expectedVersion: link.version,
+      reason,
+    });
+    setGuardianLinks((current) => current.map((item) =>
+      item.guardian.id === revoked.guardian.id && item.student.id === revoked.student.id
+        ? revoked
+        : item,
+    ));
+    setLinkRequestsState('persistent');
+    setLinkRequestsError(undefined);
+    setAuditRefreshKey((current) => current + 1);
   };
 
   const parentDataUpdatedAt = [
@@ -819,6 +871,7 @@ export default function App() {
         currentStaffUser={currentStaffUser}
         onOpenAuthModal={(mode, role) => openAuthModal(mode, role)}
         onLogout={handleLogout}
+        canViewAudit={canReviewLinks}
       />
 
       {/* Main Dashboard Container */}
@@ -916,10 +969,12 @@ export default function App() {
             {canReviewLinks && (
               <LinkRequestsManager
                 requests={linkRequests}
+                links={guardianLinks}
                 state={linkRequestsState}
                 error={linkRequestsError}
                 canReview={canReviewLinks}
                 onReview={handleReviewLinkRequest}
+                onRevoke={handleRevokeLink}
               />
             )}
             <StudentsManagementList
@@ -938,6 +993,17 @@ export default function App() {
               persistenceState={justificationsState}
               persistenceError={justificationsError}
               canReview={['Coordenação Pedagógica', 'Direção Escolar'].includes(currentStaffUser.staffRole || '')}
+            />
+          </div>
+        )}
+
+        {managementTab === 'auditoria' && canReviewLinks && (
+          <div className="animate-in fade-in duration-150">
+            <AuditLogPanel
+              records={auditRecords}
+              state={auditState}
+              error={auditError}
+              onRefresh={() => setAuditRefreshKey((current) => current + 1)}
             />
           </div>
         )}

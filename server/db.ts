@@ -53,6 +53,10 @@ const schema = `
     status TEXT NOT NULL CHECK (status IN ('APPROVED', 'PENDING', 'REVOKED')),
     approved_at TEXT,
     approved_by TEXT REFERENCES users(id),
+    revoked_at TEXT,
+    revoked_by TEXT REFERENCES users(id),
+    revocation_reason TEXT,
+    version INTEGER NOT NULL DEFAULT 1,
     PRIMARY KEY (guardian_user_id, student_id)
   );
 
@@ -399,6 +403,18 @@ export const createDatabase = (options: DatabaseOptions = {}) => {
   const justificationColumns = database.prepare('PRAGMA table_info(justifications)').all() as Array<{ name: string }>;
   if (!justificationColumns.some((column) => column.name === 'attachment_id')) {
     database.exec('ALTER TABLE justifications ADD COLUMN attachment_id TEXT REFERENCES attachments(id)');
+  }
+  const linkColumns = database.prepare('PRAGMA table_info(guardian_student_links)').all() as Array<{ name: string }>;
+  const linkMigrations = [
+    ['revoked_at', 'TEXT'],
+    ['revoked_by', 'TEXT REFERENCES users(id)'],
+    ['revocation_reason', 'TEXT'],
+    ['version', 'INTEGER NOT NULL DEFAULT 1'],
+  ] as const;
+  for (const [column, definition] of linkMigrations) {
+    if (!linkColumns.some((candidate) => candidate.name === column)) {
+      database.exec(`ALTER TABLE guardian_student_links ADD COLUMN ${column} ${definition}`);
+    }
   }
   database.exec(`
     UPDATE access_events

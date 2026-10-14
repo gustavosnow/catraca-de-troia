@@ -18,6 +18,7 @@ import {
   LogOut,
   ShieldCheck,
   Radio,
+  History,
   X
 } from 'lucide-react';
 import { AuthUser } from '../types';
@@ -30,8 +31,9 @@ interface HeaderProps {
   onTriggerManualTap: () => void;
   onOpenManualRelease: () => void;
   onOpenProjectDocs?: () => void;
-  activeTab: 'catracas' | 'avisos' | 'alunos' | 'justificativas';
-  onSelectTab: (tab: 'catracas' | 'avisos' | 'alunos' | 'justificativas') => void;
+  activeTab: 'catracas' | 'avisos' | 'alunos' | 'justificativas' | 'auditoria';
+  onSelectTab: (tab: 'catracas' | 'avisos' | 'alunos' | 'justificativas' | 'auditoria') => void;
+  canViewAudit: boolean;
   noticesCount: number;
   pendingJustificationsCount: number;
   onSwitchToParentApp: () => void;
@@ -54,6 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
   currentStaffUser,
   onOpenAuthModal,
   onLogout,
+  canViewAudit,
 }) => {
 
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -117,7 +120,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* 2. Center: Navigation Tabs */}
-          <nav className="col-span-2 row-start-2 grid w-full grid-cols-4 items-stretch gap-0.5 p-1 bg-slate-800/90 rounded-xl border border-slate-700/80">
+          <nav className={`col-span-2 row-start-2 grid w-full ${canViewAudit ? 'grid-cols-5' : 'grid-cols-4'} items-stretch gap-0.5 p-1 bg-slate-800/90 rounded-xl border border-slate-700/80`}>
             <button
               id="nav-tab-catracas"
               onClick={() => onSelectTab('catracas')}
@@ -183,6 +186,22 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               )}
             </button>
+
+            {canViewAudit && (
+              <button
+                id="nav-tab-auditoria"
+                onClick={() => onSelectTab('auditoria')}
+                className={`min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all cursor-pointer ${
+                  activeTab === 'auditoria'
+                    ? 'bg-orange-600 text-white shadow-sm font-bold'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                <History className={`w-3.5 h-3.5 ${activeTab === 'auditoria' ? 'text-white' : 'text-slate-400'}`} />
+                <span className="hidden sm:inline">Auditoria</span>
+                <span className="sm:hidden">Logs</span>
+              </button>
+            )}
           </nav>
 
           {/* 3. Right: Simulation Controls & User Menus */}

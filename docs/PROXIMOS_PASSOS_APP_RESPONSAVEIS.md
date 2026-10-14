@@ -9,6 +9,7 @@ Diagnóstico técnico em 14/10/2026, após o corte de fila local e sincronizaç�
 - projetos-base Capacitor Android/iOS;
 - login e sessão demonstrativos, autorização por papel e vínculo no backend;
 - solicitação de vínculo por matrícula e aprovação/rejeição auditada pela Coordenação/Direção;
+- consulta administrativa, revogação imediata e revalidação posterior de vínculos, com trilha de auditoria restrita;
 - eventos/histórico e justificativas consumidos da API comum;
 - avisos, leitura por responsável e caixa de notificações internas persistidos na API comum;
 - detecção de conectividade, última atualização, bloqueio de escritas offline e retomada automática das consultas;
@@ -31,6 +32,6 @@ A fila resolve a preservação dos eventos no servidor da escola quando o destin
 
 ## Próximo incremento recomendado
 
-Os incrementos de infraestrutura compartilhada, conectividade, vínculos, anexos, endurecimento HTTP básico, backup verificado e limpeza de uploads órfãos foram concluídos. O próximo incremento gratuito recomendado é administrar vínculos existentes — consulta, revogação auditada e reflexo imediato nas sessões — e expor uma visão segura da auditoria para Coordenação/Direção. Antivírus homologado, HTTPS, limitação distribuída, criptografia em repouso e agenda externa de backups dependem de ferramenta e decisão institucional.
+Os incrementos de infraestrutura compartilhada, conectividade, solicitação/administração de vínculos, auditoria restrita, anexos, endurecimento HTTP básico, backup verificado e limpeza de uploads órfãos foram concluídos. O próximo incremento gratuito recomendado é administrar as contas fictícias e suas sessões — bloqueio/desbloqueio, encerramento remoto e registro auditado — seguido por uma fila demonstrativa de entrega de notificações com estados e retentativas, ainda sem integrar serviço externo. Antivírus homologado, HTTPS, limitação distribuída, criptografia em repouso e agenda externa de backups dependem de ferramenta e decisão institucional.
 
 Não entram automaticamente nesse incremento: reconhecimento facial, integração física das catracas, QR Code de contingência, WhatsApp, publicação em lojas ou uso de dados reais. Cada item depende das aprovações e controles descritos na consolidação do projeto.

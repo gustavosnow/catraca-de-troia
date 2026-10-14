@@ -2,9 +2,11 @@ import { createHash, randomUUID } from 'node:crypto';
 import type {
   CreateGuardianLinkRequest,
   GuardianLinkRequestRecord,
+  GuardianStudentLinkRecord,
   GuardianRelationship,
   LinkRequestStatus,
   ReviewGuardianLinkRequest,
+  RevokeGuardianLinkRequest,
 } from '../../../shared/contracts/linkRequests';
 import type { DemoActor } from '../../../shared/contracts/justifications';
 import type { AppDatabase } from '../../db';
@@ -27,6 +29,21 @@ interface LinkRequestRow {
   review_note: string | null;
   version: number;
   request_hash: string;
+}
+
+interface GuardianLinkRow {
+  guardian_user_id: string;
+  guardian_name: string;
+  student_id: string;
+  student_name: string;
+  enrollment: string;
+  status: 'APPROVED' | 'REVOKED';
+  approved_at: string | null;
+  approved_by: string | null;
+  revoked_at: string | null;
+  revoked_by: string | null;
+  revocation_reason: string | null;
+  version: number;
 }
 
 const selectRequest = `
@@ -58,6 +75,18 @@ const mapForGuardian = (row: LinkRequestRow): GuardianLinkRequestRecord => {
     : { ...record, student: { ...record.student, name: 'Estudante informado' } };
 };
 
+const mapLink = (row: GuardianLinkRow): GuardianStudentLinkRecord => ({
+  guardian: { id: row.guardian_user_id, name: row.guardian_name },
+  student: { id: row.student_id, name: row.student_name, enrollment: row.enrollment },
+  status: row.status,
+  approvedAt: row.approved_at ?? undefined,
+  approvedById: row.approved_by ?? undefined,
+  revokedAt: row.revoked_at ?? undefined,
+  revokedById: row.revoked_by ?? undefined,
+  revocationReason: row.revocation_reason ?? undefined,
+  version: row.version,
+});
+
 const requestHash = (request: CreateGuardianLinkRequest) => createHash('sha256')
   .update(JSON.stringify(request))
   .digest('hex');
@@ -85,6 +114,21 @@ export class LinkRequestService {
       WHERE request.school_id = ?
       ORDER BY CASE request.status WHEN 'PENDING' THEN 0 ELSE 1 END, request.submitted_at DESC
     `).all(actor.schoolId) as LinkRequestRow[]).map(mapRequest);
+  }
+
+  listLinks(actor: DemoActor): GuardianStudentLinkRecord[] {
+    if (!canReview(actor)) throw forbidden('Somente Coordenação ou Direção consulta vínculos.');
+    const rows = this.database.prepare(`
+      SELECT link.*, guardian.name AS guardian_name, student.name AS student_name,
+        student.enrollment
+      FROM guardian_student_links link
+      JOIN users guardian ON guardian.id = link.guardian_user_id
+      JOIN students student ON student.id = link.student_id
+      WHERE guardian.school_id = ? AND student.school_id = ?
+      ORDER BY CASE link.status WHEN 'APPROVED' THEN 0 ELSE 1 END,
+        guardian.name, student.name
+    `).all(actor.schoolId, actor.schoolId) as GuardianLinkRow[];
+    return rows.map(mapLink);
   }
 
   create(
@@ -178,11 +222,24 @@ export class LinkRequestService {
       if (request.status === 'APPROVED') {
         this.database.prepare(`
           INSERT INTO guardian_student_links (
-            guardian_user_id, student_id, status, approved_at, approved_by
-          ) VALUES (?, ?, 'APPROVED', ?, ?)
+            guardian_user_id, student_id, status, approved_at, approved_by, version
+          ) VALUES (?, ?, 'APPROVED', ?, ?, 1)
           ON CONFLICT(guardian_user_id, student_id) DO UPDATE SET
-            status = 'APPROVED', approved_at = excluded.approved_at, approved_by = excluded.approved_by
+            status = 'APPROVED', approved_at = excluded.approved_at, approved_by = excluded.approved_by,
+            revoked_at = NULL, revoked_by = NULL, revocation_reason = NULL,
+            version = guardian_student_links.version + 1
         `).run(current.guardian_user_id, current.student_id, reviewedAt, actor.id);
+
+        this.database.prepare(`
+          INSERT INTO audit_log (
+            id, school_id, actor_id, aggregate_type, aggregate_id, action,
+            previous_state, new_state, occurred_at
+          ) VALUES (?, ?, ?, 'GUARDIAN_STUDENT_LINK', ?, 'APPROVED', NULL, ?, ?)
+        `).run(
+          randomUUID(), actor.schoolId, actor.id,
+          `${current.guardian_user_id}:${current.student_id}`,
+          JSON.stringify({ status: 'APPROVED' }), reviewedAt,
+        );
       }
 
       this.database.prepare(`
@@ -214,12 +271,79 @@ export class LinkRequestService {
     return mapRequest(this.find(actor.schoolId, id));
   }
 
+  revokeLink(
+    actor: DemoActor,
+    guardianId: string,
+    studentId: string,
+    request: RevokeGuardianLinkRequest,
+  ): GuardianStudentLinkRecord {
+    if (!canReview(actor)) throw forbidden('Somente Coordenação ou Direção revoga vínculos.');
+    const current = this.findLink(actor.schoolId, guardianId, studentId);
+    if (current.status !== 'APPROVED') {
+      throw conflict('LINK_ALREADY_REVOKED', 'O vínculo já está revogado.');
+    }
+    if (current.version !== request.expectedVersion) {
+      throw conflict('VERSION_CONFLICT', 'O vínculo foi alterado. Atualize a lista antes de revogar.');
+    }
+    const revokedAt = this.now();
+    this.database.transaction(() => {
+      const result = this.database.prepare(`
+        UPDATE guardian_student_links
+        SET status = 'REVOKED', revoked_at = ?, revoked_by = ?, revocation_reason = ?,
+          version = version + 1
+        WHERE guardian_user_id = ? AND student_id = ? AND status = 'APPROVED' AND version = ?
+      `).run(
+        revokedAt, actor.id, request.reason, guardianId, studentId, request.expectedVersion,
+      );
+      if (result.changes !== 1) throw conflict('VERSION_CONFLICT', 'O vínculo foi alterado.');
+
+      const aggregateId = `${guardianId}:${studentId}`;
+      this.database.prepare(`
+        INSERT INTO audit_log (
+          id, school_id, actor_id, aggregate_type, aggregate_id, action,
+          previous_state, new_state, occurred_at
+        ) VALUES (?, ?, ?, 'GUARDIAN_STUDENT_LINK', ?, 'REVOKED', ?, ?, ?)
+      `).run(
+        randomUUID(), actor.schoolId, actor.id, aggregateId,
+        JSON.stringify({ status: current.status, version: current.version }),
+        JSON.stringify({ status: 'REVOKED', version: current.version + 1, reason: request.reason }),
+        revokedAt,
+      );
+      notifyUser(this.database, guardianId, {
+        schoolId: actor.schoolId,
+        type: 'SECURITY',
+        title: 'Vínculo revogado',
+        message: `O acesso aos dados de ${current.student_name} foi revogado pela escola.`,
+        studentId,
+        contextLabel: 'Validação escolar de vínculo',
+        sourceType: 'LINK_REVOCATION',
+        sourceId: `${aggregateId}:v${current.version + 1}`,
+        createdAt: revokedAt,
+      });
+    })();
+    return mapLink(this.findLink(actor.schoolId, guardianId, studentId));
+  }
+
   private find(schoolId: string, id: string): LinkRequestRow {
     const row = this.database.prepare(`
       ${selectRequest}
       WHERE request.id = ? AND request.school_id = ?
     `).get(id, schoolId) as LinkRequestRow | undefined;
     if (!row) throw notFound('Solicitação de vínculo não encontrada.');
+    return row;
+  }
+
+  private findLink(schoolId: string, guardianId: string, studentId: string): GuardianLinkRow {
+    const row = this.database.prepare(`
+      SELECT link.*, guardian.name AS guardian_name, student.name AS student_name,
+        student.enrollment
+      FROM guardian_student_links link
+      JOIN users guardian ON guardian.id = link.guardian_user_id
+      JOIN students student ON student.id = link.student_id
+      WHERE link.guardian_user_id = ? AND link.student_id = ?
+        AND guardian.school_id = ? AND student.school_id = ?
+    `).get(guardianId, studentId, schoolId, schoolId) as GuardianLinkRow | undefined;
+    if (!row) throw notFound('Vínculo não encontrado.');
     return row;
   }
 }

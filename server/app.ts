@@ -20,6 +20,8 @@ import { createLinkRequestRouter } from './modules/linkRequests/routes';
 import { LinkRequestService } from './modules/linkRequests/service';
 import { createAttachmentRouter } from './modules/attachments/routes';
 import { AttachmentService } from './modules/attachments/service';
+import { createAuditRouter } from './modules/audit/routes';
+import { AuditService } from './modules/audit/service';
 
 export interface AppOptions {
   /** @deprecated Mantido temporariamente para compatibilidade dos chamadores. */
@@ -77,6 +79,7 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
     '/api/v1',
     createAttachmentRouter(new AttachmentService(database, options.now)),
   );
+  app.use('/api/v1', createAuditRouter(new AuditService(database)));
   const disabledTransport: AccessEventSyncTransport = {
     send: async () => ({
       kind: 'retry',

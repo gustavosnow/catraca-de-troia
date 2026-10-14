@@ -3,6 +3,7 @@ import {
   CreateGuardianLinkRequest,
   GUARDIAN_RELATIONSHIPS,
   ReviewGuardianLinkRequest,
+  RevokeGuardianLinkRequest,
 } from '../../../shared/contracts/linkRequests';
 import { ActorRequest } from '../../auth/sessionAuth';
 import { invalidRequest } from '../../errors';
@@ -37,6 +38,19 @@ const parseReview = (body: unknown): ReviewGuardianLinkRequest => {
   return value as ReviewGuardianLinkRequest;
 };
 
+const parseRevocation = (body: unknown): RevokeGuardianLinkRequest => {
+  const value = body as Partial<RevokeGuardianLinkRequest> | null;
+  if (!value
+    || !Number.isInteger(value.expectedVersion)
+    || (value.expectedVersion ?? 0) < 1
+    || typeof value.reason !== 'string'
+    || value.reason.trim().length < 5
+    || value.reason.length > 500) {
+    throw invalidRequest('Informe versão e motivo da revogação entre 5 e 500 caracteres.');
+  }
+  return { expectedVersion: value.expectedVersion, reason: value.reason.trim() };
+};
+
 export const createLinkRequestRouter = (service: LinkRequestService) => {
   const router = Router();
   const createLimiter = new FixedWindowRateLimiter(10, 60 * 60 * 1000);
@@ -55,6 +69,19 @@ export const createLinkRequestRouter = (service: LinkRequestService) => {
   });
   router.patch('/guardian-link-requests/:id', (request, response) => {
     response.json({ data: service.review(actorFrom(request), request.params.id, parseReview(request.body)) });
+  });
+  router.get('/guardian-links', (request, response) => {
+    response.json({ data: service.listLinks(actorFrom(request)) });
+  });
+  router.patch('/guardian-links/:guardianId/:studentId/revoke', (request, response) => {
+    response.json({
+      data: service.revokeLink(
+        actorFrom(request),
+        request.params.guardianId,
+        request.params.studentId,
+        parseRevocation(request.body),
+      ),
+    });
   });
   return router;
 };
