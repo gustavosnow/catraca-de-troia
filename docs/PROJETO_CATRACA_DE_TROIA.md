@@ -25,7 +25,7 @@ A decisão de trabalho desta conversa é evoluir o portal para experiência de a
 
 A embalagem Android/iOS com Capacitor e a distribuição como PWA são **propostas técnicas**. Publicação em lojas, serviços push e novas dependências devem ser detalhados em controle de mudanças e refletidos nos documentos acadêmicos antes de serem tratados como obrigações do piloto. Nenhum APK ou PWA instalável foi entregue nesta revisão.
 
-O protótipo atual alterna os perfis na mesma aplicação para demonstração. Essa alternância não é autorização. A estrutura ainda não fornece sincronização real entre dispositivos, nem API ou banco compartilhado.
+O protótipo atual oferece entradas demonstrativas por hash para responsáveis e escola e permite alternar os perfis na mesma aplicação. Essa separação visual não é autorização. Eventos e justificativas compartilham apenas o estado em memória da sessão; a estrutura ainda não fornece sincronização real entre dispositivos, nem API ou banco compartilhado.
 
 ## Arquitetura prevista e continuidade
 

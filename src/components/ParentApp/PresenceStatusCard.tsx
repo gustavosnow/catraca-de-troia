@@ -87,19 +87,23 @@ export const PresenceStatusCard: React.FC<PresenceStatusCardProps> = ({
         </div>
 
         {/* Highlight Banner with exact entry info */}
-        <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50/60 rounded-xl p-3.5 border border-emerald-200/80 mb-4">
+        <div className={`rounded-xl p-3.5 border mb-4 ${
+          isAtSchool
+            ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50/60 border-emerald-200/80'
+            : 'bg-slate-50 border-slate-200'
+        }`}>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-sm shrink-0">
                 <Clock className="w-5 h-5" />
               </div>
               <div>
-                <div className="text-xs text-emerald-800 font-medium">
-                  Entrada registrada com pontualidade
+                <div className={`text-xs font-medium ${isAtSchool ? 'text-emerald-800' : 'text-slate-600'}`}>
+                  {isAtSchool ? 'Entrada ativa na sessão demonstrativa' : 'Sem entrada ativa na sessão demonstrativa'}
                 </div>
-                <div className="text-sm font-bold text-emerald-950 flex items-center gap-1.5">
-                  <span>Às {entryTime}</span>
-                  <span className="text-emerald-400">•</span>
+                <div className={`text-sm font-bold flex items-center gap-1.5 ${isAtSchool ? 'text-emerald-950' : 'text-slate-700'}`}>
+                  <span>{entryTime === '—' ? 'Nenhuma passagem registrada' : `Última entrada às ${entryTime}`}</span>
+                  <span className={isAtSchool ? 'text-emerald-400' : 'text-slate-300'}>•</span>
                   <span className="font-medium text-emerald-800 text-xs">{turnstileName}</span>
                 </div>
               </div>
@@ -117,7 +121,7 @@ export const PresenceStatusCard: React.FC<PresenceStatusCardProps> = ({
         <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-xs text-slate-600">
           <div className="flex items-center gap-1.5 py-1">
             <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
-            <span className="truncate">Validação: <strong>Biometria Facial</strong></span>
+            <span className="truncate">Método demonstrado: <strong>Reconhecimento Facial</strong></span>
           </div>
           <div className="flex items-center gap-1.5 py-1">
             <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
@@ -136,13 +140,18 @@ export const PresenceStatusCard: React.FC<PresenceStatusCardProps> = ({
             </h3>
           </div>
           <span className="text-[11px] font-medium text-slate-500">
-            Atualizado em tempo real
+            Atualizado nesta sessão
           </span>
         </div>
 
         {/* Timeline Items */}
         <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
-          {timeline.map((event, index) => {
+          {timeline.length === 0 && (
+            <div className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3 -ml-4">
+              Nenhum evento de entrada ou saída registrado nesta sessão demonstrativa.
+            </div>
+          )}
+          {timeline.map((event) => {
             const isCompleted = event.status === 'completed';
             const isCurrent = event.status === 'current';
             const isUpcoming = event.status === 'upcoming';

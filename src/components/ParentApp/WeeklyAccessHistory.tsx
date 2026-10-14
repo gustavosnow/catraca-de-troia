@@ -48,7 +48,8 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({
       {/* Week Day Cards */}
       <div className="space-y-3">
         {days.map((day, idx) => {
-          const isToday = day.status === 'em_andamento';
+          const isToday = day.dayName.startsWith('Hoje');
+          const isInProgress = day.status === 'em_andamento';
           const isJustified = day.status === 'ausente_justificado';
           const isDelay = day.status === 'atraso_tolerado';
           const isNormal = day.status === 'presente';
@@ -97,7 +98,7 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({
 
                 {/* Status Badge */}
                 <div>
-                  {isToday && (
+                  {isInProgress && (
                     <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300 flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
                       Em Andamento
@@ -143,7 +144,7 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({
                   <div>
                     <div className="text-[10px] text-slate-500">Saída</div>
                     <div className="font-mono font-bold text-slate-800">
-                      {day.exitTime || (isToday ? 'Previsto 12:45' : '—')}
+                      {day.exitTime || (isInProgress ? 'Previsto 12:45' : '—')}
                     </div>
                   </div>
                 </div>
@@ -168,7 +169,7 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({
       <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start gap-2">
         <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
         <p className="text-[11px] leading-relaxed">
-          Os registros são protegidos por criptografia e espelhados instantaneamente a partir das catracas físicas. Em caso de divergências de horário, contate a portaria escolar.
+          Esta tela usa o mesmo estado simulado do painel escolar. Persistência, criptografia e integração com catracas físicas ainda não estão implementadas.
         </p>
       </div>
     </section>

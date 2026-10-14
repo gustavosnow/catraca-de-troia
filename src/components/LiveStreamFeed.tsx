@@ -58,8 +58,9 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
   });
 
   const exportCSV = () => {
-    const headers = ['Horario', 'Matricula', 'Aluno', 'Turma', 'Turno', 'Catraca', 'Metodo', 'Status', 'Notificacao App', 'Telefone Responsavel'];
+    const headers = ['Evento', 'Horario', 'Matricula', 'Aluno', 'Turma', 'Turno', 'Catraca', 'Metodo', 'Status', 'Notificacao App', 'Telefone Responsavel'];
     const rows = filteredLogs.map(l => [
+      l.direction === 'entry' ? 'Entrada' : 'Saida',
       l.exactTime,
       l.matricula,
       `"${l.studentName}"`,
@@ -241,7 +242,7 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
                 <tr>
                   <th className="py-3.5 px-4">Estudante</th>
                   <th className="py-3.5 px-3">Turma & Turno</th>
-                  <th className="py-3.5 px-3">Horário</th>
+                  <th className="py-3.5 px-3">Evento & Horário</th>
                   <th className="py-3.5 px-3">Catraca</th>
                   <th className="py-3.5 px-3">Método</th>
                   <th className="py-3.5 px-3">Status</th>
@@ -307,6 +308,11 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
 
                       {/* Exact Time */}
                       <td className="py-3.5 px-3 whitespace-nowrap">
+                        <div className={`text-[10px] font-extrabold uppercase tracking-wide mb-1 ${
+                          log.direction === 'entry' ? 'text-emerald-700' : 'text-blue-700'
+                        }`}>
+                          {log.direction === 'entry' ? 'Entrada' : 'Saída'}
+                        </div>
                         <div className="font-mono font-extrabold text-slate-900 text-xs bg-slate-100 px-2 py-0.5 rounded-md inline-block">
                           {log.exactTime}
                         </div>
@@ -427,6 +433,13 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
                     </p>
 
                     <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                      <span className={`text-xs font-bold px-2.5 py-0.5 rounded-lg border ${
+                        log.direction === 'entry'
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          : 'bg-blue-50 text-blue-800 border-blue-200'
+                      }`}>
+                        {log.direction === 'entry' ? 'Entrada' : 'Saída'}
+                      </span>
                       <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-200">
                         {log.turnstileName}
                       </span>
@@ -470,7 +483,7 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
       <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 flex flex-col sm:flex-row items-center justify-between gap-2 font-semibold">
         <div className="flex items-center gap-2">
           <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-          <span>Exibindo {filteredLogs.length} passagens processadas na catraca</span>
+          <span>Exibindo {filteredLogs.length} registros simulados de passagem</span>
         </div>
         <div className="text-slate-500 text-xs">
           Filtros ativos: <span className="font-bold text-slate-800">Turno {selectedTurno}</span> • <span className="font-bold text-slate-800">{selectedTurma}</span>

@@ -12,6 +12,7 @@ import { ProjectDocsModal } from './components/ProjectDocsModal';
 import { SchoolNoticesManager } from './components/SchoolNoticesManager';
 import { StudentsManagementList } from './components/StudentsManagementList';
 import { AuthModal } from './components/AuthModal';
+import { JustificationsManager } from './components/JustificationsManager';
 import { 
   STUDENTS_DATABASE, 
   INITIAL_ACCESS_LOGS, 
@@ -19,12 +20,13 @@ import {
   INITIAL_ALERTS,
   INITIAL_SCHOOL_NOTICES,
   INITIAL_PARENT_NOTIFICATIONS,
+  INITIAL_ABSENCE_JUSTIFICATIONS,
   PARENT_ACCOUNTS,
   ParentAccount,
   STAFF_ACCOUNTS,
   StaffAccount
 } from './data/mockData';
-import { AccessLog, Shift, Student, Turnstile, SecurityAlert, SchoolNotice, ParentNotification, AuthUser } from './types';
+import { AccessDirection, AccessLog, Shift, Student, Turnstile, SecurityAlert, SchoolNotice, ParentNotification, AuthUser, AbsenceJustification } from './types';
 import { soundManager } from './utils/sound';
 
 import { 
@@ -42,12 +44,28 @@ import {
   Activity
 } from 'lucide-react';
 
+type ViewMode = 'parent_app' | 'management_dashboard';
+
+const getViewModeFromHash = (): ViewMode =>
+  window.location.hash === '#/escola' ? 'management_dashboard' : 'parent_app';
+
 export default function App() {
   // Perspective Mode: 'parent_app' (Requested mobile app for parents) vs 'management_dashboard' (School portal)
-  const [viewMode, setViewMode] = useState<'parent_app' | 'management_dashboard'>('parent_app');
+  const [viewMode, setViewMode] = useState<ViewMode>(getViewModeFromHash);
 
   // School management sub-tab: 'catracas' | 'avisos' | 'alunos'
-  const [managementTab, setManagementTab] = useState<'catracas' | 'avisos' | 'alunos'>('catracas');
+  const [managementTab, setManagementTab] = useState<'catracas' | 'avisos' | 'alunos' | 'justificativas'>('catracas');
+
+  useEffect(() => {
+    const handleHashChange = () => setViewMode(getViewModeFromHash());
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const navigateToView = (mode: ViewMode) => {
+    window.location.hash = mode === 'management_dashboard' ? '/escola' : '/responsaveis';
+    setViewMode(mode);
+  };
 
   // Auth & Accounts State
   const [guardiansList, setGuardiansList] = useState<ParentAccount[]>(PARENT_ACCOUNTS);
@@ -95,10 +113,10 @@ export default function App() {
         setGuardiansList(prev => [matchedGuardian!, ...prev]);
       }
       setCurrentGuardian(matchedGuardian);
-      setViewMode('parent_app');
+      navigateToView('parent_app');
     } else {
       setCurrentStaffUser(user);
-      setViewMode('management_dashboard');
+      navigateToView('management_dashboard');
     }
   };
 
@@ -116,6 +134,7 @@ export default function App() {
   // Shared Notices and Notifications across Management and Parent App
   const [notices, setNotices] = useState<SchoolNotice[]>(INITIAL_SCHOOL_NOTICES);
   const [notifications, setNotifications] = useState<ParentNotification[]>(INITIAL_PARENT_NOTIFICATIONS);
+  const [justifications, setJustifications] = useState<AbsenceJustification[]>(INITIAL_ABSENCE_JUSTIFICATIONS);
 
   // Real-time live simulation state
   const [isSimulating, setIsSimulating] = useState<boolean>(true);
@@ -140,7 +159,7 @@ export default function App() {
   const studentPoolIndex = useRef(0);
 
   // Helper to trigger a new student access
-  const triggerStudentEntry = (customStudent?: Student) => {
+  const triggerStudentAccess = (customStudent?: Student, direction: AccessDirection = 'entry') => {
     const student = customStudent || students[studentPoolIndex.current % students.length];
     studentPoolIndex.current += 1;
 
@@ -161,6 +180,7 @@ export default function App() {
       timestamp: now.toISOString(),
       exactTime: exactTime,
       relativeTime: 'Agora',
+      direction,
       turnstileId: turnstile.id,
       turnstileName: turnstile.name.split(' - ')[0] + ' (' + (turnstile.name.includes('Bicicletário') ? 'Bicicletário' : 'Principal') + ')',
       status: 'Autorizado',
@@ -188,10 +208,10 @@ export default function App() {
     // Also push real-time event to parent app notifications
     const parentNotif: ParentNotification = {
       id: 'pn-' + Date.now(),
-      title: `Entrada: ${student.name.split(' ')[0]} passou na catraca`,
-      message: `${student.name} registrou entrada na ${newLog.turnstileName} via ${selectedMethod}.`,
+      title: `${direction === 'entry' ? 'Entrada' : 'Saída'}: ${student.name.split(' ')[0]} passou na catraca`,
+      message: `${student.name} registrou ${direction === 'entry' ? 'entrada' : 'saída'} na ${newLog.turnstileName} via ${selectedMethod}.`,
       timestamp: `${exactTime} - Agora`,
-      type: 'entry',
+      type: direction,
       studentName: student.name,
       turnstile: newLog.turnstileName,
       isRead: false,
@@ -201,7 +221,7 @@ export default function App() {
     // Show temporary live toast in dashboard
     setToastMessage({
       id: newLog.id,
-      title: 'Acesso Registrado',
+      title: direction === 'entry' ? 'Entrada Registrada' : 'Saída Registrada',
       studentName: student.name,
       time: exactTime,
       phone: student.guardianPhone,
@@ -217,7 +237,7 @@ export default function App() {
     if (!isSimulating) return;
 
     const interval = setInterval(() => {
-      triggerStudentEntry();
+      triggerStudentAccess();
     }, 9000); // Trigger a new student entrance every 9 seconds
 
     return () => clearInterval(interval);
@@ -265,12 +285,13 @@ export default function App() {
       timestamp: now.toISOString(),
       exactTime: exactTime,
       relativeTime: 'Agora',
+      direction: 'entry',
       turnstileId: turnstile.id,
       turnstileName: turnstile.name.split(' - ')[0],
       status: 'LiberacaoManual',
       method: 'Manual',
       reason: data.reason,
-      operator: 'Prof. Marcos Silva',
+      operator: currentStaffUser.name,
       notification: {
         whatsapp: data.sendWhatsapp ? 'Entregue' : 'Pendente',
         pushApp: 'Entregue',
@@ -284,6 +305,19 @@ export default function App() {
     setTurnstiles((prev) =>
       prev.map(t => t.id === turnstile.id ? { ...t, passesToday: t.passesToday + 1 } : t)
     );
+
+    if (data.studentId) {
+      setNotifications((current) => [{
+        id: `pn-manual-${Date.now()}`,
+        title: `Entrada assistida: ${studentName.split(' ')[0]}`,
+        message: `${studentName} teve uma entrada manual demonstrativa registrada na ${manualLog.turnstileName}.`,
+        timestamp: `${exactTime} - Agora`,
+        type: 'entry',
+        studentName,
+        turnstile: manualLog.turnstileName,
+        isRead: false,
+      }, ...current]);
+    }
   };
 
   const handleSelectStudent = (studentId: string) => {
@@ -363,6 +397,54 @@ export default function App() {
     setNotifications(prev => [newNotif, ...prev]);
   };
 
+  const handleAddJustification = (
+    justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
+  ) => {
+    const created: AbsenceJustification = {
+      ...justification,
+      id: `abs-${Date.now()}`,
+      submittedAt: `Hoje às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
+      status: 'Em Análise',
+    };
+    setJustifications((current) => [created, ...current]);
+
+    setNotifications((current) => [{
+      id: `pn-justification-${Date.now()}`,
+      title: 'Justificativa registrada no portal',
+      message: `A justificativa de ${created.studentName.split(' ')[0]} para ${created.date} foi protocolada para análise.`,
+      timestamp: 'Agora',
+      type: 'absence',
+      studentName: created.studentName,
+      turnstile: 'Secretaria Escolar',
+      isRead: false,
+    }, ...current]);
+  };
+
+  const handleUpdateJustificationStatus = (
+    id: string,
+    status: Extract<AbsenceJustification['status'], 'Aprovado pela Coordenação' | 'Recusado'>,
+  ) => {
+    const justification = justifications.find((item) => item.id === id);
+    if (!justification) return;
+
+    const reviewedAt = `Hoje às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+    setJustifications((current) => current.map((item) =>
+      item.id === id
+        ? { ...item, status, reviewedAt, reviewedBy: currentStaffUser.name }
+        : item,
+    ));
+    setNotifications((current) => [{
+      id: `pn-review-${Date.now()}`,
+      title: status === 'Aprovado pela Coordenação' ? 'Justificativa aprovada' : 'Justificativa não aprovada',
+      message: `A justificativa de ${justification.studentName.split(' ')[0]} para ${justification.date} foi ${status === 'Aprovado pela Coordenação' ? 'aprovada' : 'recusada'} pela escola.`,
+      timestamp: 'Agora',
+      type: 'absence',
+      studentName: justification.studentName,
+      turnstile: 'Coordenação Escolar',
+      isRead: false,
+    }, ...current]);
+  };
+
   // Dynamic calculations for KPI cards
   const totalRegistered = 1240;
   const entriesCount = logs.length + 887; // Base count + live session items
@@ -373,7 +455,7 @@ export default function App() {
     return (
       <>
         <ParentAppView 
-          onSwitchToManagement={() => setViewMode('management_dashboard')}
+          onSwitchToManagement={() => navigateToView('management_dashboard')}
           sharedNotices={notices}
           onUpdateSharedNotices={setNotices}
           sharedNotifications={notifications}
@@ -383,6 +465,13 @@ export default function App() {
           onSelectGuardianExternal={setCurrentGuardian}
           onOpenAuthModal={(mode) => openAuthModal(mode, 'parent')}
           studentsList={students}
+          sharedAccessLogs={logs}
+          onSimulateAccess={(studentId, direction) => {
+            const student = students.find((item) => item.id === studentId);
+            if (student) triggerStudentAccess(student, direction);
+          }}
+          sharedJustifications={justifications}
+          onSubmitJustification={handleAddJustification}
         />
 
         <AuthModal
@@ -406,13 +495,14 @@ export default function App() {
       <Header
         isSimulating={isSimulating}
         onToggleSimulation={() => setIsSimulating(!isSimulating)}
-        onTriggerManualTap={() => triggerStudentEntry()}
+        onTriggerManualTap={() => triggerStudentAccess()}
         onOpenManualRelease={() => setIsManualReleaseOpen(true)}
         onOpenProjectDocs={() => setIsProjectDocsOpen(true)}
         activeTab={managementTab}
         onSelectTab={setManagementTab}
         noticesCount={notices.length}
-        onSwitchToParentApp={() => setViewMode('parent_app')}
+        pendingJustificationsCount={justifications.filter((item) => item.status === 'Em Análise').length}
+        onSwitchToParentApp={() => navigateToView('parent_app')}
         currentStaffUser={currentStaffUser}
         onOpenAuthModal={(mode, role) => openAuthModal(mode, role)}
       />
@@ -462,7 +552,7 @@ export default function App() {
                   onSelectTurno={setSelectedTurno}
                   selectedTurma={selectedTurma}
                   onSelectTurma={setSelectedTurma}
-                  onTriggerManualTap={() => triggerStudentEntry()}
+                  onTriggerManualTap={() => triggerStudentAccess()}
                 />
               </div>
 
@@ -490,6 +580,15 @@ export default function App() {
               students={students}
               onSelectStudent={handleSelectStudent}
               onSendWhatsappDirect={handleDirectWhatsapp}
+            />
+          </div>
+        )}
+
+        {managementTab === 'justificativas' && (
+          <div className="animate-in fade-in duration-150">
+            <JustificationsManager
+              justifications={justifications}
+              onUpdateStatus={handleUpdateJustificationStatus}
             />
           </div>
         )}

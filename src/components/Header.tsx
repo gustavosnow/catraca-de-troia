@@ -30,9 +30,10 @@ interface HeaderProps {
   onTriggerManualTap: () => void;
   onOpenManualRelease: () => void;
   onOpenProjectDocs?: () => void;
-  activeTab: 'catracas' | 'avisos' | 'alunos';
-  onSelectTab: (tab: 'catracas' | 'avisos' | 'alunos') => void;
+  activeTab: 'catracas' | 'avisos' | 'alunos' | 'justificativas';
+  onSelectTab: (tab: 'catracas' | 'avisos' | 'alunos' | 'justificativas') => void;
   noticesCount: number;
+  pendingJustificationsCount: number;
   onSwitchToParentApp: () => void;
   currentStaffUser?: AuthUser;
   onOpenAuthModal?: (mode?: 'login' | 'register', role?: 'parent' | 'staff') => void;
@@ -47,6 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onSelectTab,
   noticesCount,
+  pendingJustificationsCount,
   onSwitchToParentApp,
   currentStaffUser,
   onOpenAuthModal,
@@ -158,6 +160,25 @@ export const Header: React.FC<HeaderProps> = ({
               <Users className={`w-3.5 h-3.5 ${activeTab === 'alunos' ? 'text-white' : 'text-slate-400'}`} />
               <span className="hidden md:inline">Estudantes (1º ao 9º)</span>
               <span className="md:hidden">Alunos</span>
+            </button>
+
+            <button
+              id="nav-tab-justificativas"
+              onClick={() => onSelectTab('justificativas')}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer relative ${
+                activeTab === 'justificativas'
+                  ? 'bg-orange-600 text-white shadow-sm font-bold'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+              }`}
+            >
+              <FileText className={`w-3.5 h-3.5 ${activeTab === 'justificativas' ? 'text-white' : 'text-slate-400'}`} />
+              <span className="hidden lg:inline">Justificativas</span>
+              <span className="lg:hidden">Faltas</span>
+              {pendingJustificationsCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[10px] font-bold">
+                  {pendingJustificationsCount}
+                </span>
+              )}
             </button>
           </nav>
 
@@ -376,7 +397,7 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-slate-400">Catracas Gerenciadas:</span>
-                      <span className="font-semibold text-emerald-400">4 Unidades Online</span>
+                      <span className="font-semibold text-emerald-400">2 Unidades Online</span>
                     </div>
                   </div>
 

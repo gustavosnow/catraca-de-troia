@@ -15,6 +15,8 @@ npm run dev
 
 Abra `http://localhost:3000`. O portal inicia na visão dos responsáveis; o botão de painel escolar permite explorar o outro perfil da demonstração.
 
+As interfaces também possuem entradas demonstrativas identificáveis: `http://localhost:3000/#/responsaveis` e `http://localhost:3000/#/escola`. Ambas compartilham em memória os eventos de entrada/saída, notificações e justificativas enquanto a página permanece aberta.
+
 ```bash
 npm run lint
 npm run build
@@ -27,12 +29,13 @@ npm run preview
 - [Rastreabilidade da EAP, estado atual e próximos passos](docs/ALINHAMENTO_E_RASTREABILIDADE.md)
 - [Controle de mudanças](docs/CONTROLE_DE_MUDANCAS.md)
 - [Instruções de desenvolvimento](AGENTS.md)
+- [Política de contribuição e commits](CONTRIBUTING.md)
 
 Linha de base: uma escola, duas catracas, processamento facial local, 24 semanas e orçamento global acadêmico de R$ 291.000. Critérios quantitativos são metas de homologação, não resultados deste frontend.
 
 ## Estrutura e evolução
 
-`src/components/ParentApp/` contém a experiência dos responsáveis. Os demais componentes compõem o painel escolar e as interfaces compartilhadas. `src/data/mockData.ts` reúne os cenários fictícios; `projectBaseline.ts` centraliza metas e links das fontes.
+`src/components/ParentApp/` contém a experiência dos responsáveis. Os demais componentes compõem o painel escolar e as interfaces compartilhadas. `src/services/demoAccessService.ts` deriva linha do tempo e histórico do fluxo comum em memória. `src/data/mockData.ts` reúne os cenários fictícios; `projectBaseline.ts` centraliza metas e links das fontes.
 
 App Android/iOS via Capacitor e distribuição PWA são evoluções propostas; ainda não há APK ou instalação PWA. Painel e app deverão consumir uma API comum, com autorização no servidor por perfil e vínculo validado pela escola.
 

@@ -4,6 +4,8 @@ export type AccessStatus = 'Autorizado' | 'Tolerância' | 'Bloqueado' | 'Liberac
 
 export type NotificationStatus = 'Entregue' | 'Lido' | 'Pendente' | 'Falha';
 
+export type AccessDirection = 'entry' | 'exit';
+
 export interface Student {
   id: string;
   matricula: string;
@@ -36,6 +38,7 @@ export interface AccessLog {
   timestamp: string; // ISO string or HH:mm:ss
   exactTime: string; // "07:34:12"
   relativeTime: string;
+  direction: AccessDirection;
   turnstileId: string;
   turnstileName: string;
   status: AccessStatus;
@@ -132,6 +135,8 @@ export interface AbsenceJustification {
   attachmentName?: string;
   submittedAt: string;
   status: 'Em Análise' | 'Aprovado pela Coordenação' | 'Recusado';
+  reviewedAt?: string;
+  reviewedBy?: string;
 }
 
 export type UserRole = 'parent' | 'staff';
@@ -162,5 +167,4 @@ export interface StaffAccount {
   schoolUnit: string;
   avatar?: string;
 }
-
 

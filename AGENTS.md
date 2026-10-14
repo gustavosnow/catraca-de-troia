@@ -15,3 +15,4 @@ Leia `docs/PROJETO_CATRACA_DE_TROIA.md` e `docs/ALINHAMENTO_E_RASTREABILIDADE.md
 - Preservar a paleta azul-marinho e laranja e os ativos visuais existentes.
 - Manter explícitos os dados e fluxos simulados. Não declarar backend, criptografia, notificações externas, hardware, reconhecimento facial ou indicadores reais implementados sem evidência.
 - Validar alterações com `npm run lint` e `npm run build`; testar fluxos modificados quando necessário. Atualizar matriz de rastreabilidade e registrar mudanças de escopo.
+- Seguir a política de commits e contribuição descrita em `CONTRIBUTING.md`.

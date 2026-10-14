@@ -36,18 +36,24 @@ import {
   WeeklyAccessDay, 
   SchoolNotice, 
   ParentNotification, 
-  AbsenceJustification 
+  AbsenceJustification,
+  AccessDirection,
+  AccessLog,
 } from '../../types';
 import { 
   STUDENTS_DATABASE, 
   PARENT_ACCOUNTS,
   ParentAccount,
-  getStudentTimeline,
   getStudentWeeklyAccess,
   INITIAL_SCHOOL_NOTICES, 
   INITIAL_PARENT_NOTIFICATIONS, 
-  INITIAL_ABSENCE_JUSTIFICATIONS 
 } from '../../data/mockData';
+import {
+  buildStudentAccessTimeline,
+  getNextAccessDirection,
+  getStudentAccessLogs,
+  mergeSessionLogsIntoWeeklyAccess,
+} from '../../services/demoAccessService';
 
 interface ParentAppViewProps {
   onSwitchToManagement?: () => void;
@@ -60,6 +66,10 @@ interface ParentAppViewProps {
   onSelectGuardianExternal?: (guardian: ParentAccount) => void;
   onOpenAuthModal?: (mode?: 'login' | 'register') => void;
   studentsList?: Student[];
+  sharedAccessLogs: AccessLog[];
+  onSimulateAccess: (studentId: string, direction: AccessDirection) => void;
+  sharedJustifications: AbsenceJustification[];
+  onSubmitJustification: (justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) => void;
 }
 
 export const ParentAppView: React.FC<ParentAppViewProps> = ({ 
@@ -73,6 +83,10 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   onSelectGuardianExternal,
   onOpenAuthModal,
   studentsList = STUDENTS_DATABASE,
+  sharedAccessLogs,
+  onSimulateAccess,
+  sharedJustifications,
+  onSubmitJustification,
 }) => {
   // Current logged in guardian (Default: Claudia Mendes or external)
   const [internalGuardian, setInternalGuardian] = useState<ParentAccount>(guardiansList[0] || PARENT_ACCOUNTS[0]);
@@ -106,16 +120,28 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
 
   // Dynamic Timeline and Weekly Access tailored to the selected student
   const timeline = useMemo(() => {
-    return getStudentTimeline(selectedStudent.id, selectedStudent.name);
-  }, [selectedStudent]);
+    return buildStudentAccessTimeline(sharedAccessLogs, selectedStudent.id);
+  }, [selectedStudent, sharedAccessLogs]);
 
   const weeklyAccess = useMemo(() => {
-    return getStudentWeeklyAccess(selectedStudent.id);
-  }, [selectedStudent]);
+    return mergeSessionLogsIntoWeeklyAccess(
+      getStudentWeeklyAccess(selectedStudent.id),
+      sharedAccessLogs,
+      selectedStudent.id,
+    );
+  }, [selectedStudent, sharedAccessLogs]);
+
+  const selectedStudentLogs = useMemo(
+    () => getStudentAccessLogs(sharedAccessLogs, selectedStudent.id),
+    [selectedStudent, sharedAccessLogs],
+  );
+  const latestAccess = selectedStudentLogs.at(-1);
+  const latestEntry = [...selectedStudentLogs].reverse().find((log) => log.direction === 'entry');
+  const isAtSchool = latestAccess?.direction === 'entry';
+  const nextAccessDirection = getNextAccessDirection(sharedAccessLogs, selectedStudent.id);
 
   const [internalNotices, setInternalNotices] = useState<SchoolNotice[]>(INITIAL_SCHOOL_NOTICES);
   const [internalNotifications, setInternalNotifications] = useState<ParentNotification[]>(INITIAL_PARENT_NOTIFICATIONS);
-  const [justifications, setJustifications] = useState<AbsenceJustification[]>(INITIAL_ABSENCE_JUSTIFICATIONS);
 
   const notices = sharedNotices || internalNotices;
   const setNotices = onUpdateSharedNotices || setInternalNotices;
@@ -147,26 +173,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
 
   // Handler for adding a new absence justification
   const handleAddJustification = (newJust: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) => {
-    const created: AbsenceJustification = {
-      ...newJust,
-      id: 'abs-' + Date.now(),
-      submittedAt: 'Hoje às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      status: 'Em Análise',
-    };
-    setJustifications([created, ...justifications]);
-
-    // Add in-app notification for this guardian
-    const newNotif: ParentNotification = {
-      id: 'pn-' + Date.now(),
-      title: 'Justificativa Registrada no App',
-      message: `Sua justificativa para ${selectedStudent.name.split(' ')[0]} no dia ${newJust.date} (${newJust.reasonCategory}) foi protocolada.`,
-      timestamp: 'Agora',
-      type: 'absence',
-      studentName: selectedStudent.name,
-      turnstile: 'Secretaria Escolar',
-      isRead: false,
-    };
-    setAllNotifications([newNotif, ...allNotifications]);
+    onSubmitJustification(newJust);
   };
 
   const handleMarkNoticeAsRead = (id: string) => {
@@ -189,26 +196,15 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
     const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const turnstileName = selectedStudent.stage === 'Fundamental I' ? 'Catraca 02 (Fundamental I)' : 'Catraca 01 (Portão Principal)';
 
+    const directionLabel = nextAccessDirection === 'entry' ? 'Entrada' : 'Saída';
     const bannerInfo = {
       title: 'Catraca de Tróia: Acesso Liberado',
-      message: `${selectedStudent.name.split(' ')[0]} passou na ${turnstileName} via Reconhecimento Facial.`,
+      message: `${directionLabel} de ${selectedStudent.name.split(' ')[0]} registrada na ${turnstileName} via Reconhecimento Facial.`,
       time: timeStr,
     };
 
     setLiveBanner(bannerInfo);
-
-    const newNotif: ParentNotification = {
-      id: 'pn-' + Date.now(),
-      title: `Entrada confirmada na ${turnstileName.split(' ')[0]}`,
-      message: `${selectedStudent.name} passou na Portaria Central da EMEF via Biometria Facial.`,
-      timestamp: `${timeStr} - Agora`,
-      type: 'entry',
-      studentName: selectedStudent.name,
-      turnstile: turnstileName,
-      isRead: false,
-    };
-
-    setAllNotifications(prev => [newNotif, ...prev]);
+    onSimulateAccess(selectedStudent.id, nextAccessDirection);
 
     setTimeout(() => {
       setLiveBanner(null);
@@ -262,7 +258,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
               title="Simular passagem instantânea na catraca para o filho selecionado"
             >
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Simular Entrada de {selectedStudent.name.split(' ')[0]}</span>
+              <span>Simular {nextAccessDirection === 'entry' ? 'Entrada' : 'Saída'} de {selectedStudent.name.split(' ')[0]}</span>
             </button>
 
             {/* Frame mode switch */}
@@ -395,9 +391,9 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
                 {/* 1. Status de Presença Atual & Linha do Tempo do Filho Selecionado */}
                 <PresenceStatusCard
                   studentName={selectedStudent.name}
-                  isAtSchool={true}
-                  entryTime="07:15"
-                  turnstileName={selectedStudent.stage === 'Fundamental I' ? 'Catraca 02 - Portão Fundamental I' : 'Catraca 01 - Portão Principal'}
+                  isAtSchool={isAtSchool}
+                  entryTime={latestEntry?.exactTime.slice(0, 5) || '—'}
+                  turnstileName={latestAccess?.turnstileName || 'Sem passagem na sessão'}
                   timeline={timeline}
                   onSimulateNewPass={handleSimulatePassNotification}
                   onViewTimelineDetails={(event) => {
@@ -499,7 +495,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
               isOpen={isAbsenceModalOpen}
               onClose={() => setIsAbsenceModalOpen(false)}
               student={selectedStudent}
-              existingJustifications={justifications.filter(j => myChildren.some(c => c.id === j.studentId))}
+              existingJustifications={sharedJustifications.filter(j => myChildren.some(c => c.id === j.studentId))}
               onSubmitJustification={handleAddJustification}
             />
           )}

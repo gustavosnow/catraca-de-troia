@@ -181,7 +181,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                       </div>
                       <div>
                         <span className="font-bold text-slate-800 block">
-                          Entrada Registrada ({log.turnstileName})
+                          {log.direction === 'entry' ? 'Entrada' : 'Saída'} Registrada ({log.turnstileName})
                         </span>
                         <span className="text-slate-400 text-[11px]">
                           Método: {log.method} • Horário exato: {log.exactTime}
@@ -207,7 +207,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
           <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Cadastro Ativo e Sincronizado</span>
+            <span>Cadastro demonstrativo ativo nesta sessão</span>
           </div>
 
           <button
