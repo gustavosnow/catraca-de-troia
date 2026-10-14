@@ -32,6 +32,16 @@ export interface AppOptions {
 export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
   const app = express();
   app.disable('x-powered-by');
+  app.use((request, response, next) => {
+    response.set({
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'no-referrer',
+      'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    });
+    if (request.path.startsWith('/api/')) response.set('Cache-Control', 'no-store');
+    next();
+  });
   app.use(express.json({ limit: '32kb' }));
 
   app.get('/api/health', (_request, response) => {

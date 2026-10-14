@@ -74,3 +74,35 @@ test('login cria sessão, restaura identidade e logout revoga o token', async ()
   await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   database.close();
 });
+
+test('API aplica cabeçalhos de segurança e limita tentativas repetidas de login', async () => {
+  const database = createDatabase({ filename: ':memory:' });
+  const server = createApp(database).listen(0, '127.0.0.1');
+  await new Promise<void>((resolve) => server.once('listening', resolve));
+  const { port } = server.address() as AddressInfo;
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  const health = await fetch(`${baseUrl}/api/health`);
+  assert.equal(health.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(health.headers.get('x-frame-options'), 'DENY');
+  assert.equal(health.headers.get('cache-control'), 'no-store');
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const response = await fetch(`${baseUrl}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: 'sem.vinculo@gmail.com', password: 'senha-incorreta' }),
+    });
+    assert.equal(response.status, 401);
+  }
+  const limited = await fetch(`${baseUrl}/api/v1/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identifier: 'sem.vinculo@gmail.com', password: 'senha-incorreta' }),
+  });
+  assert.equal(limited.status, 429);
+  assert.equal((await limited.json() as { error: { code: string } }).error.code, 'RATE_LIMITED');
+
+  await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  database.close();
+});

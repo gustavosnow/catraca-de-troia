@@ -14,7 +14,7 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 | 1.3.5 | Integração e acionamento | Duas catracas em `mockData.ts`, liberação manual visual | Pendente: hardware, operador validado e auditoria persistente |
 | 1.3.6 | Notificações | Caixa interna persistente para passagens, justificativas e avisos | Corte local funcional; pendentes canal externo aprovado, fila de entrega, retentativas e comprovação da meta |
 | 1.3.7 | Gestão biométrica | Cadastro visual e ficha do aluno | Pendente: ciclo de dados biométricos e proteção institucional |
-| 1.3.8 | Autenticação e autorização | Login local, sessão opaca, APIs validando papéis/vínculos e fluxo auditado de solicitação/aprovação | Corte funcional testado com contas fictícias; integrar identidade institucional, HTTPS e controles de produção |
+| 1.3.8 | Autenticação e autorização | Login local, sessão opaca, APIs validando papéis/vínculos, fluxo auditado e limitação local de tentativas | Corte funcional testado com contas fictícias; integrar identidade institucional, HTTPS e controles distribuídos de produção |
 | 1.4.1 | Plano e testes automatizados/manuais | Typecheck, build e verificação dos cenários desta revisão | Não equivale à cobertura funcional/QA da EAP |
 | 1.4.2–1.4.3 | Carga, segurança e correções | Sem resultados de homologação | Pendente: plano, execução, retestes e relatório |
 | 1.5.1 | Servidor, backup e continuidade local | Fila SQLite de eventos, lease, retentativa exponencial, receptor idempotente e testes automatizados | Pendente: implantação em servidor escolar/destino, monitoramento, teste real de desconexão, backup e restauração |
@@ -52,6 +52,6 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 1. Definir o provedor de identidade institucional, política de credenciais/MFA/recuperação, HTTPS e armazenamento seguro de sessão no app.
 2. Implantar e observar a fila/sincronização já implementada entre servidor escolar e destino remoto, incluindo teste real de desconexão, conflito, backup e restauração.
 3. Definir hospedagem e configuração por ambiente para painel, PWA e aparelhos móveis.
-4. Definir retenção, descarte, criptografia e verificação antimalware para os anexos; ampliar o mesmo contrato aos avisos se aprovado.
+4. Implementar rotina testável de backup/restauração e limpeza de anexos órfãos; definir retenção, criptografia e verificação antimalware institucionais.
 5. Confirmar identificador institucional, estratégia de distribuição e critérios móveis; testar PWA/Android e executar iOS em macOS/Xcode.
 6. Integrar hardware e reconhecimento facial, executar homologação e produzir evidências da EAP.

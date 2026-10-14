@@ -7,6 +7,7 @@ import {
 import { ActorRequest } from '../../auth/sessionAuth';
 import { invalidRequest } from '../../errors';
 import { LinkRequestService } from './service';
+import { FixedWindowRateLimiter } from '../../security/rateLimiter';
 
 const actorFrom = (request: Request) => (request as ActorRequest).actor;
 
@@ -38,6 +39,7 @@ const parseReview = (body: unknown): ReviewGuardianLinkRequest => {
 
 export const createLinkRequestRouter = (service: LinkRequestService) => {
   const router = Router();
+  const createLimiter = new FixedWindowRateLimiter(10, 60 * 60 * 1000);
   router.get('/guardian-link-requests', (request, response) => {
     response.json({ data: service.list(actorFrom(request)) });
   });
@@ -46,7 +48,9 @@ export const createLinkRequestRouter = (service: LinkRequestService) => {
     if (!idempotencyKey || idempotencyKey.length > 200) {
       throw invalidRequest('Informe Idempotency-Key com até 200 caracteres.');
     }
-    const result = service.create(actorFrom(request), parseCreate(request.body), idempotencyKey);
+    const actor = actorFrom(request);
+    createLimiter.check(actor.id);
+    const result = service.create(actor, parseCreate(request.body), idempotencyKey);
     response.status(result.created ? 201 : 200).json({ data: result.request });
   });
   router.patch('/guardian-link-requests/:id', (request, response) => {

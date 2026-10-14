@@ -39,7 +39,7 @@ A API inicia em `http://127.0.0.1:3001`. Use os atalhos da tela de entrada ou um
 - Portaria: `carlos.mendes@emef.educacao.sp.gov.br` ou `MAT-2026/0481`.
 - Coordenação: `mariana.costa@emef.educacao.sp.gov.br` ou `MAT-2026/0129`.
 
-As senhas são derivadas com scrypt e salt; a API armazena somente o hash dos tokens opacos. Sessões expiram em 12 horas ou 30 dias quando “lembrar dispositivo” está ativo, podem ser restauradas e são revogadas no logout. Este é um corte funcional local: ainda faltam provedor institucional, HTTPS, proteção/armazenamento nativo dos tokens, política de senha, MFA, recuperação real, limitação de tentativas e testes formais de segurança.
+As senhas são derivadas com scrypt e salt; a API armazena somente o hash dos tokens opacos. Sessões expiram em 12 horas ou 30 dias quando “lembrar dispositivo” está ativo, podem ser restauradas e são revogadas no logout. A API aplica cabeçalhos básicos de segurança, impede cache das respostas e limita em memória tentativas repetidas de login e solicitações de vínculo. Este é um corte funcional local: ainda faltam provedor institucional, HTTPS, proteção/armazenamento nativo dos tokens, política de senha, MFA, recuperação real, limitação distribuída/persistente e testes formais de segurança.
 
 O React já consome essas rotas. Contas de Coordenação (`staff-2`) e Direção (`staff-3`) podem analisar justificativas e baixar seus anexos; o operador de portaria (`staff-1`) pode consultar a fila, mas análise e download permanecem bloqueados na interface e no servidor. Anexos novos aceitam PDF/JPG/PNG de até 2 MB, conferem a assinatura do formato, registram SHA-256 e ficam no SQLite. Essa validação não substitui antivírus; use somente arquivos fictícios.
 

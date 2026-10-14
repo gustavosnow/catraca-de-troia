@@ -5,6 +5,7 @@ import { createSessionAuth } from '../../auth/sessionAuth';
 import type { AppDatabase } from '../../db';
 import { invalidRequest } from '../../errors';
 import { AuthService } from './service';
+import { FixedWindowRateLimiter } from '../../security/rateLimiter';
 
 const parseLogin = (body: unknown): LoginRequest => {
   const value = body as Partial<LoginRequest> | null;
@@ -28,6 +29,7 @@ export const createAuthRouter = (
 ) => {
   const router = Router();
   const authenticate = createSessionAuth(database, now);
+  const loginLimiter = new FixedWindowRateLimiter(5, 15 * 60 * 1000);
 
   router.use((_request, response, next) => {
     response.set('Cache-Control', 'no-store');
@@ -35,7 +37,14 @@ export const createAuthRouter = (
   });
 
   router.post('/auth/login', (request, response) => {
-    response.json({ data: service.login(parseLogin(request.body)) });
+    const identifier = typeof request.body?.identifier === 'string'
+      ? request.body.identifier.trim().toLocaleLowerCase('pt-BR')
+      : 'invalid';
+    const limiterKey = `${request.ip}:${identifier}`;
+    loginLimiter.check(limiterKey);
+    const session = service.login(parseLogin(request.body));
+    loginLimiter.reset(limiterKey);
+    response.json({ data: session });
   });
   router.get('/auth/session', authenticate, (request, response) => {
     response.json({ data: service.currentUser((request as ActorRequest).actor.id) });

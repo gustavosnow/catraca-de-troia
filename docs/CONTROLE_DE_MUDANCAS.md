@@ -123,3 +123,11 @@ Solicitação: continuar os recursos completos que podem funcionar sem serviço 
 Ajustes: o formulário de justificativa passou a enviar arquivos reais PDF/JPG/PNG de até 2 MB. A API confere tipo declarado e assinatura do formato, calcula SHA-256, armazena conteúdo e metadados no SQLite, vincula cada arquivo a uma única justificativa e audita upload/descarte. O responsável remetente e Coordenação/Direção podem baixar; outros responsáveis e Portaria são bloqueados no backend. Se a criação da justificativa falhar, o cliente tenta descartar o upload ainda não vinculado. Registros antigos que continham apenas nome permanecem identificados como legados.
 
 Limites: a validação básica não é antivírus nem garante que o conteúdo seja seguro. Não há criptografia do banco em repouso, política institucional de retenção, limpeza periódica de uploads abandonados, backup de anexos ou armazenamento externo. O corte deve usar apenas documentos fictícios. Anexos de avisos continuam somente nominais.
+
+## MC-017 — Endurecimento HTTP e limitação local de tentativas
+
+Solicitação: continuar os controles gratuitos possíveis no ambiente acadêmico local.
+
+Ajustes: a API passou a enviar `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` e `Cache-Control: no-store`. Tentativas de login são limitadas por origem e identificador em janela de 15 minutos; um login válido limpa o contador. Solicitações de vínculo são limitadas por conta em janela de uma hora. A resposta usa HTTP 429 e código estável quando o limite é atingido. Testes automatizados cobrem cabeçalhos e bloqueio.
+
+Limites: os contadores ficam na memória do processo e são perdidos ao reiniciar; não coordenam múltiplas instâncias nem substituem proteção no provedor de identidade, proxy ou gateway. HTTPS, CSP da interface, gestão institucional de segredos, MFA, monitoração e testes formais de segurança continuam pendentes.
