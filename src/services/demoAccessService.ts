@@ -1,4 +1,4 @@
-import { AccessDirection, AccessLog, DayTimelineEvent, WeeklyAccessDay } from '../types';
+import { AbsenceJustification, AccessDirection, AccessLog, DayTimelineEvent, WeeklyAccessDay } from '../types';
 
 export const getStudentAccessLogs = (logs: AccessLog[], studentId: string) =>
   logs
@@ -76,4 +76,78 @@ export const mergeSessionLogsIntoWeeklyAccess = (
     },
     ...days.slice(1),
   ];
+};
+
+const localDateKey = (date: Date) => [
+  date.getFullYear(),
+  String(date.getMonth() + 1).padStart(2, '0'),
+  String(date.getDate()).padStart(2, '0'),
+].join('-');
+
+export const buildWeeklyAccessFromLogs = (
+  logs: AccessLog[],
+  studentId: string,
+  justifications: AbsenceJustification[] = [],
+  referenceDate = new Date(),
+): WeeklyAccessDay[] => {
+  const dates: Date[] = [];
+  const cursor = new Date(referenceDate);
+  cursor.setHours(12, 0, 0, 0);
+  while (dates.length < 5) {
+    if (cursor.getDay() !== 0 && cursor.getDay() !== 6) dates.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  const studentLogs = getStudentAccessLogs(logs, studentId);
+  return dates.map((date, index) => {
+    const key = localDateKey(date);
+    const dayLogs = studentLogs.filter((log) => localDateKey(new Date(log.timestamp)) === key);
+    const entries = dayLogs.filter((log) => log.direction === 'entry');
+    const exits = dayLogs.filter((log) => log.direction === 'exit');
+    const entry = entries[0];
+    const exit = exits.at(-1);
+    const reference = exit || entry;
+    const justification = justifications.find((item) =>
+      item.studentId === studentId
+      && item.status === 'Aprovado pela Coordenação'
+      && key >= item.date
+      && key <= (item.endDate || item.date),
+    );
+
+    let status: WeeklyAccessDay['status'] = 'sem_registro';
+    let durationHours = 'Sem eventos persistidos';
+    if (entry && exit) {
+      status = 'presente';
+      durationHours = durationBetween(entry.exactTime, exit.exactTime);
+    } else if (entry) {
+      status = 'em_andamento';
+      durationHours = 'Entrada registrada; saída ainda não registrada';
+    } else if (exit) {
+      status = 'em_andamento';
+      durationHours = 'Saída registrada sem entrada correspondente';
+    } else if (justification) {
+      status = 'ausente_justificado';
+      durationHours = `Ausência justificada: ${justification.reasonCategory}`;
+    }
+
+    const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' })
+      .format(date)
+      .replace('.', '');
+    return {
+      dayName: index === 0 ? `Hoje (${weekday})` : weekday,
+      shortDate: `${String(date.getDate()).padStart(2, '0')}/${new Intl.DateTimeFormat('pt-BR', { month: 'short' })
+        .format(date)
+        .replace('.', '')}`,
+      fullDate: new Intl.DateTimeFormat('pt-BR', {
+        weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
+      }).format(date),
+      entryTime: entry?.exactTime || null,
+      exitTime: exit?.exactTime || null,
+      turnstileUsed: reference?.turnstileName || 'Sem evento',
+      method: reference?.method || '-',
+      status,
+      durationHours,
+      notificationDelivered: reference?.notification.pushApp === 'Entregue',
+    };
+  });
 };

@@ -59,3 +59,11 @@ Limites: `com.gustavosnow.catracatroia` é provisório. Não foram produzidos AP
 Durante a preparação móvel, a auditoria apontou alertas altos em Firebase/Firestore. Firebase e Google GenAI não eram importados pelo código e foram removidos como resíduos da exportação do AI Studio. A auditoria das dependências de produção passou sem vulnerabilidades conhecidas no registro consultado em 14/10/2026.
 
 Limite: a auditoria completa ainda reporta três alertas moderados transitivos na ferramenta de desenvolvimento `@capacitor/cli`; a correção automática propõe mudança de versão e não foi aplicada sem validação de compatibilidade.
+
+## MC-009 — Eventos e histórico na API comum
+
+Solicitação: continuar a evolução até compartilhar entradas, saídas e histórico entre painel escolar e app dos responsáveis.
+
+Ajustes: criada API de eventos de acesso com SQLite, contratos compartilhados, idempotência e auditoria. Somente atores escolares podem registrar eventos; responsáveis consultam exclusivamente estudantes com vínculo aprovado. O painel e o app passaram a consultar a mesma fonte com atualização periódica, e presença, linha do tempo e histórico são derivados desses registros. A simulação automática passou a iniciar desligada para evitar gravações sem ação explícita. Liberações manuais vinculadas a estudantes persistem o motivo e o operador demonstrativo.
+
+Limites: as passagens continuam sendo simulações e não provêm de catracas ou reconhecimento facial. `X-Demo-User-Id` não é autenticação. Estados WhatsApp/push são valores fictícios; não há fila offline, sincronização entre servidor escolar e nuvem, criptografia/backup comprovados ou tratamento persistente de visitantes sem estudante.

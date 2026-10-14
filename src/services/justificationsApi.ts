@@ -9,6 +9,7 @@ import type {
 } from '../../shared/contracts/justifications';
 import type { AbsenceJustification } from '../types';
 import { apiBaseUrl } from '../config/runtime';
+import { ApiClientError } from './apiError';
 
 const reasonToApi: Record<AbsenceJustification['reasonCategory'], JustificationReason> = {
   'Médico / Saúde': 'MEDICAL',
@@ -60,12 +61,6 @@ export const mapJustification = (record: JustificationRecord): AbsenceJustificat
   version: record.version,
 });
 
-export class JustificationsApiError extends Error {
-  constructor(public readonly code: string, message: string, public readonly status: number) {
-    super(message);
-  }
-}
-
 const request = async <T>(pathname: string, actorId: string, init?: RequestInit): Promise<T> => {
   const headers = new Headers(init?.headers);
   headers.set('X-Demo-User-Id', actorId);
@@ -75,7 +70,7 @@ const request = async <T>(pathname: string, actorId: string, init?: RequestInit)
   try {
     response = await fetch(`${apiBaseUrl}${pathname}`, { ...init, headers });
   } catch {
-    throw new JustificationsApiError(
+    throw new ApiClientError(
       'API_UNAVAILABLE',
       'A API de justificativas não está acessível. Inicie o ambiente completo ou configure VITE_API_BASE_URL.',
       0,
@@ -84,7 +79,7 @@ const request = async <T>(pathname: string, actorId: string, init?: RequestInit)
 
   const body = await response.json().catch(() => null) as ({ data?: T } & Partial<ApiErrorBody>) | null;
   if (!response.ok) {
-    throw new JustificationsApiError(
+    throw new ApiClientError(
       body?.error?.code || 'REQUEST_FAILED',
       body?.error?.message || 'Não foi possível concluir a operação.',
       response.status,

@@ -93,7 +93,7 @@ export interface WeeklyAccessDay {
   exitTime: string | null;
   turnstileUsed: string;
   method: 'Facial' | 'RFID' | 'QR Code' | 'Biometria' | 'Manual' | '-';
-  status: 'presente' | 'atraso_tolerado' | 'ausente_justificado' | 'ausente' | 'em_andamento';
+  status: 'presente' | 'atraso_tolerado' | 'ausente_justificado' | 'ausente' | 'em_andamento' | 'sem_registro';
   durationHours: string;
   notificationDelivered: boolean;
 }

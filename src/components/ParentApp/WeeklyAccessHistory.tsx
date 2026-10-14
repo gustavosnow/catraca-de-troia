@@ -35,7 +35,7 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({
               Histórico de Acessos da Semana
             </h3>
             <p className="text-[11px] text-slate-500">
-              Registros eletrônicos capturados pelas catracas
+              Eventos persistidos na API local demonstrativa
             </p>
           </div>
         </div>
@@ -53,6 +53,7 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({
           const isJustified = day.status === 'ausente_justificado';
           const isDelay = day.status === 'atraso_tolerado';
           const isNormal = day.status === 'presente';
+          const hasNoRecord = day.status === 'sem_registro';
 
           return (
             <div
@@ -122,6 +123,12 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({
                       Falta Justificada
                     </span>
                   )}
+                  {hasNoRecord && (
+                    <span className="text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 text-slate-500" />
+                      Sem registro
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -144,7 +151,7 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({
                   <div>
                     <div className="text-[10px] text-slate-500">Saída</div>
                     <div className="font-mono font-bold text-slate-800">
-                      {day.exitTime || (isInProgress ? 'Previsto 12:45' : '—')}
+                      {day.exitTime || '—'}
                     </div>
                   </div>
                 </div>
@@ -169,7 +176,7 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({
       <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start gap-2">
         <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
         <p className="text-[11px] leading-relaxed">
-          Esta tela usa o mesmo estado simulado do painel escolar. Persistência, criptografia e integração com catracas físicas ainda não estão implementadas.
+          Esta tela consulta a mesma API local do painel escolar. A origem dos eventos ainda é simulada; não há integração com catracas físicas, sincronização offline ou criptografia homologada.
         </p>
       </div>
     </section>

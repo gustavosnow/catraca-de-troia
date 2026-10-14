@@ -30,6 +30,7 @@ import { AccessDirection, AccessLog, Shift, Student, Turnstile, SecurityAlert, S
 import { soundManager } from './utils/sound';
 import { isParentOnlyBuild } from './config/runtime';
 import { justificationsApi } from './services/justificationsApi';
+import { accessEventsApi } from './services/accessEventsApi';
 
 import { 
   Bell, 
@@ -91,6 +92,8 @@ export default function App() {
 
   const [students, setStudents] = useState<Student[]>(STUDENTS_DATABASE);
   const [logs, setLogs] = useState<AccessLog[]>(INITIAL_ACCESS_LOGS);
+  const [accessEventsState, setAccessEventsState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
+  const [accessEventsError, setAccessEventsError] = useState<string>();
   const [turnstiles, setTurnstiles] = useState<Turnstile[]>(INITIAL_TURNSTILES);
   const [alerts, setAlerts] = useState<SecurityAlert[]>(INITIAL_ALERTS);
 
@@ -163,8 +166,36 @@ export default function App() {
     return () => { active = false; };
   }, [currentGuardian.id, currentStaffUser.id, viewMode]);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadAccessEvents = async (showLoading = false) => {
+      if (showLoading) setAccessEventsState('loading');
+      try {
+        const records = viewMode === 'parent_app'
+          ? await accessEventsApi.listForGuardian(currentGuardian.id, students)
+          : await accessEventsApi.listForSchool(currentStaffUser.id, students);
+        if (!active) return;
+        setLogs(records);
+        setAccessEventsState('persistent');
+        setAccessEventsError(undefined);
+      } catch (error) {
+        if (!active) return;
+        setAccessEventsState('unavailable');
+        setAccessEventsError(error instanceof Error ? error.message : 'API de eventos indisponível.');
+      }
+    };
+
+    void loadAccessEvents(true);
+    const interval = window.setInterval(() => void loadAccessEvents(), 5000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [currentGuardian.id, currentStaffUser.id, students, viewMode]);
+
   // Real-time live simulation state
-  const [isSimulating, setIsSimulating] = useState<boolean>(true);
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [selectedTurno, setSelectedTurno] = useState<Shift>('Todos');
   const [selectedTurma, setSelectedTurma] = useState<string>('Todas');
 
@@ -186,40 +217,31 @@ export default function App() {
   const studentPoolIndex = useRef(0);
 
   // Helper to trigger a new student access
-  const triggerStudentAccess = (customStudent?: Student, direction: AccessDirection = 'entry') => {
+  const triggerStudentAccess = async (customStudent?: Student, direction: AccessDirection = 'entry') => {
     const student = customStudent || students[studentPoolIndex.current % students.length];
     studentPoolIndex.current += 1;
 
     const turnstile = turnstiles[Math.floor(Math.random() * turnstiles.length)];
-    const now = new Date();
-    const exactTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    
-    const selectedMethod = 'Facial' as const;
+    let newLog: AccessLog;
+    try {
+      newLog = await accessEventsApi.create(
+        viewMode === 'parent_app' ? 'staff-1' : currentStaffUser.id,
+        student,
+        direction,
+        turnstile,
+        students,
+      );
+      newLog = { ...newLog, relativeTime: 'Agora', isNew: true };
+      setAccessEventsState('persistent');
+      setAccessEventsError(undefined);
+    } catch (error) {
+      setAccessEventsState('unavailable');
+      setAccessEventsError(error instanceof Error ? error.message : 'Não foi possível registrar o evento.');
+      return;
+    }
 
-    const newLog: AccessLog = {
-      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-      studentId: student.id,
-      studentName: student.name,
-      matricula: student.matricula,
-      avatar: student.avatar,
-      turma: student.turma,
-      shift: student.shift,
-      timestamp: now.toISOString(),
-      exactTime: exactTime,
-      relativeTime: 'Agora',
-      direction,
-      turnstileId: turnstile.id,
-      turnstileName: turnstile.name.split(' - ')[0] + ' (' + (turnstile.name.includes('Bicicletário') ? 'Bicicletário' : 'Principal') + ')',
-      status: 'Autorizado',
-      method: selectedMethod,
-      notification: {
-        whatsapp: 'Entregue',
-        pushApp: 'Entregue',
-        sentAt: exactTime,
-        phoneTarget: student.guardianPhone,
-      },
-      isNew: true,
-    };
+    const exactTime = newLog.exactTime;
+    const selectedMethod = newLog.method;
 
     // Play pleasant chime
     soundManager.playAccessGranted();
@@ -268,10 +290,10 @@ export default function App() {
     }, 9000); // Trigger a new student entrance every 9 seconds
 
     return () => clearInterval(interval);
-  }, [isSimulating, students, turnstiles]);
+  }, [currentStaffUser.id, isSimulating, students, turnstiles, viewMode]);
 
   // Handle manual turnstile authorization
-  const handleConfirmManualRelease = (data: {
+  const handleConfirmManualRelease = async (data: {
     turnstileId: string;
     studentId?: string;
     visitorName?: string;
@@ -280,7 +302,7 @@ export default function App() {
   }) => {
     const turnstile = turnstiles.find(t => t.id === data.turnstileId) || turnstiles[0];
     const now = new Date();
-    const exactTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    let exactTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
     let studentName = data.visitorName || 'Visitante Autorizado';
     let turma = 'Visitante / Secretaria';
@@ -288,9 +310,10 @@ export default function App() {
     let avatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
     let matricula = 'VIS-' + Math.floor(1000 + Math.random() * 9000);
     let guardianPhone = '(11) 98888-0000';
+    let foundStudent: Student | undefined;
 
     if (data.studentId) {
-      const foundStudent = students.find(s => s.id === data.studentId);
+      foundStudent = students.find(s => s.id === data.studentId);
       if (foundStudent) {
         studentName = foundStudent.name;
         turma = foundStudent.turma;
@@ -301,7 +324,7 @@ export default function App() {
       }
     }
 
-    const manualLog: AccessLog = {
+    let manualLog: AccessLog = {
       id: `manual-log-${Date.now()}`,
       studentId: data.studentId || 'visitor',
       studentName: studentName,
@@ -327,6 +350,39 @@ export default function App() {
       },
       isNew: true,
     };
+
+    if (foundStudent) {
+      try {
+        const persisted = await accessEventsApi.create(
+          currentStaffUser.id,
+          foundStudent,
+          'entry',
+          turnstile,
+          students,
+          {
+            status: 'MANUAL_RELEASE',
+            method: 'MANUAL',
+            whatsappStatus: data.sendWhatsapp ? 'DELIVERED' : 'PENDING',
+            pushStatus: 'DELIVERED',
+            reason: data.reason,
+          },
+        );
+        exactTime = persisted.exactTime;
+        manualLog = {
+          ...persisted,
+          reason: data.reason,
+          operator: currentStaffUser.name,
+          relativeTime: 'Agora',
+          isNew: true,
+        };
+        setAccessEventsState('persistent');
+        setAccessEventsError(undefined);
+      } catch (error) {
+        setAccessEventsState('unavailable');
+        setAccessEventsError(error instanceof Error ? error.message : 'Não foi possível registrar a liberação.');
+        throw error;
+      }
+    }
 
     setLogs((prev) => [manualLog, ...prev]);
     setTurnstiles((prev) =>
@@ -498,6 +554,8 @@ export default function App() {
           onSubmitJustification={handleAddJustification}
           justificationsState={justificationsState}
           justificationsError={justificationsError}
+          accessEventsState={accessEventsState}
+          accessEventsError={accessEventsError}
         />
 
         <AuthModal
@@ -535,6 +593,19 @@ export default function App() {
 
       {/* Main Dashboard Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5">
+        <div className={`mb-4 rounded-xl border px-4 py-2 text-xs ${
+          accessEventsState === 'persistent'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+            : accessEventsState === 'loading'
+              ? 'border-blue-200 bg-blue-50 text-blue-800'
+              : 'border-amber-200 bg-amber-50 text-amber-900'
+        }`}>
+          {accessEventsState === 'persistent'
+            ? 'Eventos de entrada/saída sincronizados com a API local demonstrativa.'
+            : accessEventsState === 'loading'
+              ? 'Sincronizando eventos de acesso…'
+              : `Eventos sem sincronização: ${accessEventsError || 'API local indisponível.'}`}
+        </div>
         
         {/* VIEW TAB 1: Monitoramento de Catracas */}
         {managementTab === 'catracas' && (

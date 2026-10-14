@@ -23,7 +23,7 @@ interface ManualReleaseModalProps {
     visitorName?: string;
     reason: string;
     sendWhatsapp: boolean;
-  }) => void;
+  }) => Promise<void>;
 }
 
 export const ManualReleaseModal: React.FC<ManualReleaseModalProps> = ({
@@ -41,17 +41,17 @@ export const ManualReleaseModal: React.FC<ManualReleaseModalProps> = ({
   const [sendWhatsapp, setSendWhatsapp] = useState(true);
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [successAuthorized, setSuccessAuthorized] = useState(false);
+  const [authorizationError, setAuthorizationError] = useState<string>();
 
   if (!isOpen) return null;
 
-  const handleAuthorize = () => {
+  const handleAuthorize = async () => {
     setIsAuthorizing(true);
+    setAuthorizationError(undefined);
     soundManager.playManualUnlock();
 
-    setTimeout(() => {
-      setIsAuthorizing(false);
-      setSuccessAuthorized(true);
-
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 600));
       const reasonMap = {
         student_no_card: reasonNote.trim() ? reasonNote : 'Aluno sem crachá - Identificação confirmada pelo operador',
         visitor: `Visitante/Responsável: ${visitorName || 'Não informado'} - ${reasonNote || 'Atendimento escolar'}`,
@@ -59,19 +59,23 @@ export const ManualReleaseModal: React.FC<ManualReleaseModalProps> = ({
         emergency: `Liberação de Emergência: ${reasonNote || 'Protocolo de segurança'}`,
       };
 
-      onConfirmRelease({
+      await onConfirmRelease({
         turnstileId: selectedTurnstile,
         studentId: releaseType === 'student_no_card' ? selectedStudentId : undefined,
         visitorName: releaseType === 'visitor' ? visitorName : undefined,
         reason: reasonMap[releaseType],
         sendWhatsapp: releaseType === 'student_no_card' && sendWhatsapp,
       });
-
+      setIsAuthorizing(false);
+      setSuccessAuthorized(true);
       setTimeout(() => {
         setSuccessAuthorized(false);
         onClose();
       }, 900);
-    }, 600);
+    } catch (error) {
+      setIsAuthorizing(false);
+      setAuthorizationError(error instanceof Error ? error.message : 'Não foi possível registrar a liberação.');
+    }
   };
 
   const selectedStudentObj = students.find(s => s.id === selectedStudentId);
@@ -117,11 +121,16 @@ export const ManualReleaseModal: React.FC<ManualReleaseModalProps> = ({
               </div>
               <h4 className="text-lg font-extrabold text-slate-900">Catraca Destravada com Sucesso!</h4>
               <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                Solenóide acionado e registro de auditoria gravado no servidor escolar.
+                Liberação demonstrativa registrada. Nenhum hardware físico foi acionado.
               </p>
             </div>
           ) : (
             <>
+              {authorizationError && (
+                <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                  {authorizationError}
+                </div>
+              )}
               {/* Select Turnstile Gate */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">

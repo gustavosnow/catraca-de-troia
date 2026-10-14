@@ -4,6 +4,8 @@ import { AppDatabase } from './db';
 import { ApiError } from './errors';
 import { createJustificationRouter } from './modules/justifications/routes';
 import { JustificationService } from './modules/justifications/service';
+import { createAccessEventRouter } from './modules/accessEvents/routes';
+import { AccessEventService } from './modules/accessEvents/service';
 
 export interface AppOptions {
   demoAuthEnabled?: boolean;
@@ -23,6 +25,10 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
   app.use(
     '/api/v1',
     createJustificationRouter(new JustificationService(database, options.now)),
+  );
+  app.use(
+    '/api/v1',
+    createAccessEventRouter(new AccessEventService(database, options.now)),
   );
 
   app.use((_request, _response, next) => next(new ApiError(404, 'NOT_FOUND', 'Rota não encontrada.')));

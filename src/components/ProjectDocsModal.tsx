@@ -126,7 +126,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
           
           <aside className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs space-y-2">
             <p><strong>Linha de base consultada em 13/10/2026.</strong> Protótipo demonstrativo, sem integração real com hardware ou notificações externas.</p>
-            <p>Painel escolar e portal responsivo compartilham o escopo do piloto. App Android/iOS é evolução proposta; publicação em lojas e expansão para outras escolas exigem controle de mudanças.</p>
+            <p>Painel escolar, PWA e projetos-base Capacitor compartilham o escopo demonstrativo. Não há APK/IPA publicado; distribuição em lojas e expansão para outras escolas exigem controle de mudanças.</p>
             <p>Linha de base de custos: R$ 279.000,00. Reserva gerencial de R$ 12.000,00 fora da linha de base. Orçamento global: R$ 291.000,00.</p>
             <p>Autorização por vínculo deve ocorrer no backend. Preferência de notificação não equivale a autorização biométrica ou condição de frequência escolar.</p>
             <div className="flex flex-wrap gap-3">{projectBaseline.sources.map(source => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="text-blue-700 underline">{source.title}</a>)}</div>

@@ -46,15 +46,14 @@ import {
   STUDENTS_DATABASE, 
   PARENT_ACCOUNTS,
   ParentAccount,
-  getStudentWeeklyAccess,
   INITIAL_SCHOOL_NOTICES, 
   INITIAL_PARENT_NOTIFICATIONS, 
 } from '../../data/mockData';
 import {
   buildStudentAccessTimeline,
+  buildWeeklyAccessFromLogs,
   getNextAccessDirection,
   getStudentAccessLogs,
-  mergeSessionLogsIntoWeeklyAccess,
 } from '../../services/demoAccessService';
 
 interface ParentAppViewProps {
@@ -74,6 +73,8 @@ interface ParentAppViewProps {
   onSubmitJustification: (justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) => Promise<void>;
   justificationsState: 'loading' | 'persistent' | 'unavailable';
   justificationsError?: string;
+  accessEventsState: 'loading' | 'persistent' | 'unavailable';
+  accessEventsError?: string;
 }
 
 export const ParentAppView: React.FC<ParentAppViewProps> = ({ 
@@ -93,6 +94,8 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   onSubmitJustification,
   justificationsState,
   justificationsError,
+  accessEventsState,
+  accessEventsError,
 }) => {
   // Current logged in guardian (Default: Claudia Mendes or external)
   const [internalGuardian, setInternalGuardian] = useState<ParentAccount>(guardiansList[0] || PARENT_ACCOUNTS[0]);
@@ -130,12 +133,12 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   }, [selectedStudent, sharedAccessLogs]);
 
   const weeklyAccess = useMemo(() => {
-    return mergeSessionLogsIntoWeeklyAccess(
-      getStudentWeeklyAccess(selectedStudent.id),
+    return buildWeeklyAccessFromLogs(
       sharedAccessLogs,
       selectedStudent.id,
+      sharedJustifications,
     );
-  }, [selectedStudent, sharedAccessLogs]);
+  }, [selectedStudent, sharedAccessLogs, sharedJustifications]);
 
   const selectedStudentLogs = useMemo(
     () => getStudentAccessLogs(sharedAccessLogs, selectedStudent.id),
@@ -389,6 +392,20 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
               : justificationsState === 'loading'
                 ? 'Sincronizando justificativas…'
                 : `Sem sincronização: ${justificationsError || 'API local indisponível.'}`}
+          </div>
+
+          <div className={`px-4 py-2 border-b text-[11px] ${
+            accessEventsState === 'persistent'
+              ? 'bg-emerald-950/40 border-emerald-900 text-emerald-200'
+              : accessEventsState === 'loading'
+                ? 'bg-blue-950/40 border-blue-900 text-blue-200'
+                : 'bg-amber-950/50 border-amber-900 text-amber-200'
+          }`}>
+            {accessEventsState === 'persistent'
+              ? 'Entradas, saídas e histórico sincronizados com a API local demonstrativa.'
+              : accessEventsState === 'loading'
+                ? 'Sincronizando histórico de acesso…'
+                : `Histórico sem sincronização: ${accessEventsError || 'API local indisponível.'}`}
           </div>
 
           {/* Quick Absence Shortcut Bar on Home */}
