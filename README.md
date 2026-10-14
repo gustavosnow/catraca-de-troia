@@ -2,7 +2,7 @@
 
 Protótipo acadêmico de controle de entrada e saída em uma escola pública de ensino fundamental. Painel web da gestão escolar e portal responsivo dos responsáveis, preparado para evolução móvel.
 
-**Estado: demonstração de interfaces.** Dados, autenticação, passagens, notificações e anexos são simulados. Não há integração real com catracas, reconhecimento facial, backend ou banco de dados.
+**Estado: demonstração em evolução.** O frontend ainda usa dados, autenticação, passagens, notificações e anexos simulados. Há uma primeira API local isolada para justificativas, com SQLite e autorização demonstrativa; ela ainda não está conectada às interfaces nem equivale a autenticação real.
 
 ## Executar
 
@@ -22,6 +22,17 @@ npm run lint
 npm run build
 npm run preview
 ```
+
+## API local de justificativas
+
+O primeiro corte do backend persiste justificativas em `.data/catraca-de-troia.sqlite`, valida vínculos no servidor, restringe revisões à Coordenação/Direção e registra auditoria. Os dados iniciais são fictícios e coerentes com os identificadores da demonstração.
+
+```bash
+npm run api:dev
+npm run test:api
+```
+
+A API inicia em `http://127.0.0.1:3001`. O script ativa `DEMO_AUTH=true`; envie o header `X-Demo-User-Id` com um ator fictício, como `guardian-1` ou `staff-2`. Esse mecanismo existe somente para desenvolvimento e não deve ser exposto como autenticação real. A integração do React com a API permanece pendente.
 
 ## Documentação
 
