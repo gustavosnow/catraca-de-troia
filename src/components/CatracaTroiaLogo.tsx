@@ -9,8 +9,9 @@ interface CatracaTroiaLogoProps {
 }
 
 /**
- * CatracaTroiaLogo - Logotipo Oficial do Projeto Catraca de Tróia
- * Exibe diretamente o arquivo original da identidade visual fornecida (/logo-catraca-troia.png).
+ * Logotipo oficial do projeto para cabeçalhos, avatares e credenciais.
+ * A arte original é horizontal e deve manter sua proporção, sem compressão em
+ * uma caixa quadrada.
  */
 export const CatracaTroiaLogo: React.FC<CatracaTroiaLogoProps> = ({
   className = '',
@@ -19,20 +20,29 @@ export const CatracaTroiaLogo: React.FC<CatracaTroiaLogoProps> = ({
   variant = 'dark',
   subtitle = 'Ensino Fundamental • Rede Pública',
 }) => {
-  const isDark = variant === 'dark';
+  const isDark = variant === 'dark' || variant === 'contrast';
+  const imageFrame = variant === 'light'
+    ? 'bg-white ring-1 ring-slate-300/80'
+    : variant === 'contrast'
+      ? 'bg-white ring-2 ring-orange-400/70'
+      : 'bg-white ring-1 ring-white/20';
+  const logoWidth = Math.round(size * (1470 / 1070));
 
   return (
     <div className={`inline-flex items-center gap-3 shrink-0 ${className}`}>
-      {/* Imagem Oficial da Identidade Visual Fornecida */}
-      <img
-        src="/logo-catraca-troia.png"
-        alt="Logotipo Oficial Catraca de Tróia"
-        width={size}
-        height={size}
-        style={{ width: `${size}px`, height: `${size}px` }}
-        className="shrink-0 object-contain rounded-xl select-none drop-shadow-sm transition-transform duration-200 hover:scale-105"
-        referrerPolicy="no-referrer"
-      />
+      <span
+        className={`shrink-0 inline-flex items-center justify-center overflow-hidden rounded-xl p-0.5 shadow-sm ${imageFrame}`}
+        style={{ width: `${logoWidth}px`, height: `${size}px` }}
+      >
+        <img
+          src="/logo-catraca-troia.png"
+          alt="Logotipo oficial Catraca de Tróia"
+          width={1470}
+          height={1070}
+          className="block h-full w-full object-contain select-none transition-transform duration-200 hover:scale-[1.02]"
+          referrerPolicy="no-referrer"
+        />
+      </span>
 
       {/* Tipografia da Marca (Opcional) */}
       {showText && (

@@ -87,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-30 shadow-md">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-2 sm:gap-4">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 py-2">
           
           {/* 1. Left: Brand & School Identification */}
           <div className="flex items-center space-x-2.5 sm:space-x-3 shrink-0 min-w-0">
@@ -103,7 +103,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <h1 className="text-sm sm:text-base font-extrabold text-white tracking-tight leading-none truncate">
                   Catraca de Tróia
                 </h1>
-                <span className="px-1.5 py-0.5 text-[9px] sm:text-[10px] font-extrabold bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded shrink-0">
+                <span className="hidden sm:inline px-1.5 py-0.5 text-[10px] font-extrabold bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded shrink-0">
                   EMEF
                 </span>
               </div>
@@ -115,11 +115,11 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* 2. Center: Navigation Tabs */}
-          <nav className="flex items-center p-1 bg-slate-800/90 rounded-xl border border-slate-700/80 shrink-0">
+          <nav className="col-span-2 row-start-2 grid w-full grid-cols-4 items-stretch gap-0.5 p-1 bg-slate-800/90 rounded-xl border border-slate-700/80">
             <button
               id="nav-tab-catracas"
               onClick={() => onSelectTab('catracas')}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'catracas'
                   ? 'bg-orange-600 text-white shadow-sm font-bold'
                   : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
@@ -133,16 +133,17 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="nav-tab-avisos"
               onClick={() => onSelectTab('avisos')}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer relative ${
+              className={`min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all cursor-pointer relative ${
                 activeTab === 'avisos'
                   ? 'bg-orange-600 text-white shadow-sm font-bold'
                   : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
               }`}
             >
               <Megaphone className={`w-3.5 h-3.5 ${activeTab === 'avisos' ? 'text-white' : 'text-slate-400'}`} />
-              <span>Comunicados</span>
+              <span className="sm:hidden">Avisos</span>
+              <span className="hidden sm:inline">Comunicados</span>
               {noticesCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-orange-500 text-white text-[10px] font-bold">
+                <span className="absolute right-1 top-0.5 min-w-4 px-1 rounded-full bg-orange-500 text-white text-[9px] font-bold sm:static sm:px-1.5 sm:text-[10px]">
                   {noticesCount}
                 </span>
               )}
@@ -151,7 +152,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="nav-tab-alunos"
               onClick={() => onSelectTab('alunos')}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'alunos'
                   ? 'bg-orange-600 text-white shadow-sm font-bold'
                   : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
@@ -165,7 +166,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="nav-tab-justificativas"
               onClick={() => onSelectTab('justificativas')}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer relative ${
+              className={`min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all cursor-pointer relative ${
                 activeTab === 'justificativas'
                   ? 'bg-orange-600 text-white shadow-sm font-bold'
                   : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
@@ -175,7 +176,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden lg:inline">Justificativas</span>
               <span className="lg:hidden">Faltas</span>
               {pendingJustificationsCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[10px] font-bold">
+                <span className="absolute right-1 top-0.5 min-w-4 px-1 rounded-full bg-amber-500 text-slate-950 text-[9px] font-bold sm:static sm:px-1.5 sm:text-[10px]">
                   {pendingJustificationsCount}
                 </span>
               )}
@@ -183,7 +184,7 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* 3. Right: Simulation Controls & User Menus */}
-          <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+          <div className="col-start-2 row-start-1 flex items-center space-x-1.5 sm:space-x-2 shrink-0">
             
             {/* Live simulation toggle */}
             <button
@@ -219,7 +220,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={toggleSound}
               title={soundOn ? 'Desativar som de bipe' : 'Ativar som de bipe'}
-              className="p-1.5 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer border border-slate-700"
+              className="hidden sm:block p-1.5 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer border border-slate-700"
             >
               {soundOn ? (
                 <Volume2 className="w-4 h-4 text-orange-400" />
@@ -355,7 +356,7 @@ export const Header: React.FC<HeaderProps> = ({
 
               {showProfileMenu && (
                 <div 
-                  className="absolute right-0 mt-2 w-80 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700 py-3 z-50 animate-in fade-in zoom-in-95 duration-150"
+                  className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] sm:w-80 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700 py-3 z-50 animate-in fade-in zoom-in-95 duration-150"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Top user header */}
@@ -444,10 +445,11 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="btn-switch-to-parent-app"
               onClick={onSwitchToParentApp}
-              className="ml-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer shrink-0"
+              className="sm:ml-1 px-2 sm:px-3 py-1.5 rounded-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold flex flex-col sm:flex-row items-center gap-0 sm:gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer shrink-0"
               title="Abrir o aplicativo móvel dos pais e responsáveis"
             >
               <Smartphone className="w-3.5 h-3.5 text-white" />
+              <span className="text-[9px] leading-none sm:hidden">Pais</span>
               <span className="hidden sm:inline">App dos Pais</span>
             </button>
 

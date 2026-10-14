@@ -1,4 +1,5 @@
 import { DemoNotice } from '../DemoNotice';
+import { CatracaTroiaLogo } from '../CatracaTroiaLogo';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Smartphone, 
@@ -226,39 +227,37 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
       
       {/* Top Navigation / Perspective Bar */}
       <header className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:gap-3">
           
           {/* Logo & Mode indicator */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-600 flex items-center justify-center shadow-md">
-              <Smartphone className="w-5 h-5 text-white" />
-            </div>
-            <div>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <CatracaTroiaLogo size={36} variant="dark" showText={false} />
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-sm font-extrabold text-white tracking-tight">
+                <h1 className="truncate text-sm font-extrabold text-white tracking-tight">
                   Catraca de Tróia
                 </h1>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                <span className="hidden sm:inline text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
                   App dos Pais
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="hidden sm:block truncate text-xs text-slate-400">
                 Acesso exclusivo para responsáveis • EMEF Profª. Cecília Meireles
               </p>
             </div>
           </div>
 
           {/* Quick controls */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="col-span-2 row-start-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:flex">
             {/* Simulate pass notification */}
             <button
               id="btn-simulate-parent-push"
               onClick={handleSimulatePassNotification}
-              className="px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-xs"
+              className="min-w-0 px-2 sm:px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-xs"
               title="Simular passagem instantânea na catraca para o filho selecionado"
             >
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Simular {nextAccessDirection === 'entry' ? 'Entrada' : 'Saída'} de {selectedStudent.name.split(' ')[0]}</span>
+              <span className="truncate">Simular {nextAccessDirection === 'entry' ? 'Entrada' : 'Saída'} <span className="hidden sm:inline">de {selectedStudent.name.split(' ')[0]}</span></span>
             </button>
 
             {/* Frame mode switch */}
@@ -288,18 +287,21 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
               </button>
             </div>
 
-            {/* Switch to school portal */}
-            {onSwitchToManagement && (
-              <button
-                id="btn-switch-to-school-portal"
-                onClick={onSwitchToManagement}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Monitor className="w-3.5 h-3.5 text-orange-400" />
-                <span>Painel da Escola</span>
-              </button>
-            )}
           </div>
+
+          {/* Keep perspective switching visible independently from demo controls. */}
+          {onSwitchToManagement && (
+            <button
+              id="btn-switch-to-school-portal"
+              onClick={onSwitchToManagement}
+              className="col-start-2 row-start-1 px-2 sm:px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 lg:col-start-3"
+              title="Abrir o painel da escola"
+            >
+              <Monitor className="w-3.5 h-3.5 text-orange-400" />
+              <span className="sm:hidden">Painel</span>
+              <span className="hidden sm:inline">Painel da Escola</span>
+            </button>
+          )}
         </div>
       </header>
 

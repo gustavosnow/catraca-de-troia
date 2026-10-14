@@ -29,3 +29,11 @@ Solicitação: iniciar a evolução para backend compartilhado sem antecipar int
 Ajustes: criada API Express isolada para justificativas, com SQLite local, contratos estáveis, vínculos fictícios validados no servidor, revisão restrita aos papéis de Coordenação e Direção, idempotência na criação, controle otimista de versão e trilha de auditoria. Testes cobrem segregação por vínculo, conta sem vínculo, persistência após reabertura do banco, repetição idempotente e permissão de revisão.
 
 Limites: o frontend ainda não consome a API. O header `X-Demo-User-Id`, habilitado somente por `DEMO_AUTH=true`, é um mecanismo explícito de desenvolvimento e não representa autenticação ou sessão real. Anexos, eventos de catraca, sincronização offline, notificações externas, backup e criptografia do banco permanecem pendentes.
+
+## MC-005 — Responsividade da navegação e apresentação da marca
+
+Solicitação: manter a alternância entre painel escolar e portal dos responsáveis acessível sem rolagem e melhorar a apresentação da logo oficial.
+
+Ajustes: os cabeçalhos foram reorganizados em grades responsivas; as quatro seções do painel ocupam uma faixa própria em telas menores, e os botões de troca de perspectiva permanecem visíveis na primeira faixa. A logo oficial em PNG continua inalterada e passou a respeitar sua proporção horizontal dentro de uma moldura adequada ao fundo do cabeçalho.
+
+Limites: os ativos da identidade visual não foram redesenhados ou substituídos. A validação automatizada cobre compilação e build; a conferência visual deve considerar os navegadores e aparelhos definidos futuramente no plano de testes.
