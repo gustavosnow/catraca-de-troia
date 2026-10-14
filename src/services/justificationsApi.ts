@@ -8,6 +8,7 @@ import type {
 } from '../../shared/contracts/justifications';
 import type { AbsenceJustification } from '../types';
 import { authenticatedRequest } from './authApi';
+import { attachmentsApi } from './attachmentsApi';
 
 const reasonToApi: Record<AbsenceJustification['reasonCategory'], JustificationReason> = {
   'Médico / Saúde': 'MEDICAL',
@@ -52,6 +53,8 @@ export const mapJustification = (record: JustificationRecord): AbsenceJustificat
   reasonCategory: reasonFromApi[record.reasonCategory],
   description: record.description,
   attachmentName: record.attachmentName,
+  attachmentId: record.attachmentId,
+  attachmentValidationStatus: record.attachmentValidationStatus,
   submittedAt: formatDateTime(record.submittedAt) || record.submittedAt,
   status: statusFromApi[record.status],
   reviewedAt: formatDateTime(record.reviewedAt),
@@ -79,25 +82,33 @@ export const justificationsApi = {
 
   create: async (
     input: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
+    attachment?: File,
   ) => {
+    const uploaded = attachment ? await attachmentsApi.upload(attachment) : undefined;
     const payload: CreateJustificationRequest = {
       absenceStartDate: input.date,
       absenceEndDate: input.endDate,
       reasonCategory: reasonToApi[input.reasonCategory],
       description: input.description,
-      attachmentName: input.attachmentName,
+      attachmentName: uploaded?.fileName || input.attachmentName,
+      attachmentId: uploaded?.id,
     };
     const idempotencyKey = globalThis.crypto?.randomUUID?.()
       ?? `justification-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const record = await authenticatedRequest<JustificationRecord>(
-      `/api/v1/students/${input.studentId}/justifications`,
-      {
-        method: 'POST',
-        headers: { 'Idempotency-Key': idempotencyKey },
-        body: JSON.stringify(payload),
-      },
-    );
-    return mapJustification(record);
+    try {
+      const record = await authenticatedRequest<JustificationRecord>(
+        `/api/v1/students/${input.studentId}/justifications`,
+        {
+          method: 'POST',
+          headers: { 'Idempotency-Key': idempotencyKey },
+          body: JSON.stringify(payload),
+        },
+      );
+      return mapJustification(record);
+    } catch (error) {
+      if (uploaded) await attachmentsApi.discard(uploaded.id).catch(() => undefined);
+      throw error;
+    }
   },
 
   review: async (

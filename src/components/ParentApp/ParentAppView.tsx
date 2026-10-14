@@ -74,7 +74,10 @@ interface ParentAppViewProps {
   studentsList?: Student[];
   sharedAccessLogs: AccessLog[];
   sharedJustifications: AbsenceJustification[];
-  onSubmitJustification: (justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) => Promise<void>;
+  onSubmitJustification: (
+    justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
+    attachment?: File,
+  ) => Promise<void>;
   justificationsState: 'loading' | 'persistent' | 'unavailable';
   justificationsError?: string;
   accessEventsState: 'loading' | 'persistent' | 'unavailable';
@@ -202,8 +205,10 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   const unreadCount = parentNotifications.filter(n => !n.isRead).length;
 
   // Handler for adding a new absence justification
-  const handleAddJustification = (newJust: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) =>
-    onSubmitJustification(newJust);
+  const handleAddJustification = (
+    newJust: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
+    attachment?: File,
+  ) => onSubmitJustification(newJust, attachment);
 
   const handleMarkNoticeAsRead = async (id: string) => {
     if (onMarkNoticeRead) {

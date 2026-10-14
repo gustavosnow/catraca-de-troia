@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { CheckCircle2, Clock3, FileText, Paperclip, Search, XCircle } from 'lucide-react';
 import { AbsenceJustification } from '../types';
+import { attachmentsApi } from '../services/attachmentsApi';
 
 interface JustificationsManagerProps {
   justifications: AbsenceJustification[];
@@ -142,10 +143,20 @@ export const JustificationsManager: React.FC<JustificationsManagerProps> = ({
                   </p>
 
                   {justification.attachmentName && (
-                    <div className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700">
+                    <button
+                      type="button"
+                      disabled={!justification.attachmentId || !canReview}
+                      onClick={() => justification.attachmentId && attachmentsApi
+                        .download(justification.attachmentId, justification.attachmentName!)
+                        .catch((error: unknown) => setActionError(
+                          error instanceof Error ? error.message : 'Não foi possível baixar o anexo.',
+                        ))}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 disabled:cursor-not-allowed disabled:text-slate-500"
+                      title={justification.attachmentId ? 'Baixar conteúdo armazenado' : 'Registro legado sem conteúdo armazenado'}
+                    >
                       <Paperclip className="w-3.5 h-3.5" />
-                      <span>Anexo demonstrativo: {justification.attachmentName}</span>
-                    </div>
+                      <span>{justification.attachmentId ? 'Baixar anexo' : 'Somente nome registrado'}: {justification.attachmentName}</span>
+                    </button>
                   )}
 
                   {justification.reviewedAt && (
@@ -188,7 +199,7 @@ export const JustificationsManager: React.FC<JustificationsManagerProps> = ({
         <p>
           {persistenceState === 'persistent'
             ? canReview
-              ? 'Dados persistidos na API local demonstrativa. O conteúdo do arquivo anexo ainda não é enviado; somente o nome é registrado.'
+              ? 'Dados persistidos na API local demonstrativa. Anexos novos armazenam conteúdo com validação básica de tipo, sem antivírus homologado.'
               : 'Dados persistidos na API local. A análise é restrita às contas demonstrativas de Coordenação e Direção.'
             : persistenceState === 'loading'
               ? 'Carregando justificativas da API local…'

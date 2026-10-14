@@ -644,8 +644,9 @@ export default function App() {
 
   const handleAddJustification = async (
     justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
+    attachment?: File,
   ) => {
-    const created = await justificationsApi.create(justification);
+    const created = await justificationsApi.create(justification, attachment);
     setJustifications((current) => [created, ...current]);
     setJustificationsState('persistent');
     setJustificationsError(undefined);

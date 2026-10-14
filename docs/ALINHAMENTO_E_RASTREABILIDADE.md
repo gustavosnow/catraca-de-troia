@@ -37,14 +37,14 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 - A linha do tempo do portal foi limitada aos eventos simulados de entrada e saída; uma agenda pedagógica futura exigirá fonte e escopo próprios.
 - Painel e portal consultam os mesmos eventos persistidos para formar feed, presença, linha do tempo e histórico. A origem ainda é simulada; a fila local e o protocolo de sincronização existem no corte técnico, mas hardware, implantação remota e homologação offline continuam pendentes.
 - O painel escolar consulta o estado real da fila local, diferencia destino não configurado e exibe pendências, processamento, sincronizados, conflitos e última sincronização. Reenfileiramento de conflitos permanece restrito à Coordenação/Direção também no backend.
-- Justificativas já são lidas, criadas e analisadas pelo React por meio da API local, com idempotência, controle otimista, auditoria, papéis e vínculos. `X-Demo-User-Id` foi removido; a identidade agora deriva de sessão emitida após validação de credencial fictícia. Anexos continuam restritos ao nome fictício do arquivo.
+- Justificativas já são lidas, criadas e analisadas pelo React por meio da API local, com idempotência, controle otimista, auditoria, papéis e vínculos. Anexos novos de justificativas armazenam conteúdo no SQLite, com tipos/tamanho restritos, assinatura conferida, hash e download autorizado. Registros semeados antigos e anexos de avisos continuam apenas nominais; não há antivírus homologado.
 - Avisos são persistidos na API local, com gestão restrita à Coordenação/Direção, controle otimista, exclusão lógica, auditoria, leitura individual e disparo idempotente para a caixa interna dos responsáveis. Passagens e mudanças em justificativas também geram notificações internas somente para os vínculos aprovados.
 - A PWA armazena somente o shell estático. Cache da interface não substitui a continuidade do servidor escolar; a fila implementada é do servidor escolar e não habilita escritas offline no celular do responsável.
 - Com o portal aberto, a perda de conexão preserva somente o estado já carregado em memória, informa a última atualização, bloqueia escritas e dispara nova consulta no retorno da rede. Uma abertura sem conexão ainda não restaura sessão nem dados pessoais, por decisão de minimização deste corte.
 - Os projetos Capacitor foram gerados e sincronizados, mas ainda exigem URL HTTPS de API acessível ao aparelho, identificador institucional definitivo, SDKs, assinatura, testes em dispositivos e decisão formal de distribuição.
 - O cadastro demonstrativo não lista mais estudantes. Responsáveis autenticados solicitam vínculo pela matrícula; pendências não revelam o nome do estudante, e somente Coordenação/Direção aprova ou rejeita com controle otimista e auditoria.
 - QR da carteirinha é ilustrativo; tokens seguros, validade e procedimento de contingência exigem especificação e aprovação.
-- WhatsApp/push, conteúdo de anexos, câmeras e biometria não estão conectados a serviços reais. Persistência e auditoria existem nos cortes locais de justificativas, eventos, avisos e notificações internas; a fila de eventos existe, mas o destino remoto e a sincronização implantada continuam pendentes.
+- WhatsApp/push, antivírus, anexos de avisos, câmeras e biometria não estão conectados a serviços reais. Persistência e auditoria existem nos cortes locais de justificativas, anexos locais, eventos, avisos e notificações internas; a fila de eventos existe, mas o destino remoto e a sincronização implantada continuam pendentes.
 - Nenhum resultado de acurácia, latência, disponibilidade, segurança ou carga foi medido.
 
 ## Próxima sequência de desenvolvimento
@@ -52,6 +52,6 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 1. Definir o provedor de identidade institucional, política de credenciais/MFA/recuperação, HTTPS e armazenamento seguro de sessão no app.
 2. Implantar e observar a fila/sincronização já implementada entre servidor escolar e destino remoto, incluindo teste real de desconexão, conflito, backup e restauração.
 3. Definir hospedagem e configuração por ambiente para painel, PWA e aparelhos móveis.
-4. Implementar conteúdo real de anexos, com autorização, antivírus, retenção e proteção definidas.
+4. Definir retenção, descarte, criptografia e verificação antimalware para os anexos; ampliar o mesmo contrato aos avisos se aprovado.
 5. Confirmar identificador institucional, estratégia de distribuição e critérios móveis; testar PWA/Android e executar iOS em macOS/Xcode.
 6. Integrar hardware e reconhecimento facial, executar homologação e produzir evidências da EAP.

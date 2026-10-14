@@ -115,3 +115,11 @@ Solicitação: seguir com os demais passos do portal, substituindo a seleção d
 Ajustes: criada API/SQLite para solicitações de vínculo por matrícula, com idempotência, estados pendente/aprovado/rejeitado, controle otimista e auditoria. Responsáveis consultam somente as próprias solicitações; a identidade do estudante fica ocultada na resposta enquanto o vínculo não é aprovado. Apenas Coordenação/Direção lista e analisa pendências. A aprovação grava ou reativa `guardian_student_links`, passa a liberar as rotas já protegidas e gera notificação interna para o solicitante. O painel escolar recebeu a fila de análise, o portal recebeu formulário e histórico, e o cadastro deixou de expor uma lista pesquisável de estudantes.
 
 Limites: a matrícula funciona como referência demonstrativa e não substitui conferência documental ou procedimento institucional. Ainda faltam limitação de tentativas contra enumeração, gestão de documentos comprobatórios, revogação administrativa pela interface, identidade institucional e notificações externas. Nenhum vínculo com dados reais deve ser criado neste ambiente acadêmico.
+
+## MC-016 — Conteúdo local de anexos de justificativas
+
+Solicitação: continuar os recursos completos que podem funcionar sem serviço pago ou infraestrutura externa.
+
+Ajustes: o formulário de justificativa passou a enviar arquivos reais PDF/JPG/PNG de até 2 MB. A API confere tipo declarado e assinatura do formato, calcula SHA-256, armazena conteúdo e metadados no SQLite, vincula cada arquivo a uma única justificativa e audita upload/descarte. O responsável remetente e Coordenação/Direção podem baixar; outros responsáveis e Portaria são bloqueados no backend. Se a criação da justificativa falhar, o cliente tenta descartar o upload ainda não vinculado. Registros antigos que continham apenas nome permanecem identificados como legados.
+
+Limites: a validação básica não é antivírus nem garante que o conteúdo seja seguro. Não há criptografia do banco em repouso, política institucional de retenção, limpeza periódica de uploads abandonados, backup de anexos ou armazenamento externo. O corte deve usar apenas documentos fictícios. Anexos de avisos continuam somente nominais.

@@ -32,6 +32,7 @@ O protótipo oferece entradas por hash para responsáveis e escola e permite alt
 - Servidor local: identificação facial Python/OpenCV, aplicação das regras de acesso, registro persistente e integração física das duas catracas.
 - Fila local: corte técnico em SQLite preserva eventos, sincroniza depois, deduplica repetições e isola conflitos; implantação e teste ponta a ponta continuam pendentes.
 - Backend/API: autenticação, sessão, perfis, vínculos familiares validados, avisos, justificativas e auditoria.
+- Anexos de justificativas: armazenamento local demonstrativo no SQLite, limite de 2 MB, PDF/JPG/PNG, assinatura de formato, hash e download autorizado; antivírus, criptografia e retenção institucionais permanecem pendentes.
 - Notificações: canal aprovado, fila, novas tentativas e estados distintos de processamento, envio, entrega e falha.
 - Interfaces: painel escolar e portal/app dos responsáveis com acesso restrito.
 

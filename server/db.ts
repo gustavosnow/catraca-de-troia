@@ -78,6 +78,25 @@ const schema = `
   CREATE INDEX IF NOT EXISTS idx_guardian_link_requests_guardian
     ON guardian_link_requests(guardian_user_id, submitted_at DESC);
 
+  CREATE TABLE IF NOT EXISTS attachments (
+    id TEXT PRIMARY KEY,
+    school_id TEXT NOT NULL REFERENCES schools(id),
+    uploaded_by TEXT NOT NULL REFERENCES users(id),
+    purpose TEXT NOT NULL CHECK (purpose IN ('JUSTIFICATION')),
+    file_name TEXT NOT NULL,
+    content_type TEXT NOT NULL CHECK (content_type IN ('application/pdf', 'image/jpeg', 'image/png')),
+    size_bytes INTEGER NOT NULL,
+    sha256 TEXT NOT NULL,
+    validation_status TEXT NOT NULL CHECK (validation_status IN ('BASIC_VALIDATION_ONLY')),
+    content BLOB NOT NULL,
+    aggregate_type TEXT,
+    aggregate_id TEXT,
+    created_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_attachments_owner
+    ON attachments(uploaded_by, created_at DESC);
+
   CREATE TABLE IF NOT EXISTS justifications (
     id TEXT PRIMARY KEY,
     school_id TEXT NOT NULL REFERENCES schools(id),
@@ -88,6 +107,7 @@ const schema = `
     reason_category TEXT NOT NULL CHECK (reason_category IN ('MEDICAL', 'DENTAL', 'FORCE_MAJEURE', 'FAMILY_COMMITMENT', 'OTHER')),
     description TEXT NOT NULL,
     attachment_name TEXT,
+    attachment_id TEXT REFERENCES attachments(id),
     status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED')),
     submitted_at TEXT NOT NULL,
     reviewed_at TEXT,
@@ -375,6 +395,10 @@ export const createDatabase = (options: DatabaseOptions = {}) => {
   }
   if (!accessEventColumns.some((column) => column.name === 'sync_payload_hash')) {
     database.exec('ALTER TABLE access_events ADD COLUMN sync_payload_hash TEXT');
+  }
+  const justificationColumns = database.prepare('PRAGMA table_info(justifications)').all() as Array<{ name: string }>;
+  if (!justificationColumns.some((column) => column.name === 'attachment_id')) {
+    database.exec('ALTER TABLE justifications ADD COLUMN attachment_id TEXT REFERENCES attachments(id)');
   }
   database.exec(`
     UPDATE access_events

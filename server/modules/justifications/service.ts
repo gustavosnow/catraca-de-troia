@@ -30,6 +30,8 @@ interface JustificationRow {
   reason_category: JustificationRecord['reasonCategory'];
   description: string;
   attachment_name: string | null;
+  attachment_id: string | null;
+  attachment_validation_status: 'BASIC_VALIDATION_ONLY' | null;
   status: JustificationStatus;
   submitted_at: string;
   reviewed_at: string | null;
@@ -39,9 +41,11 @@ interface JustificationRow {
 }
 
 const selectJustification = `
-  SELECT j.*, s.name AS student_name, s.enrollment
+  SELECT j.*, s.name AS student_name, s.enrollment,
+    attachment.validation_status AS attachment_validation_status
   FROM justifications j
   JOIN students s ON s.id = j.student_id
+  LEFT JOIN attachments attachment ON attachment.id = j.attachment_id
 `;
 
 const mapJustification = (row: JustificationRow): JustificationRecord => ({
@@ -58,6 +62,8 @@ const mapJustification = (row: JustificationRow): JustificationRecord => ({
   reasonCategory: row.reason_category,
   description: row.description,
   attachmentName: row.attachment_name ?? undefined,
+  attachmentId: row.attachment_id ?? undefined,
+  attachmentValidationStatus: row.attachment_validation_status ?? undefined,
   status: row.status,
   submittedAt: row.submitted_at,
   reviewedAt: row.reviewed_at ?? undefined,
@@ -160,15 +166,24 @@ export class JustificationService {
       return { justification: mapJustification(existing), created: false };
     }
 
+    const attachment = request.attachmentId
+      ? this.database.prepare(`
+          SELECT id, file_name FROM attachments
+          WHERE id = ? AND school_id = ? AND uploaded_by = ?
+            AND purpose = 'JUSTIFICATION' AND aggregate_id IS NULL
+        `).get(request.attachmentId, actor.schoolId, actor.id) as { id: string; file_name: string } | undefined
+      : undefined;
+    if (request.attachmentId && !attachment) throw notFound('Anexo não encontrado ou já utilizado.');
+
     const id = randomUUID();
     const timestamp = this.now();
     const transaction = this.database.transaction(() => {
       this.database.prepare(`
         INSERT INTO justifications (
           id, school_id, student_id, submitted_by, absence_start_date, absence_end_date,
-          reason_category, description, attachment_name, status, submitted_at, version,
-          idempotency_key, request_hash
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, 1, ?, ?)
+          reason_category, description, attachment_name, attachment_id, status, submitted_at,
+          version, idempotency_key, request_hash
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, 1, ?, ?)
       `).run(
         id,
         actor.schoolId,
@@ -178,11 +193,20 @@ export class JustificationService {
         request.absenceEndDate ?? null,
         request.reasonCategory,
         request.description.trim(),
-        request.attachmentName?.trim() || null,
+        attachment?.file_name || request.attachmentName?.trim() || null,
+        attachment?.id || null,
         timestamp,
         idempotencyKey,
         requestHash,
       );
+
+      if (attachment) {
+        const bound = this.database.prepare(`
+          UPDATE attachments SET aggregate_type = 'JUSTIFICATION', aggregate_id = ?
+          WHERE id = ? AND aggregate_id IS NULL
+        `).run(id, attachment.id);
+        if (bound.changes !== 1) throw conflict('ATTACHMENT_CONFLICT', 'O anexo já foi utilizado.');
+      }
 
       this.database.prepare(`
         INSERT INTO audit_log (

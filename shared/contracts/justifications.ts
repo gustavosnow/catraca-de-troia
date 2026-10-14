@@ -44,6 +44,8 @@ export interface JustificationRecord {
   reasonCategory: JustificationReason;
   description: string;
   attachmentName?: string;
+  attachmentId?: string;
+  attachmentValidationStatus?: 'BASIC_VALIDATION_ONLY';
   status: JustificationStatus;
   submittedAt: string;
   reviewedAt?: string;
@@ -57,6 +59,7 @@ export interface CreateJustificationRequest {
   reasonCategory: JustificationReason;
   description: string;
   attachmentName?: string;
+  attachmentId?: string;
 }
 
 export interface ReviewJustificationRequest {

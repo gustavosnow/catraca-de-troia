@@ -134,6 +134,8 @@ export interface AbsenceJustification {
   reasonCategory: 'Médico / Saúde' | 'Consulta Odontológica' | 'Motivo de Força Maior' | 'Compromisso Familiar' | 'Outro';
   description: string;
   attachmentName?: string;
+  attachmentId?: string;
+  attachmentValidationStatus?: 'BASIC_VALIDATION_ONLY';
   submittedAt: string;
   status: 'Em Análise' | 'Aprovado pela Coordenação' | 'Recusado';
   reviewedAt?: string;

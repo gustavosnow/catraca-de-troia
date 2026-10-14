@@ -18,6 +18,8 @@ import { createCommunicationRouter } from './modules/communications/routes';
 import { CommunicationService } from './modules/communications/service';
 import { createLinkRequestRouter } from './modules/linkRequests/routes';
 import { LinkRequestService } from './modules/linkRequests/service';
+import { createAttachmentRouter } from './modules/attachments/routes';
+import { AttachmentService } from './modules/attachments/service';
 
 export interface AppOptions {
   /** @deprecated Mantido temporariamente para compatibilidade dos chamadores. */
@@ -61,6 +63,10 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
     '/api/v1',
     createLinkRequestRouter(new LinkRequestService(database, options.now)),
   );
+  app.use(
+    '/api/v1',
+    createAttachmentRouter(new AttachmentService(database, options.now)),
+  );
   const disabledTransport: AccessEventSyncTransport = {
     send: async () => ({
       kind: 'retry',
@@ -80,6 +86,12 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
   app.use((error: unknown, _request: Request, response: Response, _next: NextFunction) => {
     if (error instanceof ApiError) {
       response.status(error.status).json({ error: { code: error.code, message: error.message } });
+      return;
+    }
+    if ((error as { type?: string } | null)?.type === 'entity.too.large') {
+      response.status(413).json({
+        error: { code: 'PAYLOAD_TOO_LARGE', message: 'O anexo excede o limite de 2 MB.' },
+      });
       return;
     }
     console.error(error);

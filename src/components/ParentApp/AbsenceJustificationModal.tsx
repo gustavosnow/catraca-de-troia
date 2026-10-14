@@ -14,13 +14,17 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import { Student, AbsenceJustification } from '../../types';
+import { attachmentsApi } from '../../services/attachmentsApi';
 
 interface AbsenceJustificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   student: Student;
   existingJustifications: AbsenceJustification[];
-  onSubmitJustification: (justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>) => Promise<void>;
+  onSubmitJustification: (
+    justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
+    attachment?: File,
+  ) => Promise<void>;
 }
 
 export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps> = ({
@@ -33,7 +37,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [reasonCategory, setReasonCategory] = useState<AbsenceJustification['reasonCategory']>('Médico / Saúde');
   const [description, setDescription] = useState<string>('');
-  const [attachedFile, setAttachedFile] = useState<string | null>(null);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'nova' | 'historico'>('nova');
@@ -54,8 +58,8 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
         date,
         reasonCategory,
         description,
-        attachmentName: attachedFile || undefined,
-      });
+        attachmentName: attachedFile?.name,
+      }, attachedFile || undefined);
       setSuccessMessage(true);
       setTimeout(() => {
         setSuccessMessage(false);
@@ -68,10 +72,6 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleSimulateFileUpload = () => {
-    setAttachedFile(`atestado_medico_${date.replace(/-/g, '')}.pdf`);
   };
 
   return (
@@ -220,7 +220,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
                 />
               </div>
 
-              {/* Simulated File Upload */}
+              {/* Local demonstrative file upload */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                   <span>Anexar Comprovante / Atestado (Opcional)</span>
@@ -231,7 +231,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-blue-50 border border-blue-200">
                     <div className="flex items-center gap-2 text-xs font-medium text-blue-900 truncate">
                       <Paperclip className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span className="truncate">{attachedFile}</span>
+                      <span className="truncate">{attachedFile.name} · {(attachedFile.size / 1024).toFixed(0)} KB</span>
                     </div>
                     <button
                       type="button"
@@ -243,18 +243,21 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
                     </button>
                   </div>
                 ) : (
-                  <div
-                    onClick={handleSimulateFileUpload}
-                    className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-4 text-center cursor-pointer transition-colors bg-slate-50/60 hover:bg-blue-50/30"
-                  >
+                  <label className="block border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-4 text-center cursor-pointer transition-colors bg-slate-50/60 hover:bg-blue-50/30">
+                    <input
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png"
+                      className="sr-only"
+                      onChange={(event) => setAttachedFile(event.target.files?.[0] || null)}
+                    />
                     <Upload className="w-6 h-6 text-slate-400 mx-auto mb-1" />
                     <div className="text-xs font-bold text-slate-700">
-                      Clique para simular anexo de Atestado
+                      Selecionar comprovante ou atestado
                     </div>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      Envie a foto ou documento emitido pelo médico
+                      PDF, JPG ou PNG, até 2 MB
                     </p>
-                  </div>
+                  </label>
                 )}
               </div>
 
@@ -262,7 +265,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 flex items-start gap-2">
                 <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <span>
-                  Este fluxo é demonstrativo. O envio registra a solicitação para análise; não cancela alertas nem garante abono de avaliações.
+                  O arquivo recebe validação de tipo e assinatura, mas não passa por antivírus homologado. Use somente dados fictícios neste ambiente acadêmico.
                 </span>
               </div>
 
@@ -324,10 +327,16 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
                     </p>
 
                     {just.attachmentName && (
-                      <div className="flex items-center gap-1.5 text-[11px] text-blue-700 font-medium">
+                      <button
+                        type="button"
+                        disabled={!just.attachmentId}
+                        onClick={() => just.attachmentId && void attachmentsApi.download(just.attachmentId, just.attachmentName!)}
+                        className="flex items-center gap-1.5 text-[11px] text-blue-700 font-medium disabled:cursor-not-allowed disabled:text-slate-500"
+                        title={just.attachmentId ? 'Baixar anexo autorizado' : 'Registro legado sem conteúdo armazenado'}
+                      >
                         <Paperclip className="w-3.5 h-3.5" />
-                        <span>Documento: {just.attachmentName}</span>
-                      </div>
+                        <span>{just.attachmentId ? 'Baixar' : 'Somente nome registrado'}: {just.attachmentName}</span>
+                      </button>
                     )}
                   </div>
                 ))

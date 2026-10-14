@@ -39,13 +39,28 @@ export const authenticatedRequest = async <T>(pathname: string, init?: RequestIn
   if (!token) throw new ApiClientError('UNAUTHORIZED', 'Entre para continuar.', 401);
   const headers = new Headers(init?.headers);
   headers.set('Authorization', `Bearer ${token}`);
-  if (init?.body) headers.set('Content-Type', 'application/json');
+  if (init?.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   try {
     return await parseResponse<T>(await fetch(`${apiBaseUrl}${pathname}`, { ...init, headers }));
   } catch (error) {
     if (error instanceof ApiClientError) throw error;
     throw new ApiClientError('API_UNAVAILABLE', 'A API local não está acessível.', 0);
   }
+};
+
+export const authenticatedRawRequest = async (pathname: string, init?: RequestInit) => {
+  const token = readToken();
+  if (!token) throw new ApiClientError('UNAUTHORIZED', 'Entre para continuar.', 401);
+  const headers = new Headers(init?.headers);
+  headers.set('Authorization', `Bearer ${token}`);
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl}${pathname}`, { ...init, headers });
+  } catch {
+    throw new ApiClientError('API_UNAVAILABLE', 'A API local não está acessível.', 0);
+  }
+  if (!response.ok) await parseResponse<never>(response);
+  return response;
 };
 
 export const authApi = {

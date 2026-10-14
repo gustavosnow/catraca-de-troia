@@ -37,12 +37,17 @@ const parseCreateRequest = (body: unknown): CreateJustificationRequest => {
   if (value.attachmentName !== undefined && (typeof value.attachmentName !== 'string' || value.attachmentName.length > 255)) {
     throw invalidRequest('attachmentName deve ter no máximo 255 caracteres.');
   }
+  if (value.attachmentId !== undefined
+    && (typeof value.attachmentId !== 'string' || value.attachmentId.length < 10 || value.attachmentId.length > 100)) {
+    throw invalidRequest('attachmentId é inválido.');
+  }
   return {
     absenceStartDate: value.absenceStartDate,
     absenceEndDate: value.absenceEndDate,
     reasonCategory: value.reasonCategory,
     description: value.description,
     attachmentName: value.attachmentName,
+    attachmentId: value.attachmentId,
   };
 };
 
