@@ -2,7 +2,7 @@
 
 Protótipo acadêmico de controle de entrada e saída em uma escola pública de ensino fundamental. Painel web da gestão escolar e portal responsivo dos responsáveis, preparado para evolução móvel.
 
-**Estado: demonstração em evolução.** A API local já valida credenciais fictícias, emite sessões revogáveis e aplica perfil e vínculo no servidor. Eventos de entrada/saída, justificativas, avisos e notificações internas usam SQLite, idempotência ou controle de versão conforme o fluxo e auditoria das ações escolares. Eventos novos também entram atomicamente em uma fila local durável, preparada para sincronizar com outra instância da API. A origem das passagens, a entrega por canais externos e os anexos ainda são simulados. A experiência dos responsáveis também possui PWA instalável e projetos-base Capacitor; isso não equivale a identidade institucional, aplicativo publicado ou integração com hardware/serviços externos.
+**Estado: demonstração em evolução.** A API local já valida credenciais fictícias, emite sessões revogáveis e aplica perfil e vínculo no servidor. Eventos de entrada/saída, justificativas, avisos, notificações internas e solicitações de vínculo usam SQLite, idempotência ou controle de versão conforme o fluxo e auditoria das ações escolares. Eventos novos também entram atomicamente em uma fila local durável, preparada para sincronizar com outra instância da API. A origem das passagens, a entrega por canais externos e os anexos ainda são simulados. A experiência dos responsáveis também possui PWA instalável e projetos-base Capacitor; isso não equivale a identidade institucional, aplicativo publicado ou integração com hardware/serviços externos.
 
 ## Executar
 
@@ -25,7 +25,7 @@ npm run preview
 
 ## API local, autenticação e sessões
 
-O backend persiste sessões, justificativas, eventos, avisos e notificações internas em `.data/catraca-de-troia.sqlite`, valida vínculos no servidor, restringe revisões e gestão de avisos à Coordenação/Direção e registra auditoria. Os dados e as credenciais iniciais são fictícios.
+O backend persiste sessões, justificativas, eventos, avisos, notificações internas e solicitações de vínculo em `.data/catraca-de-troia.sqlite`. Responsáveis solicitam vínculo pela matrícula; somente Coordenação/Direção pode analisar e a aprovação atualiza a autorização efetiva no backend. Os dados e as credenciais iniciais são fictícios.
 
 ```bash
 npm run api:dev
@@ -35,6 +35,7 @@ npm run test:api
 A API inicia em `http://127.0.0.1:3001`. Use os atalhos da tela de entrada ou uma das contas abaixo; a senha comum da demonstração é `Troia@2026`.
 
 - Responsável: `claudia.mendes@gmail.com` ou `(11) 98765-4321`.
+- Responsável sem vínculo, para testar a solicitação: `sem.vinculo@gmail.com`.
 - Portaria: `carlos.mendes@emef.educacao.sp.gov.br` ou `MAT-2026/0481`.
 - Coordenação: `mariana.costa@emef.educacao.sp.gov.br` ou `MAT-2026/0129`.
 

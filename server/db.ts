@@ -56,6 +56,28 @@ const schema = `
     PRIMARY KEY (guardian_user_id, student_id)
   );
 
+  CREATE TABLE IF NOT EXISTS guardian_link_requests (
+    id TEXT PRIMARY KEY,
+    school_id TEXT NOT NULL REFERENCES schools(id),
+    guardian_user_id TEXT NOT NULL REFERENCES users(id),
+    student_id TEXT NOT NULL REFERENCES students(id),
+    relationship TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED')),
+    submitted_at TEXT NOT NULL,
+    reviewed_at TEXT,
+    reviewed_by TEXT REFERENCES users(id),
+    review_note TEXT,
+    version INTEGER NOT NULL DEFAULT 1,
+    idempotency_key TEXT NOT NULL,
+    request_hash TEXT NOT NULL,
+    UNIQUE (guardian_user_id, idempotency_key)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_guardian_link_requests_school_status
+    ON guardian_link_requests(school_id, status, submitted_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_guardian_link_requests_guardian
+    ON guardian_link_requests(guardian_user_id, submitted_at DESC);
+
   CREATE TABLE IF NOT EXISTS justifications (
     id TEXT PRIMARY KEY,
     school_id TEXT NOT NULL REFERENCES schools(id),

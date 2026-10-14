@@ -13,6 +13,7 @@ import { SchoolNoticesManager } from './components/SchoolNoticesManager';
 import { StudentsManagementList } from './components/StudentsManagementList';
 import { AuthModal } from './components/AuthModal';
 import { JustificationsManager } from './components/JustificationsManager';
+import { LinkRequestsManager } from './components/LinkRequestsManager';
 import { 
   STUDENTS_DATABASE, 
   INITIAL_TURNSTILES, 
@@ -31,7 +32,13 @@ import { authApi } from './services/authApi';
 import { toAuthUser } from './services/authUserMapper';
 import { communicationsApi } from './services/communicationsApi';
 import { useConnectivity } from './hooks/useConnectivity';
+import { linkRequestsApi } from './services/linkRequestsApi';
 import type { AccessEventSyncStatus } from '../shared/contracts/accessEventSync';
+import type {
+  GuardianLinkRequestRecord,
+  GuardianRelationship,
+  LinkReviewStatus,
+} from '../shared/contracts/linkRequests';
 
 import { 
   Bell, 
@@ -185,6 +192,57 @@ export default function App() {
   const [justificationsState, setJustificationsState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
   const [justificationsError, setJustificationsError] = useState<string>();
   const [justificationsUpdatedAt, setJustificationsUpdatedAt] = useState<string>();
+  const [linkRequests, setLinkRequests] = useState<GuardianLinkRequestRecord[]>([]);
+  const [linkRequestsState, setLinkRequestsState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
+  const [linkRequestsError, setLinkRequestsError] = useState<string>();
+
+  const canReviewLinks = authenticatedUser?.role === 'staff'
+    && ['Coordenação Pedagógica', 'Direção Escolar'].includes(currentStaffUser.staffRole || '');
+
+  useEffect(() => {
+    if (!authenticatedUser) return;
+    if (authenticatedUser.role === 'staff' && !canReviewLinks) {
+      setLinkRequests([]);
+      setLinkRequestsState('persistent');
+      setLinkRequestsError(undefined);
+      return;
+    }
+    if (!isOnline) {
+      setLinkRequestsState('unavailable');
+      setLinkRequestsError('Dispositivo sem conexão.');
+      return;
+    }
+    let active = true;
+    setLinkRequestsState('loading');
+    const load = async () => {
+      try {
+        const [requests, linkedStudents] = await Promise.all([
+          linkRequestsApi.list(),
+          authenticatedUser.role === 'parent'
+            ? justificationsApi.listLinkedStudents()
+            : Promise.resolve(undefined),
+        ]);
+        if (!active) return;
+        setLinkRequests(requests);
+        if (linkedStudents) {
+          const childrenIds = linkedStudents.map((student) => student.id);
+          setCurrentGuardian((current) => ({ ...current, childrenIds }));
+        }
+        setLinkRequestsState('persistent');
+        setLinkRequestsError(undefined);
+      } catch (error) {
+        if (!active) return;
+        setLinkRequestsState('unavailable');
+        setLinkRequestsError(error instanceof Error ? error.message : 'Solicitações de vínculo indisponíveis.');
+      }
+    };
+    void load();
+    const interval = window.setInterval(() => void load(), 5000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [authenticatedUser, canReviewLinks, isOnline, portalRefreshKey]);
 
   useEffect(() => {
     if (!authenticatedUser) return;
@@ -627,6 +685,28 @@ export default function App() {
     setCommunicationsUpdatedAt(new Date().toISOString());
   };
 
+  const handleCreateLinkRequest = async (enrollment: string, relationship: GuardianRelationship) => {
+    const created = await linkRequestsApi.create({ studentEnrollment: enrollment, relationship });
+    setLinkRequests((current) => [created, ...current]);
+    setLinkRequestsState('persistent');
+    setLinkRequestsError(undefined);
+  };
+
+  const handleReviewLinkRequest = async (
+    request: GuardianLinkRequestRecord,
+    status: LinkReviewStatus,
+    reviewNote?: string,
+  ) => {
+    const reviewed = await linkRequestsApi.review(request.id, {
+      status,
+      expectedVersion: request.version,
+      reviewNote,
+    });
+    setLinkRequests((current) => current.map((item) => item.id === reviewed.id ? reviewed : item));
+    setLinkRequestsState('persistent');
+    setLinkRequestsError(undefined);
+  };
+
   const parentDataUpdatedAt = [
     accessEventsUpdatedAt,
     justificationsUpdatedAt,
@@ -700,6 +780,10 @@ export default function App() {
           isOnline={isOnline}
           dataUpdatedAt={parentDataUpdatedAt}
           onRefreshData={() => setPortalRefreshKey((current) => current + 1)}
+          linkRequests={linkRequests}
+          linkRequestsState={linkRequestsState}
+          linkRequestsError={linkRequestsError}
+          onCreateLinkRequest={handleCreateLinkRequest}
           onLogout={handleLogout}
         />
 
@@ -828,6 +912,15 @@ export default function App() {
         {/* VIEW TAB 3: Diretório de Alunos & Contato WhatsApp */}
         {managementTab === 'alunos' && (
           <div className="animate-in fade-in duration-150">
+            {canReviewLinks && (
+              <LinkRequestsManager
+                requests={linkRequests}
+                state={linkRequestsState}
+                error={linkRequestsError}
+                canReview={canReviewLinks}
+                onReview={handleReviewLinkRequest}
+              />
+            )}
             <StudentsManagementList
               students={students}
               onSelectStudent={handleSelectStudent}

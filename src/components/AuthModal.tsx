@@ -17,8 +17,6 @@ import {
   ChevronRight, 
   Sparkles,
   Smartphone,
-  Search,
-  Check,
   Building2,
   HelpCircle,
   ArrowLeft,
@@ -65,11 +63,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [parentPhone, setParentPhone] = useState('');
   const [parentEmail, setParentEmail] = useState('');
   const [parentRelation, setParentRelation] = useState<'Mãe' | 'Pai' | 'Avó / Avô' | 'Tutor(a) Legal' | 'Responsável'>('Mãe');
-  const [selectedChildrenIds, setSelectedChildrenIds] = useState<string[]>(['std-1']);
+  const [requestedEnrollment, setRequestedEnrollment] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [studentSearchTerm, setStudentSearchTerm] = useState('');
 
   // Form states - Register Staff
   const [staffName, setStaffName] = useState('');
@@ -156,10 +153,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   // Quick Demo Login Handler
-  const handleQuickDemoLogin = (type: 'claudia' | 'rodrigo' | 'carlos' | 'mariana') => {
+  const handleQuickDemoLogin = (type: 'claudia' | 'rodrigo' | 'sem_vinculo' | 'carlos' | 'mariana') => {
     const accounts = {
       claudia: ['claudia.mendes@gmail.com', 'parent'],
       rodrigo: ['rodrigo.oliveira@gmail.com', 'parent'],
+      sem_vinculo: ['sem.vinculo@gmail.com', 'parent'],
       carlos: ['carlos.mendes@emef.educacao.sp.gov.br', 'staff'],
       mariana: ['mariana.costa@emef.educacao.sp.gov.br', 'staff'],
     } as const;
@@ -180,8 +178,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setLoginError('Informe um número de celular/WhatsApp válido para notificações.');
       return;
     }
-    if (selectedChildrenIds.length === 0) {
-      setLoginError('Vincule ao menos um(a) estudante (filho/dependente) à sua conta.');
+    if (requestedEnrollment.trim().length < 4) {
+      setLoginError('Informe a matrícula que deverá ser conferida pela escola.');
       return;
     }
     if (!registerPassword || registerPassword.length < 6) {
@@ -193,7 +191,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    setLoginSuccess('Solicitação demonstrativa registrada. A escola ainda precisa validar o vínculo e criar a credencial no serviço de identidade.');
+    setLoginSuccess('Cadastro demonstrativo recebido. Após a ativação da credencial, solicite o vínculo no portal para análise da escola.');
     setTimeout(() => {
       setMode('login');
       setLoginSuccess('Use uma conta demonstrativa já validada para entrar.');
@@ -231,25 +229,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setMode('login');
       setLoginSuccess('Use uma conta demonstrativa já validada para entrar.');
     }, 700);
-  };
-
-  // Filter students for linking in parent registration
-  const filteredStudents = studentsDatabase.filter(s => 
-    s.name.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
-    s.matricula.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
-    s.turma.toLowerCase().includes(studentSearchTerm.toLowerCase())
-  );
-
-  const toggleStudentSelection = (studentId: string) => {
-    if (selectedChildrenIds.includes(studentId)) {
-      if (selectedChildrenIds.length === 1) {
-        setLoginError('Mantenha ao menos um(a) estudante selecionado(a).');
-        return;
-      }
-      setSelectedChildrenIds(selectedChildrenIds.filter(id => id !== studentId));
-    } else {
-      setSelectedChildrenIds([...selectedChildrenIds, studentId]);
-    }
   };
 
   return (
@@ -486,6 +465,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                   <button
                     type="button"
+                    onClick={() => handleQuickDemoLogin('sem_vinculo')}
+                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors cursor-pointer"
+                  >
+                    <div className="text-xs font-bold text-white truncate">Responsável sem vínculo</div>
+                    <div className="text-[10px] text-amber-400 font-medium truncate">Testar solicitação escolar</div>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => handleQuickDemoLogin('carlos')}
                     className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors cursor-pointer"
                   >
@@ -614,76 +602,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     />
                   </div>
 
-                  {/* Vínculo de Aluno(s) */}
+                  {/* Identificação para futura solicitação de vínculo */}
                   <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-700/80 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <School className="w-3.5 h-3.5 text-orange-400" />
-                        <span>Vincular Estudante(s) na EMEF</span>
-                      </label>
-                      <span className="text-[11px] text-orange-300 font-semibold">
-                        {selectedChildrenIds.length} selecionado(s)
-                      </span>
-                    </div>
-
-                    {/* Search box for students */}
-                    <div className="relative">
-                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-                      <input
-                        type="text"
-                        value={studentSearchTerm}
-                        onChange={(e) => setStudentSearchTerm(e.target.value)}
-                        placeholder="Buscar por nome do filho, turma ou matrícula..."
-                        className="w-full pl-8 pr-3 py-1.5 bg-slate-800/90 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
-                      />
-                    </div>
-
-                    {/* Students list */}
-                    <div className="space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar pr-1">
-                      {filteredStudents.slice(0, 6).map((std) => {
-                        const isSelected = selectedChildrenIds.includes(std.id);
-                        return (
-                          <div
-                            key={std.id}
-                            onClick={() => toggleStudentSelection(std.id)}
-                            className={`p-2 rounded-xl border flex items-center justify-between gap-2 cursor-pointer transition-all ${
-                              isSelected
-                                ? 'bg-orange-950/40 border-orange-500/70 text-white'
-                                : 'bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/70 text-slate-300'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <img
-                                src={std.avatar}
-                                alt={std.name}
-                                className="w-7 h-7 rounded-lg object-cover shrink-0"
-                                referrerPolicy="no-referrer"
-                              />
-                              <div className="min-w-0">
-                                <div className="text-xs font-bold truncate">{std.name}</div>
-                                <div className="text-[10px] text-slate-400 flex items-center gap-1.5">
-                                  <span>{std.turma}</span>
-                                  <span>•</span>
-                                  <span className="font-mono">#{std.matricula}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="shrink-0">
-                              {isSelected ? (
-                                <span className="w-5 h-5 rounded-full bg-orange-600 text-white flex items-center justify-center">
-                                  <Check className="w-3 h-3" />
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-slate-400 font-semibold px-2 py-0.5 rounded bg-slate-700">
-                                  Vincular
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <School className="w-3.5 h-3.5 text-orange-400" />
+                      <span>Matrícula para conferência posterior *</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={requestedEnrollment}
+                      onChange={(e) => setRequestedEnrollment(e.target.value)}
+                      placeholder="Ex.: 2024-0182"
+                      minLength={4}
+                      maxLength={40}
+                      required
+                      className="w-full px-3 py-2 bg-slate-800/90 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 font-mono"
+                    />
+                    <p className="text-[10px] leading-relaxed text-slate-400">
+                      A matrícula não libera acesso. O vínculo será solicitado após o login e dependerá de aprovação da Coordenação ou Direção.
+                    </p>
                   </div>
 
                   {/* Senha e Confirmação */}

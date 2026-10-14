@@ -107,3 +107,11 @@ Solicitação: continuar os próximos passos do aplicativo sem contratar infraes
 Ajustes: o portal passou a observar eventos de conexão do navegador, reunir o estado dos serviços de eventos, justificativas e comunicações, informar o instante da última consulta bem-sucedida e permitir atualização manual. Quando a conexão cai com a sessão aberta, os últimos dados permanecem apenas na memória da página; novas consultas são retomadas automaticamente no retorno da rede. Envio de justificativa e registros de leitura ficam bloqueados offline para não indicar uma persistência inexistente. Os dados pessoais semeados deixaram de ser usados como fallback inicial dos fluxos integrados.
 
 Limites: `navigator.onLine` é um sinal de conectividade e não prova disponibilidade da API; falhas das requisições continuam sendo tratadas separadamente. O service worker mantém somente o shell estático, sem respostas da API. Não há login offline, persistência pessoal no aparelho, fila de escritas do responsável ou resolução de conflitos móveis. Esses recursos dependem de decisão institucional e armazenamento protegido.
+
+## MC-015 — Solicitação e aprovação escolar de vínculos
+
+Solicitação: seguir com os demais passos do portal, substituindo a seleção demonstrativa de dependentes por autorização efetiva da escola.
+
+Ajustes: criada API/SQLite para solicitações de vínculo por matrícula, com idempotência, estados pendente/aprovado/rejeitado, controle otimista e auditoria. Responsáveis consultam somente as próprias solicitações; a identidade do estudante fica ocultada na resposta enquanto o vínculo não é aprovado. Apenas Coordenação/Direção lista e analisa pendências. A aprovação grava ou reativa `guardian_student_links`, passa a liberar as rotas já protegidas e gera notificação interna para o solicitante. O painel escolar recebeu a fila de análise, o portal recebeu formulário e histórico, e o cadastro deixou de expor uma lista pesquisável de estudantes.
+
+Limites: a matrícula funciona como referência demonstrativa e não substitui conferência documental ou procedimento institucional. Ainda faltam limitação de tentativas contra enumeração, gestão de documentos comprobatórios, revogação administrativa pela interface, identidade institucional e notificações externas. Nenhum vínculo com dados reais deve ser criado neste ambiente acadêmico.

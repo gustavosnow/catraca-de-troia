@@ -16,6 +16,8 @@ import { createAuthRouter } from './modules/auth/routes';
 import { AuthService } from './modules/auth/service';
 import { createCommunicationRouter } from './modules/communications/routes';
 import { CommunicationService } from './modules/communications/service';
+import { createLinkRequestRouter } from './modules/linkRequests/routes';
+import { LinkRequestService } from './modules/linkRequests/service';
 
 export interface AppOptions {
   /** @deprecated Mantido temporariamente para compatibilidade dos chamadores. */
@@ -54,6 +56,10 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
   app.use(
     '/api/v1',
     createCommunicationRouter(new CommunicationService(database, options.now)),
+  );
+  app.use(
+    '/api/v1',
+    createLinkRequestRouter(new LinkRequestService(database, options.now)),
   );
   const disabledTransport: AccessEventSyncTransport = {
     send: async () => ({

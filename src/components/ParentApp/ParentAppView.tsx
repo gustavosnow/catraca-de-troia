@@ -32,6 +32,7 @@ import { StudentDigitalBadgeModal } from './StudentDigitalBadgeModal';
 import { InAppNotificationDrawer } from './InAppNotificationDrawer';
 import { InstallAppBanner } from './InstallAppBanner';
 import { ParentDataStatus } from './ParentDataStatus';
+import { GuardianLinkRequests } from './GuardianLinkRequests';
 import { 
   Student, 
   DayTimelineEvent, 
@@ -53,6 +54,10 @@ import {
   buildWeeklyAccessFromLogs,
   getStudentAccessLogs,
 } from '../../services/demoAccessService';
+import type {
+  GuardianLinkRequestRecord,
+  GuardianRelationship,
+} from '../../../shared/contracts/linkRequests';
 
 interface ParentAppViewProps {
   onSwitchToManagement?: () => void;
@@ -79,6 +84,10 @@ interface ParentAppViewProps {
   isOnline: boolean;
   dataUpdatedAt?: string;
   onRefreshData: () => void;
+  linkRequests: GuardianLinkRequestRecord[];
+  linkRequestsState: 'loading' | 'persistent' | 'unavailable';
+  linkRequestsError?: string;
+  onCreateLinkRequest: (enrollment: string, relationship: GuardianRelationship) => Promise<void>;
   onLogout?: () => void;
 }
 
@@ -107,6 +116,10 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   isOnline,
   dataUpdatedAt,
   onRefreshData,
+  linkRequests,
+  linkRequestsState,
+  linkRequestsError,
+  onCreateLinkRequest,
   onLogout,
 }) => {
   // Current logged in guardian (Default: Claudia Mendes or external)
@@ -215,12 +228,25 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   };
 
   if (myChildren.length === 0 || !myChildren.some(child => child.id === selectedStudent.id)) {
-    return <div className="min-h-screen bg-slate-950 text-white p-6">
+    return <div className="min-h-screen bg-slate-950 text-white">
       <DemoNotice />
       <InstallAppBanner />
-      <h1 className="text-xl font-bold mt-6">Nenhum estudante vinculado</h1>
-      <p className="mt-3">Solicite à escola a validação do vínculo antes de consultar registros.</p>
-      <button className="mt-4 underline" onClick={() => onOpenAuthModal?.('login')}>Trocar conta de demonstração</button>
+      <main className="mx-auto max-w-2xl space-y-5 p-5 sm:p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold">Nenhum estudante vinculado</h1>
+            <p className="mt-2 text-sm text-slate-300">Solicite o vínculo abaixo. Nenhum registro estudantil é liberado antes da aprovação escolar.</p>
+          </div>
+          <button className="shrink-0 text-xs underline" onClick={onLogout || (() => onOpenAuthModal?.('login'))}>Sair</button>
+        </div>
+        <GuardianLinkRequests
+          requests={linkRequests}
+          state={linkRequestsState}
+          error={linkRequestsError}
+          isOnline={isOnline}
+          onCreate={onCreateLinkRequest}
+        />
+      </main>
     </div>;
   }
 
@@ -399,12 +425,21 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             )}
 
             {activeTab === 'notices' && (
-              /* 4. Canal de Avisos da Direção Completo */
-              <SchoolNoticesSection
-                notices={notices}
-                onMarkAsRead={handleMarkNoticeAsRead}
-                canMarkAsRead={isOnline}
-              />
+              <>
+                {/* 4. Canal de Avisos da Direção Completo */}
+                <SchoolNoticesSection
+                  notices={notices}
+                  onMarkAsRead={handleMarkNoticeAsRead}
+                  canMarkAsRead={isOnline}
+                />
+                <GuardianLinkRequests
+                  requests={linkRequests}
+                  state={linkRequestsState}
+                  error={linkRequestsError}
+                  isOnline={isOnline}
+                  onCreate={onCreateLinkRequest}
+                />
+              </>
             )}
           </div>
 

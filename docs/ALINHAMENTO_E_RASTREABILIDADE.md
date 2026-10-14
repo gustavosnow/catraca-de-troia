@@ -14,7 +14,7 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 | 1.3.5 | Integração e acionamento | Duas catracas em `mockData.ts`, liberação manual visual | Pendente: hardware, operador validado e auditoria persistente |
 | 1.3.6 | Notificações | Caixa interna persistente para passagens, justificativas e avisos | Corte local funcional; pendentes canal externo aprovado, fila de entrega, retentativas e comprovação da meta |
 | 1.3.7 | Gestão biométrica | Cadastro visual e ficha do aluno | Pendente: ciclo de dados biométricos e proteção institucional |
-| 1.3.8 | Autenticação e autorização | Login local, senha derivada com scrypt, sessão opaca expirada/revogável e APIs validando papéis/vínculos | Corte funcional testado com contas fictícias; integrar identidade institucional, HTTPS e controles de produção |
+| 1.3.8 | Autenticação e autorização | Login local, sessão opaca, APIs validando papéis/vínculos e fluxo auditado de solicitação/aprovação | Corte funcional testado com contas fictícias; integrar identidade institucional, HTTPS e controles de produção |
 | 1.4.1 | Plano e testes automatizados/manuais | Typecheck, build e verificação dos cenários desta revisão | Não equivale à cobertura funcional/QA da EAP |
 | 1.4.2–1.4.3 | Carga, segurança e correções | Sem resultados de homologação | Pendente: plano, execução, retestes e relatório |
 | 1.5.1 | Servidor, backup e continuidade local | Fila SQLite de eventos, lease, retentativa exponencial, receptor idempotente e testes automatizados | Pendente: implantação em servidor escolar/destino, monitoramento, teste real de desconexão, backup e restauração |
@@ -42,7 +42,7 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 - A PWA armazena somente o shell estático. Cache da interface não substitui a continuidade do servidor escolar; a fila implementada é do servidor escolar e não habilita escritas offline no celular do responsável.
 - Com o portal aberto, a perda de conexão preserva somente o estado já carregado em memória, informa a última atualização, bloqueia escritas e dispara nova consulta no retorno da rede. Uma abertura sem conexão ainda não restaura sessão nem dados pessoais, por decisão de minimização deste corte.
 - Os projetos Capacitor foram gerados e sincronizados, mas ainda exigem URL HTTPS de API acessível ao aparelho, identificador institucional definitivo, SDKs, assinatura, testes em dispositivos e decisão formal de distribuição.
-- Cadastro demonstrativo ainda permite selecionar alunos para explorar a interface; substituir por solicitação de vínculo e aprovação escolar no serviço real.
+- O cadastro demonstrativo não lista mais estudantes. Responsáveis autenticados solicitam vínculo pela matrícula; pendências não revelam o nome do estudante, e somente Coordenação/Direção aprova ou rejeita com controle otimista e auditoria.
 - QR da carteirinha é ilustrativo; tokens seguros, validade e procedimento de contingência exigem especificação e aprovação.
 - WhatsApp/push, conteúdo de anexos, câmeras e biometria não estão conectados a serviços reais. Persistência e auditoria existem nos cortes locais de justificativas, eventos, avisos e notificações internas; a fila de eventos existe, mas o destino remoto e a sincronização implantada continuam pendentes.
 - Nenhum resultado de acurácia, latência, disponibilidade, segurança ou carga foi medido.
@@ -52,6 +52,6 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 1. Definir o provedor de identidade institucional, política de credenciais/MFA/recuperação, HTTPS e armazenamento seguro de sessão no app.
 2. Implantar e observar a fila/sincronização já implementada entre servidor escolar e destino remoto, incluindo teste real de desconexão, conflito, backup e restauração.
 3. Definir hospedagem e configuração por ambiente para painel, PWA e aparelhos móveis.
-4. Implementar conteúdo real de anexos e solicitação/aprovação de vínculos, com autorização, retenção e proteção definidas.
+4. Implementar conteúdo real de anexos, com autorização, antivírus, retenção e proteção definidas.
 5. Confirmar identificador institucional, estratégia de distribuição e critérios móveis; testar PWA/Android e executar iOS em macOS/Xcode.
 6. Integrar hardware e reconhecimento facial, executar homologação e produzir evidências da EAP.
