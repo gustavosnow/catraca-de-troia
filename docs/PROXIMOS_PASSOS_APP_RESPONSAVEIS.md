@@ -8,6 +8,7 @@ Diagnóstico técnico em 14/10/2026, após o corte de fila local e sincronizaç�
 - PWA instalável com cache apenas do shell, sem armazenar respostas pessoais da API;
 - projetos-base Capacitor Android/iOS;
 - APK Android de depuração gerado, com layout de tela inteira e configuração local isolada para emulador;
+- variante de depuração para celular físico na mesma rede, com descoberta do IP local e servidor de laboratório;
 - login e sessão demonstrativos, autorização por papel e vínculo no backend;
 - solicitação de vínculo por matrícula e aprovação/rejeição auditada pela Coordenação/Direção;
 - consulta administrativa, revogação imediata e revalidação posterior de vínculos, com trilha de auditoria restrita;

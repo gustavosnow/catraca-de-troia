@@ -155,3 +155,11 @@ Solicitação: avançar até a criação do app dos responsáveis sem publicaç�
 Ajustes: o contêiner Capacitor passou a usar layout nativo de tela inteira, sem moldura de smartphone ou controles exclusivos da apresentação web, com suporte às áreas seguras. Foi criado um fluxo reproduzível para emulador Android que injeta a API acadêmica em `10.0.2.2`, usa origem HTTP somente no build de depuração e mantém HTTPS como padrão. A API passou a responder CORS/preflight apenas às origens Capacitor configuradas, com teste automatizado para origem permitida e rejeitada. Após autorização, JDK 21 e Android SDK 36 foram instalados localmente e ignorados pelo Git. O APK de depuração foi gerado em `.artifacts/`, com pacote `com.gustavosnow.catracatroia`, versão 1.0, `minSdk 24`, `targetSdk 36` e assinatura Android Debug verificada.
 
 Limites: o APK ainda não foi executado em emulador/aparelho e sua assinatura serve somente para depuração. Não há assinatura de distribuição, publicação, push nativo, armazenamento seguro do token ou homologação. O HTTP e tráfego aberto existem apenas no manifesto `debug`; qualquer uso fora do emulador/laboratório deve usar HTTPS.
+
+## MC-021 — Variante Android para teste em celular físico
+
+Solicitação: configurar o aplicativo para teste em um celular real.
+
+Ajustes: o script Android passou a oferecer modos separados para emulador e aparelho. O modo de aparelho detecta o IPv4 da rota local, incorpora a API correspondente no build e gera `catraca-de-troia-responsaveis-device-debug.apk`. Foram adicionados comandos para iniciar API e frontend na rede local. No ambiente desta revisão, a variante aponta para `192.168.0.121:3001`, teve assinatura verificada, contém a URL esperada e concluiu login demonstrativo pela interface LAN. O APK foi disponibilizado temporariamente pelo servidor web local para transferência ao celular.
+
+Limites: celular e computador precisam permanecer na mesma rede confiável, o servidor deve continuar em execução e o endereço IPv4 pode mudar. O APK deve ser regenerado após mudança de IP. A instalação de fonte desconhecida é uma decisão explícita do usuário. O HTTP continua limitado ao build de depuração e não é configuração de produção.

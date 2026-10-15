@@ -5,6 +5,7 @@ coverage/
 .data/
 .tools/
 .artifacts/
+public/*.apk
 .DS_Store
 *.log
 .env*

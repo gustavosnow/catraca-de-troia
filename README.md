@@ -80,6 +80,7 @@ npm run preview
 npm run cap:sync
 npm run cap:sync:android:demo
 npm run android:debug
+npm run android:debug:device
 ```
 
 Para conferir a versão instalável local, mantenha a API ativa e abra `http://localhost:4173/#/responsaveis` após `npm run preview`. O servidor de desenvolvimento prioriza HMR; o manifesto e o service worker validados são os arquivos do build de produção.
@@ -93,6 +94,15 @@ Os projetos nativos ficam em `android/` e `ios/`. O build móvel oculta os contr
 ```bash
 .tools/android-sdk/platform-tools/adb install -r .artifacts/catraca-de-troia-responsaveis-debug.apk
 ```
+
+Para testar em celular físico na mesma rede Wi-Fi, gere uma variante com o IP local incorporado e inicie a API na rede:
+
+```bash
+npm run android:debug:device
+npm run dev:device
+```
+
+O artefato fica em `.artifacts/catraca-de-troia-responsaveis-device-debug.apk`. Durante `dev:device`, copie-o para `public/` — ignorado pelo Git — ou transfira-o por USB. O IP pode mudar ao reconectar o computador à rede; nesse caso, gere novamente o APK. Não use esse modo HTTP fora de uma rede de laboratório confiável.
 
 O identificador `com.gustavosnow.catracatroia` é provisório e deve ser confirmado com o domínio institucional antes de assinatura ou publicação. Foi gerado um APK Android de depuração, mas ainda faltam teste em emulador/aparelho, assinatura de distribuição, push nativo e qualquer publicação. iOS continua exigindo macOS e Xcode.
 
