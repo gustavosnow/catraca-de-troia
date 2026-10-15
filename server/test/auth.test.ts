@@ -87,6 +87,22 @@ test('API aplica cabeçalhos de segurança e limita tentativas repetidas de logi
   assert.equal(health.headers.get('x-frame-options'), 'DENY');
   assert.equal(health.headers.get('cache-control'), 'no-store');
 
+  const nativePreflight = await fetch(`${baseUrl}/api/v1/auth/login`, {
+    method: 'OPTIONS',
+    headers: {
+      Origin: 'http://localhost',
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'content-type',
+    },
+  });
+  assert.equal(nativePreflight.status, 204);
+  assert.equal(nativePreflight.headers.get('access-control-allow-origin'), 'http://localhost');
+  const rejectedPreflight = await fetch(`${baseUrl}/api/v1/auth/login`, {
+    method: 'OPTIONS',
+    headers: { Origin: 'https://origem-nao-autorizada.example' },
+  });
+  assert.equal(rejectedPreflight.status, 403);
+
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const response = await fetch(`${baseUrl}/api/v1/auth/login`, {
       method: 'POST',

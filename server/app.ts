@@ -29,11 +29,13 @@ export interface AppOptions {
   now?: () => string;
   syncSharedSecret?: string;
   syncService?: AccessEventSyncService;
+  corsOrigins?: string[];
 }
 
 export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
   const app = express();
   app.disable('x-powered-by');
+  const corsOrigins = options.corsOrigins ?? ['http://localhost', 'https://localhost'];
   app.use((request, response, next) => {
     response.set({
       'X-Content-Type-Options': 'nosniff',
@@ -42,6 +44,19 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
       'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
     });
     if (request.path.startsWith('/api/')) response.set('Cache-Control', 'no-store');
+    const origin = request.header('Origin');
+    if (origin && corsOrigins.includes(origin)) {
+      response.set({
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type, Idempotency-Key',
+        'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+        Vary: 'Origin',
+      });
+    }
+    if (request.method === 'OPTIONS') {
+      response.sendStatus(origin && corsOrigins.includes(origin) ? 204 : 403);
+      return;
+    }
     next();
   });
   app.use(express.json({ limit: '32kb' }));

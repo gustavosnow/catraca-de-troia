@@ -11,13 +11,17 @@ const host = process.env.API_HOST ?? '127.0.0.1';
 const database = createDatabase({ filename: process.env.DATABASE_PATH });
 const syncRemoteUrl = process.env.SYNC_REMOTE_URL;
 const syncSharedSecret = process.env.SYNC_SHARED_SECRET;
+const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost,https://localhost')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 const syncService = syncRemoteUrl && syncSharedSecret
   ? new AccessEventSyncService(
       database,
       new HttpAccessEventSyncTransport(syncRemoteUrl, syncSharedSecret),
     )
   : undefined;
-const app = createApp(database, { syncSharedSecret, syncService });
+const app = createApp(database, { syncSharedSecret, syncService, corsOrigins });
 
 let syncTimer: NodeJS.Timeout | undefined;
 const cleanupAttachments = () => {

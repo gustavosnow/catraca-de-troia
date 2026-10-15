@@ -147,3 +147,11 @@ Solicitação: seguir com o funcionamento completo possível sem custos, avança
 Ajustes: Coordenação/Direção passaram a consultar vínculos existentes e revogá-los com motivo, confirmação, controle otimista de versão, notificação interna e registro de auditoria. A autorização é conferida nas chamadas seguintes, bloqueando imediatamente os dados do estudante; uma nova solicitação pode revalidar o vínculo revogado. O painel ganhou uma lista de vínculos ativos e uma aba restrita com ator, recurso, ação, referência e instante dos registros de auditoria, sem expor os estados internos armazenados. Migrações preservam bases SQLite existentes e testes cobrem papéis, revogação, bloqueio, repetição e revalidação.
 
 Limites: a conferência documental e o motivo são demonstrativos. A interface conectada consulta vínculos periodicamente, portanto pode levar até cinco segundos para refletir a revogação visualmente, embora o backend já bloqueie a chamada. Não há identidade institucional, encerramento administrativo de sessões, alerta externo, exportação assinada de auditoria ou política formal de retenção dos logs.
+
+## MC-020 — Preparação executável do aplicativo Android
+
+Solicitação: avançar até a criação do app dos responsáveis sem publicação ou infraestrutura paga.
+
+Ajustes: o contêiner Capacitor passou a usar layout nativo de tela inteira, sem moldura de smartphone ou controles exclusivos da apresentação web, com suporte às áreas seguras. Foi criado um fluxo reproduzível para emulador Android que injeta a API acadêmica em `10.0.2.2`, usa origem HTTP somente no build de depuração e mantém HTTPS como padrão. A API passou a responder CORS/preflight apenas às origens Capacitor configuradas, com teste automatizado para origem permitida e rejeitada. O build exclusivo dos responsáveis foi gerado e sincronizado com o projeto Android.
+
+Limites: a tentativa de compilar o APK identificou JDK 25 incompatível com o Gradle atual e ausência do Android SDK 36. Instalar as ferramentas gratuitas e aceitar os termos do SDK exige autorização do responsável pelo ambiente. Não há APK concluído, assinatura de distribuição, publicação, push nativo, armazenamento seguro do token ou homologação em aparelho. O HTTP e tráfego aberto existem apenas no manifesto `debug`; qualquer uso fora do emulador/laboratório deve usar HTTPS.

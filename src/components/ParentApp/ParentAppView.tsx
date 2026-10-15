@@ -58,6 +58,7 @@ import type {
   GuardianLinkRequestRecord,
   GuardianRelationship,
 } from '../../../shared/contracts/linkRequests';
+import { isNativeApp } from '../../config/runtime';
 
 interface ParentAppViewProps {
   onSwitchToManagement?: () => void;
@@ -200,7 +201,9 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   const [activeTab, setActiveTab] = useState<'home' | 'history' | 'notices'>('home');
 
   // Device frame mode: 'mobile_frame' | 'full_canvas'
-  const [deviceMode, setDeviceMode] = useState<'mobile_frame' | 'full_canvas'>('mobile_frame');
+  const [deviceMode, setDeviceMode] = useState<'mobile_frame' | 'full_canvas'>(
+    isNativeApp ? 'full_canvas' : 'mobile_frame',
+  );
 
   const unreadCount = parentNotifications.filter(n => !n.isRead).length;
 
@@ -233,7 +236,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   };
 
   if (myChildren.length === 0 || !myChildren.some(child => child.id === selectedStudent.id)) {
-    return <div className="min-h-screen bg-slate-950 text-white">
+    return <div className={`${isNativeApp ? 'min-h-dvh native-app-shell' : 'min-h-screen'} bg-slate-950 text-white`}>
       <DemoNotice />
       <InstallAppBanner />
       <main className="mx-auto max-w-2xl space-y-5 p-5 sm:p-8">
@@ -256,11 +259,11 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-orange-500 selection:text-white">
+    <div className={`${isNativeApp ? 'h-dvh overflow-hidden' : 'min-h-screen'} bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-orange-500 selection:text-white`}>
       <DemoNotice />
       
       {/* Top Navigation / Perspective Bar */}
-      <header className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 sticky top-0 z-40">
+      {!isNativeApp && <header className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:gap-3">
           
           {/* Logo & Mode indicator */}
@@ -326,19 +329,20 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             </button>
           )}
         </div>
-      </header>
+      </header>}
 
       {/* Main Container */}
-      <main className="flex-1 flex items-center justify-center p-2 sm:p-6 lg:p-8 relative">
+      <main className={`flex-1 min-h-0 flex items-center justify-center relative ${isNativeApp ? 'p-0' : 'p-2 sm:p-6 lg:p-8'}`}>
         {/* Device Container */}
-        <div className={`w-full transition-all duration-300 ${
-          deviceMode === 'mobile_frame'
+        <div className={`w-full transition-all duration-300 ${isNativeApp
+          ? 'h-full bg-slate-900 overflow-hidden relative flex flex-col native-app-shell'
+          : deviceMode === 'mobile_frame'
             ? 'max-w-[440px] rounded-[44px] ring-12 ring-slate-900 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border-4 border-slate-800 bg-slate-900 overflow-hidden relative my-2'
             : 'max-w-3xl rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden'
         }`}>
           
           {/* Smartphone Status Bar (Simulated) */}
-          {deviceMode === 'mobile_frame' && (
+          {!isNativeApp && deviceMode === 'mobile_frame' && (
             <div className="bg-slate-900 text-white px-7 pt-3 pb-1 flex items-center justify-between text-[11px] font-semibold select-none border-b border-slate-800/40">
               <div className="font-mono">07:20</div>
               {/* Dynamic Island */}
@@ -395,7 +399,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
           )}
 
           {/* Dynamic Screen Content */}
-          <div className="p-4 sm:p-5 space-y-5 max-h-[640px] overflow-y-auto bg-slate-950/30 custom-scrollbar">
+          <div className={`p-4 sm:p-5 space-y-5 overflow-y-auto bg-slate-950/30 custom-scrollbar ${isNativeApp ? 'flex-1 min-h-0' : 'max-h-[640px]'}`}>
             {activeTab === 'home' && (
               <>
                 {/* 1. Status de Presença Atual & Linha do Tempo do Filho Selecionado */}
@@ -449,7 +453,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
           </div>
 
           {/* Bottom Navigation Bar */}
-          <nav className="bg-slate-900 border-t border-slate-800 px-3 py-2 flex items-center justify-around text-xs select-none">
+          <nav className={`bg-slate-900 border-t border-slate-800 px-3 py-2 flex items-center justify-around text-xs select-none ${isNativeApp ? 'native-bottom-nav' : ''}`}>
             <button
               id="tab-parent-home"
               onClick={() => setActiveTab('home')}
@@ -505,7 +509,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
           </nav>
 
           {/* Smartphone Home Bar Indicator */}
-          {deviceMode === 'mobile_frame' && (
+          {!isNativeApp && deviceMode === 'mobile_frame' && (
             <div className="bg-slate-900 py-1.5 flex justify-center">
               <div className="w-32 h-1 bg-slate-700 rounded-full"></div>
             </div>
