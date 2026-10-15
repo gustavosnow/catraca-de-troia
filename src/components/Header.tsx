@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Radio,
   History,
+  QrCode,
   X
 } from 'lucide-react';
 import { AuthUser } from '../types';
@@ -30,6 +31,7 @@ interface HeaderProps {
   onTriggerManualTap: () => void;
   onOpenManualRelease: () => void;
   onOpenProjectDocs?: () => void;
+  onOpenPresentationAccess?: () => void;
   activeTab: 'catracas' | 'avisos' | 'alunos' | 'justificativas' | 'auditoria';
   onSelectTab: (tab: 'catracas' | 'avisos' | 'alunos' | 'justificativas' | 'auditoria') => void;
   canViewAudit: boolean;
@@ -46,6 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
   onTriggerManualTap,
   onOpenManualRelease,
   onOpenProjectDocs,
+  onOpenPresentationAccess,
   activeTab,
   onSelectTab,
   noticesCount,
@@ -117,10 +120,11 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* 2. Center: Navigation Tabs */}
-          <nav className={`col-span-2 row-start-2 grid w-full ${canViewAudit ? 'grid-cols-5' : 'grid-cols-4'} items-stretch gap-0.5 p-1 bg-slate-800/90 rounded-xl border border-slate-700/80`}>
+          <nav aria-label="Navegação do painel escolar" className={`col-span-2 row-start-2 grid w-full ${canViewAudit ? 'grid-cols-5' : 'grid-cols-4'} items-stretch gap-0.5 p-1 bg-slate-800/90 rounded-xl border border-slate-700/80`}>
             <button
               id="nav-tab-catracas"
               onClick={() => onSelectTab('catracas')}
+              aria-current={activeTab === 'catracas' ? 'page' : undefined}
               className={`min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'catracas'
                   ? 'bg-orange-600 text-white shadow-sm font-bold'
@@ -135,6 +139,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="nav-tab-avisos"
               onClick={() => onSelectTab('avisos')}
+              aria-current={activeTab === 'avisos' ? 'page' : undefined}
               className={`min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all cursor-pointer relative ${
                 activeTab === 'avisos'
                   ? 'bg-orange-600 text-white shadow-sm font-bold'
@@ -154,6 +159,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="nav-tab-alunos"
               onClick={() => onSelectTab('alunos')}
+              aria-current={activeTab === 'alunos' ? 'page' : undefined}
               className={`min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'alunos'
                   ? 'bg-orange-600 text-white shadow-sm font-bold'
@@ -168,6 +174,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="nav-tab-justificativas"
               onClick={() => onSelectTab('justificativas')}
+              aria-current={activeTab === 'justificativas' ? 'page' : undefined}
               className={`min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all cursor-pointer relative ${
                 activeTab === 'justificativas'
                   ? 'bg-orange-600 text-white shadow-sm font-bold'
@@ -188,6 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 id="nav-tab-auditoria"
                 onClick={() => onSelectTab('auditoria')}
+                aria-current={activeTab === 'auditoria' ? 'page' : undefined}
                 className={`min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all cursor-pointer ${
                   activeTab === 'auditoria'
                     ? 'bg-orange-600 text-white shadow-sm font-bold'
@@ -304,6 +312,24 @@ export const Header: React.FC<HeaderProps> = ({
                         <div>
                           <div className="font-bold text-white">Documentos do Projeto</div>
                           <div className="text-[10px] text-slate-400">SMART, KPIs, Orçamento R$ 291k & Equipe</div>
+                        </div>
+                      </button>
+                    )}
+
+                    {onOpenPresentationAccess && (
+                      <button
+                        onClick={() => {
+                          onOpenPresentationAccess();
+                          setShowToolsMenu(false);
+                        }}
+                        className="w-full px-3 py-2.5 text-left text-xs rounded-xl text-slate-200 hover:bg-slate-800 hover:text-white flex items-center gap-3 cursor-pointer transition-colors"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 border border-blue-500/30">
+                          <QrCode className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-white">Apresentar app sem APK</div>
+                          <div className="text-[10px] text-slate-400">QR Code, link e instalação pelo navegador</div>
                         </div>
                       </button>
                     )}

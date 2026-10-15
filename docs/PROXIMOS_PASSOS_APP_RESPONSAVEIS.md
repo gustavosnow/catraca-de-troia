@@ -9,6 +9,7 @@ Diagnóstico técnico em 14/10/2026, após o corte de fila local e sincronizaç�
 - projetos-base Capacitor Android/iOS;
 - APK Android de depuração gerado, com layout de tela inteira e configuração local isolada para emulador;
 - variante de depuração para celular físico na mesma rede, com descoberta do IP local e servidor de laboratório;
+- modo PWA de tela cheia para celulares, com QR Code e roteiro de apresentação HTTPS temporária sem APK;
 - login e sessão demonstrativos, autorização por papel e vínculo no backend;
 - entradas separadas por perfil e gestão auditada de bloqueio/revogação das contas fictícias;
 - solicitação de vínculo por matrícula e aprovação/rejeição auditada pela Coordenação/Direção;

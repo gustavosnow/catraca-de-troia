@@ -12,6 +12,7 @@ export const InstallAppBanner: React.FC = () => {
   const [dismissed, setDismissed] = useState(false);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
   const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isCompactViewport = window.matchMedia('(max-width: 639px)').matches;
 
   useEffect(() => {
     const capturePrompt = (event: Event) => {
@@ -27,7 +28,7 @@ export const InstallAppBanner: React.FC = () => {
     };
   }, []);
 
-  if (isNativeApp || isStandalone || dismissed || (!installPrompt && !isIos)) return null;
+  if (isNativeApp || isStandalone || dismissed || (!installPrompt && !isIos && !isCompactViewport)) return null;
 
   const install = async () => {
     if (!installPrompt) return;
@@ -43,7 +44,9 @@ export const InstallAppBanner: React.FC = () => {
         <p className="flex-1">
           {installPrompt
             ? 'Instale o app dos responsáveis neste aparelho para abrir em tela própria.'
-            : 'No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.'}
+            : isIos
+              ? 'No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.'
+              : 'Você já está no layout do app. No menu do navegador, procure “Adicionar à tela inicial”.'}
         </p>
         {installPrompt && (
           <button onClick={install} className="rounded-lg bg-orange-600 px-3 py-1.5 font-bold text-white hover:bg-orange-500">

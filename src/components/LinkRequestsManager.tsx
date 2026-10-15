@@ -27,37 +27,55 @@ export const LinkRequestsManager: React.FC<LinkRequestsManagerProps> = ({
 }) => {
   const [busyId, setBusyId] = useState<string>();
   const [operationError, setOperationError] = useState<string>();
+  const [pendingAction, setPendingAction] = useState<
+    | { type: 'reject'; request: GuardianLinkRequestRecord }
+    | { type: 'revoke'; link: GuardianStudentLinkRecord }
+  >();
+  const [actionReason, setActionReason] = useState('');
   const pending = requests.filter((request) => request.status === 'PENDING');
   const approved = links.filter((link) => link.status === 'APPROVED');
 
-  const review = async (request: GuardianLinkRequestRecord, status: LinkReviewStatus) => {
-    const note = status === 'REJECTED'
-      ? window.prompt('Informe uma orientação curta para o responsável (opcional):') || undefined
-      : undefined;
+  const review = async (request: GuardianLinkRequestRecord, status: LinkReviewStatus, note?: string) => {
     setBusyId(request.id);
     setOperationError(undefined);
     try {
       await onReview(request, status, note);
+      return true;
     } catch (caught) {
       setOperationError(caught instanceof Error ? caught.message : 'Não foi possível analisar a solicitação.');
+      return false;
     } finally {
       setBusyId(undefined);
     }
   };
 
-  const revoke = async (link: GuardianStudentLinkRecord) => {
-    if (!window.confirm(`Revogar o vínculo entre ${link.guardian.name} e ${link.student.name}? O acesso será bloqueado imediatamente.`)) return;
-    const reason = window.prompt('Informe o motivo da revogação (mínimo de 5 caracteres):')?.trim();
-    if (!reason) return;
+  const revoke = async (link: GuardianStudentLinkRecord, reason: string) => {
     setBusyId(`${link.guardian.id}:${link.student.id}`);
     setOperationError(undefined);
     try {
       await onRevoke(link, reason);
+      return true;
     } catch (caught) {
       setOperationError(caught instanceof Error ? caught.message : 'Não foi possível revogar o vínculo.');
+      return false;
     } finally {
       setBusyId(undefined);
     }
+  };
+
+  const submitPendingAction = async () => {
+    if (!pendingAction) return;
+    const reason = actionReason.trim();
+    if (pendingAction.type === 'revoke' && reason.length < 5) {
+      setOperationError('Informe um motivo com pelo menos 5 caracteres.');
+      return;
+    }
+    const succeeded = pendingAction.type === 'reject'
+      ? await review(pendingAction.request, 'REJECTED', reason || undefined)
+      : await revoke(pendingAction.link, reason);
+    if (!succeeded) return;
+    setPendingAction(undefined);
+    setActionReason('');
   };
 
   return (
@@ -93,7 +111,7 @@ export const LinkRequestsManager: React.FC<LinkRequestsManagerProps> = ({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => void review(request, 'REJECTED')}
+                  onClick={() => { setPendingAction({ type: 'reject', request }); setActionReason(''); setOperationError(undefined); }}
                   disabled={busyId === request.id}
                   className="flex items-center gap-1 rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-bold text-rose-700 disabled:opacity-50"
                 ><X className="h-3.5 w-3.5" /> Recusar</button>
@@ -129,7 +147,7 @@ export const LinkRequestsManager: React.FC<LinkRequestsManagerProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => void revoke(link)}
+                  onClick={() => { setPendingAction({ type: 'revoke', link }); setActionReason(''); setOperationError(undefined); }}
                   disabled={busyId === key}
                   className="flex items-center justify-center gap-1 rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-bold text-rose-700 disabled:opacity-50"
                 ><ShieldX className="h-3.5 w-3.5" /> Revogar</button>
@@ -138,6 +156,33 @@ export const LinkRequestsManager: React.FC<LinkRequestsManagerProps> = ({
           })}
         </div>
       </div>
+
+      {pendingAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4" role="dialog" aria-modal="true" aria-labelledby="link-action-title" onMouseDown={(event) => { if (event.target === event.currentTarget) setPendingAction(undefined); }}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 id="link-action-title" className="font-bold text-slate-900">{pendingAction.type === 'reject' ? 'Recusar solicitação' : 'Revogar vínculo'}</h3>
+                <p className="mt-1 text-xs text-slate-500">{pendingAction.type === 'reject'
+                  ? `${pendingAction.request.guardian.name} · ${pendingAction.request.student.name}`
+                  : `${pendingAction.link.guardian.name} · ${pendingAction.link.student.name}`}</p>
+              </div>
+              <button type="button" onClick={() => setPendingAction(undefined)} aria-label="Fechar" className="rounded-lg p-1 text-slate-500 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+            </div>
+            <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900">{pendingAction.type === 'reject'
+              ? 'A orientação será exibida ao responsável na solicitação.'
+              : 'O acesso aos dados do estudante será bloqueado imediatamente pelo backend.'}</p>
+            <label className="mt-3 block text-xs font-bold text-slate-700">{pendingAction.type === 'reject' ? 'Orientação ao responsável (opcional)' : 'Motivo obrigatório'}
+              <textarea autoFocus value={actionReason} onChange={(event) => setActionReason(event.target.value)} rows={3} maxLength={500} className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-xs outline-none focus:border-blue-500" />
+            </label>
+            {operationError && <p role="alert" className="mt-2 text-xs text-rose-700">{operationError}</p>}
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={() => setPendingAction(undefined)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700">Cancelar</button>
+              <button type="button" onClick={() => void submitPendingAction()} disabled={Boolean(busyId)} className={`rounded-lg px-3 py-2 text-xs font-bold text-white disabled:opacity-50 ${pendingAction.type === 'reject' ? 'bg-rose-700' : 'bg-slate-900'}`}>{busyId ? 'Salvando…' : 'Confirmar'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

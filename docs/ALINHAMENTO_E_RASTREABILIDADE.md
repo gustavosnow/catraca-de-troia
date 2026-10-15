@@ -50,13 +50,14 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 - WhatsApp/push, antivírus, anexos de avisos, câmeras e biometria não estão conectados a serviços reais. Persistência e auditoria existem nos cortes locais de justificativas, anexos locais, eventos, avisos e notificações internas; a fila de eventos existe, mas o destino remoto e a sincronização implantada continuam pendentes.
 - As entradas `#/responsaveis` e `#/escola` estão separadas por perfil; a troca encerra a sessão anterior. Coordenação/Direção administram o estado das contas fictícias e revogam sessões remotas com motivo e auditoria.
 - A fila `PUSH_DEMO` persiste uma entrega para cada nova notificação interna e demonstra falha, backoff e reenfileiramento. Ela não envia push/WhatsApp nem comprova entrega ao aparelho.
+- Em telas pequenas e no modo PWA instalado, o portal remove automaticamente a moldura de apresentação e usa o mesmo contêiner de tela cheia do aplicativo. O painel escolar gera link e QR Code da sessão; o roteiro HTTPS temporário está em `APRESENTACAO_SEM_APK.md`.
 - Nenhum resultado de acurácia, latência, disponibilidade, segurança ou carga foi medido.
 
 ## Próxima sequência de desenvolvimento
 
 1. Implantar e observar a fila/sincronização já implementada entre servidor escolar e destino remoto, incluindo teste real de desconexão, conflito, backup e restauração.
 2. Definir agenda, retenção, destino protegido e teste operacional dos backups; definir criptografia e verificação antimalware institucionais.
-3. Refinar acessibilidade, estados vazios/erro e roteiro de aceite dos dois portais na interface web responsiva.
+3. Continuar o roteiro de acessibilidade e aceite dos dois portais; navegação semântica, diálogos críticos e experiência PWA responsiva já receberam o primeiro refinamento.
 4. Quando a interface estiver estabilizada, gerar uma única nova variante do APK, executar o roteiro móvel e registrar evidências; depois confirmar identificador institucional, distribuição e iOS em macOS/Xcode.
 5. Integrar um canal externo aprovado e trabalhador real à fila demonstrativa somente se houver decisão institucional.
 6. Integrar hardware e reconhecimento facial, executar homologação e produzir evidências da EAP.

@@ -67,6 +67,11 @@ import {
 
 type ViewMode = 'parent_app' | 'management_dashboard';
 
+const PresentationAccessModal = React.lazy(async () => {
+  const module = await import('./components/PresentationAccessModal');
+  return { default: module.PresentationAccessModal };
+});
+
 const getViewModeFromHash = (): ViewMode =>
   !isParentOnlyBuild && window.location.hash === '#/escola' ? 'management_dashboard' : 'parent_app';
 
@@ -221,6 +226,7 @@ export default function App() {
   const [deliveryState, setDeliveryState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
   const [deliveryError, setDeliveryError] = useState<string>();
   const [deliveryBusy, setDeliveryBusy] = useState(false);
+  const [isPresentationAccessOpen, setIsPresentationAccessOpen] = useState(false);
 
   const canReviewLinks = authenticatedUser?.role === 'staff'
     && ['Coordenação Pedagógica', 'Direção Escolar'].includes(currentStaffUser.staffRole || '');
@@ -957,6 +963,7 @@ export default function App() {
         onTriggerManualTap={() => triggerStudentAccess()}
         onOpenManualRelease={() => setIsManualReleaseOpen(true)}
         onOpenProjectDocs={() => setIsProjectDocsOpen(true)}
+        onOpenPresentationAccess={() => setIsPresentationAccessOpen(true)}
         activeTab={managementTab}
         onSelectTab={setManagementTab}
         noticesCount={notices.length}
@@ -1174,6 +1181,15 @@ export default function App() {
         isOpen={isProjectDocsOpen}
         onClose={() => setIsProjectDocsOpen(false)}
       />
+
+      {isPresentationAccessOpen && (
+        <React.Suspense fallback={null}>
+          <PresentationAccessModal
+            isOpen
+            onClose={() => setIsPresentationAccessOpen(false)}
+          />
+        </React.Suspense>
+      )}
 
       {/* Auth Modal (Login / Cadastro / Recuperação de Senha) */}
       <AuthModal

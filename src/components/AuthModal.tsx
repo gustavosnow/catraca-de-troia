@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   X, 
   Lock, 
@@ -51,6 +51,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onLoginSuccess,
   studentsDatabase = STUDENTS_DATABASE,
 }) => {
+  const loginIdentifierRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<'login' | 'register' | 'forgot_password'>(initialMode);
   const [role, setRole] = useState<'parent' | 'staff'>(initialRole);
 
@@ -95,6 +96,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoginError('');
     setLoginSuccess('');
   }, [allowedRole, initialMode, initialRole, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const focusTimer = window.setTimeout(() => loginIdentifierRef.current?.focus(), 0);
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && dismissible) onClose();
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [dismissible, isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -238,7 +252,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" onMouseDown={(event) => { if (dismissible && event.target === event.currentTarget) onClose(); }}>
       
       {/* Modal Card */}
       <div 
@@ -255,7 +269,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <CatracaTroiaLogo size={42} variant="dark" showText={false} />
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-base sm:text-lg font-black text-white tracking-tight">Catraca de Tróia</span>
+                <span id="auth-modal-title" className="text-base sm:text-lg font-black text-white tracking-tight">Catraca de Tróia</span>
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-orange-500/20 text-orange-400 border border-orange-500/30">
                   EMEF
                 </span>
@@ -295,6 +309,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     ? 'bg-orange-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-white'
                 }`}
+                aria-pressed={mode === 'login'}
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Entrar (Login)</span>
@@ -311,6 +326,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     ? 'bg-orange-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-white'
                 }`}
+                aria-pressed={mode === 'register'}
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>Criar Conta (Cadastro)</span>
@@ -325,14 +341,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <p className="text-xs text-amber-200">Sessão validada pela API local com contas fictícias. Cadastro, recuperação e integração com identidade institucional permanecem demonstrativos.</p>
           {/* Feedback Messages */}
           {loginError && (
-            <div className="p-3 rounded-xl bg-red-950/70 border border-red-800/60 text-red-300 text-xs flex items-center gap-2.5 animate-in fade-in">
+            <div role="alert" className="p-3 rounded-xl bg-red-950/70 border border-red-800/60 text-red-300 text-xs flex items-center gap-2.5 animate-in fade-in">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
               <span>{loginError}</span>
             </div>
           )}
 
           {loginSuccess && (
-            <div className="p-3 rounded-xl bg-emerald-950/70 border border-emerald-800/60 text-emerald-300 text-xs flex items-center gap-2.5 animate-in fade-in">
+            <div role="status" aria-live="polite" className="p-3 rounded-xl bg-emerald-950/70 border border-emerald-800/60 text-emerald-300 text-xs flex items-center gap-2.5 animate-in fade-in">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>{loginSuccess}</span>
             </div>
@@ -395,6 +411,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       {role === 'parent' ? <Phone className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
                     </div>
                     <input
+                      ref={loginIdentifierRef}
                       type="text"
                       autoComplete="username"
                       value={loginIdentifier}

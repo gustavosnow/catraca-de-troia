@@ -10,6 +10,8 @@
     "build": "vite build",
     "build:parent": "cross-env VITE_APP_TARGET=parent vite build",
     "preview": "vite preview",
+    "presentation:start": "npm run build && concurrently -k -n API,WEB -c yellow,cyan \"npm:api:device\" \"vite preview --port=3000 --host=0.0.0.0\"",
+    "presentation:tunnel": "cloudflared tunnel --url http://127.0.0.1:3000",
     "api:dev": "tsx watch server/index.ts",
     "api:device": "cross-env API_HOST=0.0.0.0 tsx watch server/index.ts",
     "api:start": "tsx server/index.ts",
@@ -35,6 +37,7 @@
     "express": "^4.21.2",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "qrcode.react": "^4.2.0",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "vite": "^6.2.3"

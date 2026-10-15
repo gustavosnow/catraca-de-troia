@@ -56,8 +56,19 @@ export default defineConfig(() => {
           start_url: '/#/responsaveis',
           scope: '/',
           display: 'standalone',
+          display_override: ['window-controls-overlay', 'standalone'],
+          orientation: 'portrait-primary',
           background_color: '#020617',
           theme_color: '#0f172a',
+          categories: ['education', 'utilities'],
+          shortcuts: [
+            {
+              name: 'Portal dos responsáveis',
+              short_name: 'Responsáveis',
+              url: '/#/responsaveis',
+              icons: [{ src: '/pwa-192.png', sizes: '192x192', type: 'image/png' }],
+            },
+          ],
           icons: [
             { src: '/pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
             { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
@@ -81,11 +92,15 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      allowedHosts: ['.trycloudflare.com'],
       proxy: {
         '/api': 'http://127.0.0.1:3001',
       },
     },
     preview: {
+      host: '0.0.0.0',
+      port: 3000,
+      allowedHosts: ['.trycloudflare.com'],
       proxy: {
         '/api': 'http://127.0.0.1:3001',
       },
