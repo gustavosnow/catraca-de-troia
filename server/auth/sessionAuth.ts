@@ -11,6 +11,7 @@ interface SessionRow {
   name: string;
   role: UserRole;
   expires_at: string;
+  account_status: 'ACTIVE' | 'BLOCKED';
 }
 
 export interface ActorRequest extends Request {
@@ -33,16 +34,19 @@ export const createSessionAuth = (
 
     const tokenHash = hashSessionToken(match[1]);
     const row = database.prepare(`
-      SELECT s.id AS session_id, u.id AS user_id, u.school_id, u.name, u.role, s.expires_at
+      SELECT s.id AS session_id, u.id AS user_id, u.school_id, u.name, u.role, s.expires_at,
+        u.account_status
       FROM auth_sessions s
       JOIN users u ON u.id = s.user_id
       WHERE s.token_hash = ? AND s.revoked_at IS NULL
     `).get(tokenHash) as SessionRow | undefined;
 
     const currentTime = now();
-    if (!row || row.expires_at <= currentTime) {
+    if (!row || row.expires_at <= currentTime || row.account_status !== 'ACTIVE') {
       if (row) database.prepare('UPDATE auth_sessions SET revoked_at = ? WHERE token_hash = ?').run(currentTime, tokenHash);
-      throw unauthorized('Sessão inválida ou expirada. Entre novamente.');
+      throw unauthorized(row?.account_status === 'BLOCKED'
+        ? 'Esta conta local foi bloqueada. Procure a gestão escolar.'
+        : 'Sessão inválida ou expirada. Entre novamente.');
     }
 
     database.prepare('UPDATE auth_sessions SET last_seen_at = ? WHERE token_hash = ?')

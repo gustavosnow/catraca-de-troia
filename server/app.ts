@@ -22,6 +22,10 @@ import { createAttachmentRouter } from './modules/attachments/routes';
 import { AttachmentService } from './modules/attachments/service';
 import { createAuditRouter } from './modules/audit/routes';
 import { AuditService } from './modules/audit/service';
+import { createAccountAdministrationRouter } from './modules/accounts/routes';
+import { AccountAdministrationService } from './modules/accounts/service';
+import { createNotificationDeliveryRouter } from './modules/notificationDelivery/routes';
+import { NotificationDeliveryService } from './modules/notificationDelivery/service';
 
 export interface AppOptions {
   /** @deprecated Mantido temporariamente para compatibilidade dos chamadores. */
@@ -95,6 +99,8 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
     createAttachmentRouter(new AttachmentService(database, options.now)),
   );
   app.use('/api/v1', createAuditRouter(new AuditService(database)));
+  app.use('/api/v1', createAccountAdministrationRouter(new AccountAdministrationService(database, options.now)));
+  app.use('/api/v1', createNotificationDeliveryRouter(new NotificationDeliveryService(database, options.now)));
   const disabledTransport: AccessEventSyncTransport = {
     send: async () => ({
       kind: 'retry',

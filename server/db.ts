@@ -16,7 +16,9 @@ const schema = `
     role TEXT NOT NULL CHECK (role IN ('GUARDIAN', 'STAFF_GATE', 'STAFF_COORDINATION', 'STAFF_DIRECTION')),
     email TEXT,
     phone TEXT,
-    functional_registry TEXT
+    functional_registry TEXT,
+    account_status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (account_status IN ('ACTIVE', 'BLOCKED')),
+    account_version INTEGER NOT NULL DEFAULT 1
   );
 
   CREATE TABLE IF NOT EXISTS auth_identities (
@@ -225,6 +227,25 @@ const schema = `
   CREATE INDEX IF NOT EXISTS idx_in_app_notifications_recipient
     ON in_app_notifications(recipient_user_id, created_at DESC);
 
+  CREATE TABLE IF NOT EXISTS notification_delivery_queue (
+    id TEXT PRIMARY KEY,
+    school_id TEXT NOT NULL REFERENCES schools(id),
+    notification_id TEXT NOT NULL UNIQUE REFERENCES in_app_notifications(id) ON DELETE CASCADE,
+    recipient_user_id TEXT NOT NULL REFERENCES users(id),
+    channel TEXT NOT NULL CHECK (channel IN ('PUSH_DEMO')),
+    state TEXT NOT NULL CHECK (state IN ('PENDING', 'DELIVERED', 'FAILED')),
+    attempt_count INTEGER NOT NULL DEFAULT 0,
+    available_at TEXT NOT NULL,
+    last_attempt_at TEXT,
+    delivered_at TEXT,
+    last_error TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_notification_delivery_due
+    ON notification_delivery_queue(school_id, state, available_at);
+
   CREATE INDEX IF NOT EXISTS idx_access_events_school_time
     ON access_events(school_id, occurred_at DESC);
   CREATE INDEX IF NOT EXISTS idx_access_events_student_time
@@ -382,9 +403,16 @@ export const createDatabase = (options: DatabaseOptions = {}) => {
   if (filename !== ':memory:') database.pragma('journal_mode = WAL');
   database.exec(schema);
   const userColumns = database.prepare('PRAGMA table_info(users)').all() as Array<{ name: string }>;
-  for (const column of ['email', 'phone', 'functional_registry']) {
+  const userMigrations = [
+    ['email', 'TEXT'],
+    ['phone', 'TEXT'],
+    ['functional_registry', 'TEXT'],
+    ['account_status', "TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (account_status IN ('ACTIVE', 'BLOCKED'))"],
+    ['account_version', 'INTEGER NOT NULL DEFAULT 1'],
+  ] as const;
+  for (const [column, definition] of userMigrations) {
     if (!userColumns.some((candidate) => candidate.name === column)) {
-      database.exec(`ALTER TABLE users ADD COLUMN ${column} TEXT`);
+      database.exec(`ALTER TABLE users ADD COLUMN ${column} ${definition}`);
     }
   }
   const accessEventColumns = database.prepare('PRAGMA table_info(access_events)').all() as Array<{ name: string }>;

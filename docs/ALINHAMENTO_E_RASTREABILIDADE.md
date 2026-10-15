@@ -12,9 +12,9 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 | 1.3.3 | Painel escolar | `Header`, `LiveStreamFeed`, cadastros, avisos, fila de justificativas, vínculos, auditoria e estado da sincronização | Fluxos integrados usam API local; cadastro geral de estudantes continua demonstrativo |
 | 1.3.4 | Portal responsivo dos responsáveis | `ParentAppView`, PWA, Capacitor Android/iOS e APK Android de depuração verificado | APK demonstrativo criado; teste em aparelho, API HTTPS remota, armazenamento seguro nativo, assinatura de distribuição, homologação e publicação permanecem pendentes |
 | 1.3.5 | Integração e acionamento | Duas catracas em `mockData.ts`, liberação manual visual | Pendente: hardware, operador validado e auditoria persistente |
-| 1.3.6 | Notificações | Caixa interna persistente para passagens, justificativas e avisos | Corte local funcional; pendentes canal externo aprovado, fila de entrega, retentativas e comprovação da meta |
+| 1.3.6 | Notificações | Caixa interna persistente e fila `PUSH_DEMO` com estados, falha, backoff e reenfileiramento | Corte demonstrativo funcional; pendentes canal externo aprovado, trabalhador/provedor real e comprovação da meta |
 | 1.3.7 | Gestão biométrica | Cadastro visual e ficha do aluno | Pendente: ciclo de dados biométricos e proteção institucional |
-| 1.3.8 | Autenticação e autorização | Login local, sessão opaca, APIs validando papéis/vínculos, revogação/revalidação auditada e limitação local de tentativas | Corte funcional testado com contas fictícias; integrar identidade institucional, HTTPS e controles distribuídos de produção |
+| 1.3.8 | Autenticação e autorização | Login separado por perfil, sessão opaca, APIs validando papéis/vínculos, bloqueio de conta, revogação de sessões e auditoria | Corte funcional testado com contas fictícias; integrar identidade institucional, HTTPS e controles distribuídos de produção |
 | 1.4.1 | Plano e testes automatizados/manuais | Typecheck, build e verificação dos cenários desta revisão | Não equivale à cobertura funcional/QA da EAP |
 | 1.4.2–1.4.3 | Carga, segurança e correções | Sem resultados de homologação | Pendente: plano, execução, retestes e relatório |
 | 1.5.1 | Servidor, backup e continuidade local | Fila SQLite, retentativas, receptor idempotente, backup verificado e restauração testada em arquivo novo | Pendente: implantação em servidor escolar/destino, agenda e retenção operacional, monitoramento e teste real de desconexão/restauração |
@@ -48,13 +48,15 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 - Coordenação/Direção consultam vínculos existentes, revogam com motivo e controle de versão e podem revalidar após nova solicitação. A revogação deixa de autorizar o responsável nas chamadas seguintes; a interface do responsável atualiza os dependentes em até cinco segundos enquanto estiver conectada. A visão de auditoria é restrita e não entrega os estados internos gravados no log.
 - QR da carteirinha é ilustrativo; tokens seguros, validade e procedimento de contingência exigem especificação e aprovação.
 - WhatsApp/push, antivírus, anexos de avisos, câmeras e biometria não estão conectados a serviços reais. Persistência e auditoria existem nos cortes locais de justificativas, anexos locais, eventos, avisos e notificações internas; a fila de eventos existe, mas o destino remoto e a sincronização implantada continuam pendentes.
+- As entradas `#/responsaveis` e `#/escola` estão separadas por perfil; a troca encerra a sessão anterior. Coordenação/Direção administram o estado das contas fictícias e revogam sessões remotas com motivo e auditoria.
+- A fila `PUSH_DEMO` persiste uma entrega para cada nova notificação interna e demonstra falha, backoff e reenfileiramento. Ela não envia push/WhatsApp nem comprova entrega ao aparelho.
 - Nenhum resultado de acurácia, latência, disponibilidade, segurança ou carga foi medido.
 
 ## Próxima sequência de desenvolvimento
 
-1. Completar a administração local de contas e sessões fictícias, incluindo bloqueio/desbloqueio, encerramento remoto de sessões e auditoria, sem confundir esse corte com identidade institucional.
-2. Implantar e observar a fila/sincronização já implementada entre servidor escolar e destino remoto, incluindo teste real de desconexão, conflito, backup e restauração.
-3. Modelar uma fila demonstrativa de entrega de notificações, com estados e retentativas, mantendo o canal externo simulado.
-4. Definir agenda, retenção, destino protegido e teste operacional dos backups; definir criptografia e verificação antimalware institucionais.
-5. Instalar o APK de depuração em emulador/aparelho, executar o roteiro móvel e registrar evidências; depois confirmar identificador institucional, estratégia de distribuição e executar iOS em macOS/Xcode.
+1. Implantar e observar a fila/sincronização já implementada entre servidor escolar e destino remoto, incluindo teste real de desconexão, conflito, backup e restauração.
+2. Definir agenda, retenção, destino protegido e teste operacional dos backups; definir criptografia e verificação antimalware institucionais.
+3. Refinar acessibilidade, estados vazios/erro e roteiro de aceite dos dois portais na interface web responsiva.
+4. Quando a interface estiver estabilizada, gerar uma única nova variante do APK, executar o roteiro móvel e registrar evidências; depois confirmar identificador institucional, distribuição e iOS em macOS/Xcode.
+5. Integrar um canal externo aprovado e trabalhador real à fila demonstrativa somente se houver decisão institucional.
 6. Integrar hardware e reconhecimento facial, executar homologação e produzir evidências da EAP.

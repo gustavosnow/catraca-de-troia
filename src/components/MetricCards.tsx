@@ -4,7 +4,6 @@ import {
   UserCheck, 
   Activity, 
   AlertTriangle, 
-  TrendingUp, 
   ArrowUpRight, 
   ShieldAlert,
   Clock,
@@ -14,6 +13,7 @@ import {
 interface MetricCardsProps {
   totalStudents: number;
   entriesToday: number;
+  studentsOnCampus: number;
   presencePercentage: number;
   alertsCount: number;
   onOpenAlerts: () => void;
@@ -23,6 +23,7 @@ interface MetricCardsProps {
 export const MetricCards: React.FC<MetricCardsProps> = ({
   totalStudents,
   entriesToday,
+  studentsOnCampus,
   presencePercentage,
   alertsCount,
   onOpenAlerts,
@@ -51,11 +52,11 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
         </div>
 
         <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-700 font-semibold">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold">
-            <CheckCircle2 className="w-3 h-3" /> 100% ativos
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200 text-[11px] font-bold">
+            <CheckCircle2 className="w-3 h-3" /> Base fictícia local
           </span>
           <span className="text-slate-300">•</span>
-          <span className="text-slate-600 font-medium">3 turnos regulares</span>
+          <span className="text-slate-600 font-medium">dados demonstrativos</span>
         </div>
       </div>
 
@@ -63,7 +64,7 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:border-orange-300 transition-all group">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            Entradas Hoje
+            Entradas Registradas
           </span>
           <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center transition-colors group-hover:bg-orange-100">
             <UserCheck className="w-5 h-5" />
@@ -74,18 +75,18 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
           <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
             {entriesToday.toLocaleString('pt-BR')}
           </span>
-          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center">
-            <TrendingUp className="w-3.5 h-3.5 mr-0.5" />
-            +8.4%
+          <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md flex items-center">
+            <Activity className="w-3.5 h-3.5 mr-0.5" />
+            API local
           </span>
         </div>
 
         <div className="mt-3 flex items-center justify-between text-xs text-slate-600 font-medium">
           <span className="flex items-center gap-1">
             <Clock className="w-3.5 h-3.5 text-slate-400" />
-            Pico: 07:15 - 07:45
+            Eventos persistidos
           </span>
-          <span className="font-bold text-slate-800">70 c/ tolerância</span>
+          <span className="font-bold text-slate-800">simulação</span>
         </div>
       </div>
 
@@ -118,8 +119,8 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
             ></div>
           </div>
           <div className="mt-1.5 flex justify-between text-[11px] text-slate-600 font-semibold">
-            <span>{entriesToday} no campus</span>
-            <span className="text-slate-400">{Math.max(0, totalStudents - entriesToday)} ausentes</span>
+            <span>{studentsOnCampus} no campus</span>
+            <span className="text-slate-400">{Math.max(0, totalStudents - studentsOnCampus)} sem presença atual</span>
           </div>
         </div>
       </div>

@@ -18,16 +18,28 @@ const insertForRecipient = (
   database: AppDatabase,
   recipientUserId: string,
   input: NotificationInput,
-) => database.prepare(`
-  INSERT OR IGNORE INTO in_app_notifications (
-    id, school_id, recipient_user_id, type, title, message, student_id,
-    context_label, source_type, source_id, created_at
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`).run(
-  randomUUID(), input.schoolId, recipientUserId, input.type, input.title,
-  input.message, input.studentId || null, input.contextLabel || null,
-  input.sourceType, input.sourceId, input.createdAt,
-);
+) => {
+  const notificationId = randomUUID();
+  const inserted = database.prepare(`
+    INSERT OR IGNORE INTO in_app_notifications (
+      id, school_id, recipient_user_id, type, title, message, student_id,
+      context_label, source_type, source_id, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    notificationId, input.schoolId, recipientUserId, input.type, input.title,
+    input.message, input.studentId || null, input.contextLabel || null,
+    input.sourceType, input.sourceId, input.createdAt,
+  );
+  if (inserted.changes === 1) {
+    database.prepare(`
+      INSERT INTO notification_delivery_queue (
+        id, school_id, notification_id, recipient_user_id, channel, state,
+        available_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, 'PUSH_DEMO', 'PENDING', ?, ?, ?)
+    `).run(randomUUID(), input.schoolId, notificationId, recipientUserId, input.createdAt, input.createdAt, input.createdAt);
+  }
+  return inserted;
+};
 
 export const notifyUser = (
   database: AppDatabase,
@@ -62,4 +74,3 @@ export const notifySchoolGuardians = (
     0,
   );
 };
-

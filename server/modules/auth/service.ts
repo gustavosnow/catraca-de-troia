@@ -21,6 +21,7 @@ interface UserRow {
   email: string | null;
   phone: string | null;
   functional_registry: string | null;
+  account_status: 'ACTIVE' | 'BLOCKED';
 }
 
 const normalizeIdentifier = (value: string) => {
@@ -116,11 +117,12 @@ export class AuthService {
   private findUser(userId: string) {
     const row = this.database.prepare(`
       SELECT u.id, u.school_id, schools.name AS school_name, u.name, u.role,
-        u.email, u.phone, u.functional_registry
+        u.email, u.phone, u.functional_registry, u.account_status
       FROM users u JOIN schools ON schools.id = u.school_id
       WHERE u.id = ?
     `).get(userId) as UserRow | undefined;
     if (!row) throw unauthorized('Usuário da sessão não está mais disponível.');
+    if (row.account_status !== 'ACTIVE') throw unauthorized('Esta conta local está bloqueada. Procure a gestão escolar.');
     return mapUser(this.database, row);
   }
 }

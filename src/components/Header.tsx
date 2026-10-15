@@ -13,7 +13,6 @@ import {
   VolumeX, 
   Clock, 
   ChevronDown,
-  UserCheck,
   BadgeCheck,
   LogOut,
   ShieldCheck,
@@ -38,7 +37,6 @@ interface HeaderProps {
   pendingJustificationsCount: number;
   onSwitchToParentApp: () => void;
   currentStaffUser?: AuthUser;
-  onOpenAuthModal?: (mode?: 'login' | 'register', role?: 'parent' | 'staff') => void;
   onLogout?: () => void;
 }
 
@@ -54,7 +52,6 @@ export const Header: React.FC<HeaderProps> = ({
   pendingJustificationsCount,
   onSwitchToParentApp,
   currentStaffUser,
-  onOpenAuthModal,
   onLogout,
   canViewAudit,
 }) => {
@@ -419,7 +416,7 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-slate-400">Catracas Gerenciadas:</span>
-                      <span className="font-semibold text-emerald-400">2 Unidades Online</span>
+                      <span className="font-semibold text-amber-300">2 unidades simuladas</span>
                     </div>
                   </div>
 
@@ -433,40 +430,18 @@ export const Header: React.FC<HeaderProps> = ({
                       <span className="text-[10px] text-emerald-400 font-mono">Meta: disponibilidade ≥ 99%</span>
                     </div>
 
-                    {onOpenAuthModal && (
+                    {onLogout && (
                       <div className="pt-1 space-y-1 border-t border-slate-800">
                         <button
                           onClick={() => {
                             setShowProfileMenu(false);
-                            onOpenAuthModal('register', 'staff');
+                            onLogout();
                           }}
-                          className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-orange-300 hover:bg-orange-600/20 flex items-center gap-2 cursor-pointer transition-colors"
+                          className="w-full text-left px-3 py-2 rounded-xl text-xs text-red-300 hover:bg-red-950/40 flex items-center gap-2 cursor-pointer transition-colors"
                         >
-                          <span className="w-4 h-4 rounded-full bg-orange-600 text-white flex items-center justify-center text-[10px] font-black">+</span>
-                          <span>Cadastrar Novo Membro da Equipe</span>
+                          <LogOut className="w-4 h-4" />
+                          <span>Encerrar ou trocar conta</span>
                         </button>
-                        <button
-                          onClick={() => {
-                            setShowProfileMenu(false);
-                            onOpenAuthModal('login', 'staff');
-                          }}
-                          className="w-full text-left px-3 py-2 rounded-xl text-xs text-slate-300 hover:bg-slate-800 flex items-center gap-2 cursor-pointer transition-colors"
-                        >
-                          <UserCheck className="w-4 h-4 text-slate-400" />
-                          <span>Trocar Usuário / Fazer Login</span>
-                        </button>
-                        {onLogout && (
-                          <button
-                            onClick={() => {
-                              setShowProfileMenu(false);
-                              onLogout();
-                            }}
-                            className="w-full text-left px-3 py-2 rounded-xl text-xs text-red-300 hover:bg-red-950/40 flex items-center gap-2 cursor-pointer transition-colors"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            <span>Encerrar sessão</span>
-                          </button>
-                        )}
                       </div>
                     )}
                   </div>

@@ -71,7 +71,6 @@ interface ParentAppViewProps {
   guardiansList?: ParentAccount[];
   currentGuardianExternal?: ParentAccount;
   onSelectGuardianExternal?: (guardian: ParentAccount) => void;
-  onOpenAuthModal?: (mode?: 'login' | 'register') => void;
   studentsList?: Student[];
   sharedAccessLogs: AccessLog[];
   sharedJustifications: AbsenceJustification[];
@@ -106,7 +105,6 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   guardiansList = PARENT_ACCOUNTS,
   currentGuardianExternal,
   onSelectGuardianExternal,
-  onOpenAuthModal,
   studentsList = STUDENTS_DATABASE,
   sharedAccessLogs,
   sharedJustifications,
@@ -245,7 +243,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             <h1 className="text-xl font-bold">Nenhum estudante vinculado</h1>
             <p className="mt-2 text-sm text-slate-300">Solicite o vínculo abaixo. Nenhum registro estudantil é liberado antes da aprovação escolar.</p>
           </div>
-          <button className="shrink-0 text-xs underline" onClick={onLogout || (() => onOpenAuthModal?.('login'))}>Sair</button>
+          <button className="shrink-0 text-xs underline" onClick={onLogout}>Sair</button>
         </div>
         <GuardianLinkRequests
           requests={linkRequests}
@@ -370,7 +368,6 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             onOpenNotifications={() => setIsNotificationsOpen(true)}
             onOpenDigitalBadge={() => setIsBadgeModalOpen(true)}
             activeTab={activeTab}
-            onOpenAuthModal={onOpenAuthModal}
             onLogout={onLogout}
           />
 

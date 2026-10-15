@@ -17,6 +17,8 @@ const typeLabels: Record<string, string> = {
   GUARDIAN_STUDENT_LINK: 'Vínculo responsável-estudante',
   JUSTIFICATION: 'Justificativa',
   SCHOOL_NOTICE: 'Comunicado',
+  USER_ACCOUNT: 'Conta local',
+  NOTIFICATION_DELIVERY: 'Entrega demonstrativa',
 };
 
 export const AuditLogPanel: React.FC<AuditLogPanelProps> = ({ records, state, error, onRefresh }) => (

@@ -33,6 +33,9 @@ interface AuthModalProps {
   onClose: () => void;
   initialMode?: 'login' | 'register';
   initialRole?: 'parent' | 'staff';
+  allowedRole?: 'parent' | 'staff';
+  dismissible?: boolean;
+  onSwitchAccess?: () => void;
   onLoginSuccess: (user: AuthUser) => void;
   studentsDatabase?: Student[];
 }
@@ -42,6 +45,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   initialMode = 'login',
   initialRole = 'parent',
+  allowedRole,
+  dismissible = true,
+  onSwitchAccess,
   onLoginSuccess,
   studentsDatabase = STUDENTS_DATABASE,
 }) => {
@@ -85,10 +91,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     setMode(initialMode);
-    setRole(initialRole);
+    setRole(allowedRole ?? initialRole);
     setLoginError('');
     setLoginSuccess('');
-  }, [initialMode, initialRole, isOpen]);
+  }, [allowedRole, initialMode, initialRole, isOpen]);
 
   if (!isOpen) return null;
 
@@ -255,20 +261,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400 font-medium">
-                {mode === 'login' && 'Autenticação de Acesso Escolar'}
+                {mode === 'login' && (role === 'parent' ? 'Acesso de Pais e Responsáveis' : 'Acesso da Equipe Escolar')}
                 {mode === 'register' && 'Novo Cadastro no Sistema'}
                 {mode === 'forgot_password' && 'Recuperação de Senha Segura'}
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Fechar"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {dismissible && (
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Fechar"
+              aria-label="Fechar autenticação"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Navigation Tabs (Login / Cadastro) */}
@@ -335,8 +344,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {mode === 'login' && (
             <div className="space-y-4">
               
-              {/* Role Switcher (Pais vs Equipe) */}
-              <div className="flex items-center gap-2">
+              {/* O acesso é fixado pela rota; o seletor existe apenas em usos genéricos. */}
+              {!allowedRole && <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setRole('parent')}
@@ -362,7 +371,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <School className="w-3.5 h-3.5 text-orange-400" />
                   <span>Gestão Escolar & Portaria</span>
                 </button>
-              </div>
+              </div>}
+
+              {allowedRole && (
+                <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 px-3 py-2.5 text-xs text-slate-200 flex items-center gap-2">
+                  {role === 'parent' ? <Smartphone className="w-4 h-4 text-orange-400" /> : <School className="w-4 h-4 text-orange-400" />}
+                  <span>
+                    {role === 'parent'
+                      ? 'Área exclusiva para pais e responsáveis vinculados.'
+                      : 'Área exclusiva para equipe escolar e portaria.'}
+                  </span>
+                </div>
+              )}
 
               {/* Formulário de Login */}
               <form onSubmit={handleLoginSubmit} className="space-y-3.5">
@@ -376,6 +396,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </div>
                     <input
                       type="text"
+                      autoComplete="username"
                       value={loginIdentifier}
                       onChange={(e) => setLoginIdentifier(e.target.value)}
                       placeholder={role === 'parent' ? 'Ex: (11) 98765-4321 ou claudia@gmail.com' : 'Ex: carlos.mendes@emef.educacao.sp.gov.br'}
@@ -401,6 +422,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </div>
                     <input
                       type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       placeholder="••••••••"
@@ -431,7 +453,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="submit"
                   disabled={isAuthenticating}
-                  className="w-full py-2.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs shadow-lg shadow-orange-950/40 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-500 disabled:opacity-60 disabled:cursor-wait text-white font-extrabold text-xs shadow-lg shadow-orange-950/40 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
                 >
                   <LogIn className="w-4 h-4" />
                   <span>{isAuthenticating ? 'Validando…' : 'Entrar no Sistema'}</span>
@@ -445,51 +467,60 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <span>Senha: Troia@2026</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
+                  {role === 'parent' && <button
                     type="button"
                     onClick={() => handleQuickDemoLogin('claudia')}
                     className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors cursor-pointer"
                   >
                     <div className="text-xs font-bold text-white truncate">Cláudia Mendes</div>
                     <div className="text-[10px] text-slate-400 truncate">Mãe de 2 alunos (Ana e Arthur)</div>
-                  </button>
+                  </button>}
 
-                  <button
+                  {role === 'parent' && <button
                     type="button"
                     onClick={() => handleQuickDemoLogin('rodrigo')}
                     className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors cursor-pointer"
                   >
                     <div className="text-xs font-bold text-white truncate">Rodrigo Oliveira</div>
                     <div className="text-[10px] text-slate-400 truncate">Pai de Gabriel e Sophia</div>
-                  </button>
+                  </button>}
 
-                  <button
+                  {role === 'parent' && <button
                     type="button"
                     onClick={() => handleQuickDemoLogin('sem_vinculo')}
                     className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors cursor-pointer"
                   >
                     <div className="text-xs font-bold text-white truncate">Responsável sem vínculo</div>
                     <div className="text-[10px] text-amber-400 font-medium truncate">Testar solicitação escolar</div>
-                  </button>
+                  </button>}
 
-                  <button
+                  {role === 'staff' && <button
                     type="button"
                     onClick={() => handleQuickDemoLogin('carlos')}
                     className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors cursor-pointer"
                   >
                     <div className="text-xs font-bold text-white truncate">Carlos Mendes</div>
                     <div className="text-[10px] text-orange-400 font-medium truncate">Inspetor & Operador</div>
-                  </button>
+                  </button>}
 
-                  <button
+                  {role === 'staff' && <button
                     type="button"
                     onClick={() => handleQuickDemoLogin('mariana')}
                     className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors cursor-pointer"
                   >
                     <div className="text-xs font-bold text-white truncate">Profª Mariana Costa</div>
                     <div className="text-[10px] text-orange-400 font-medium truncate">Coordenação Pedagógica</div>
-                  </button>
+                  </button>}
                 </div>
+                {onSwitchAccess && (
+                  <button
+                    type="button"
+                    onClick={onSwitchAccess}
+                    className="w-full text-center text-xs font-semibold text-slate-300 hover:text-orange-300 transition-colors"
+                  >
+                    {role === 'parent' ? 'Acessar como equipe escolar' : 'Acessar como pai ou responsável'}
+                  </button>
+                )}
               </div>
 
             </div>
@@ -501,8 +532,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {mode === 'register' && (
             <div className="space-y-4">
               
-              {/* Role Switcher para Cadastro */}
-              <div className="flex items-center gap-2">
+              {/* O cadastro demonstrativo segue o perfil definido pela rota. */}
+              {!allowedRole && <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setRole('parent')}
@@ -528,7 +559,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <Building2 className="w-3.5 h-3.5 text-orange-400" />
                   <span>Equipe Escolar / Portaria</span>
                 </button>
-              </div>
+              </div>}
 
               {/* FORM CADASTRO: RESPONSÁVEL */}
               {role === 'parent' && (

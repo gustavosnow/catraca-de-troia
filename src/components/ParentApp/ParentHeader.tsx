@@ -25,7 +25,6 @@ interface ParentHeaderProps {
   onOpenNotifications: () => void;
   onOpenDigitalBadge: () => void;
   activeTab: 'home' | 'history' | 'notices';
-  onOpenAuthModal?: (mode?: 'login' | 'register') => void;
   onLogout?: () => void;
 }
 
@@ -40,7 +39,6 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
   onOpenNotifications,
   onOpenDigitalBadge,
   activeTab,
-  onOpenAuthModal,
   onLogout,
 }) => {
 
@@ -228,10 +226,10 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
                 <button
                   onClick={() => setGuardianDropdownOpen(!guardianDropdownOpen)}
                   className="text-[11px] text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1 cursor-pointer py-0.5"
-                  title="Trocar perfil de responsável"
+                  title="Abrir opções da conta"
                 >
                   <UserCheck className="w-3 h-3 text-orange-400" />
-                  <span>Trocar Responsável</span>
+                  <span>Minha conta</span>
                   <ChevronDown className="w-3 h-3" />
                 </button>
 
@@ -274,31 +272,6 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
                         })}
                       </div>
 
-                      {/* Ações de Cadastro e Login */}
-                      {onOpenAuthModal && (
-                        <div className="pt-2 mt-2 border-t border-slate-800 space-y-1">
-                          <button
-                            onClick={() => {
-                              onOpenAuthModal('register');
-                              setGuardianDropdownOpen(false);
-                            }}
-                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold text-orange-300 hover:bg-orange-600/20 flex items-center gap-2 cursor-pointer transition-colors"
-                          >
-                            <span className="w-4 h-4 rounded-full bg-orange-600/40 text-orange-400 flex items-center justify-center text-[10px]">+</span>
-                            <span>Cadastrar Novo Responsável</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              onOpenAuthModal('login');
-                              setGuardianDropdownOpen(false);
-                            }}
-                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:bg-slate-800 flex items-center gap-2 cursor-pointer transition-colors"
-                          >
-                            <UserCheck className="w-3.5 h-3.5 text-slate-400" />
-                            <span>Entrar com Outra Conta</span>
-                          </button>
-                        </div>
-                      )}
                       {onLogout && (
                         <button
                           onClick={() => {
@@ -308,7 +281,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
                           className="mt-1 w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-red-300 hover:bg-red-950/40 flex items-center gap-2 cursor-pointer transition-colors"
                         >
                           <LogOut className="w-3.5 h-3.5" />
-                          <span>Encerrar sessão</span>
+                          <span>Encerrar ou trocar conta</span>
                         </button>
                       )}
                     </div>

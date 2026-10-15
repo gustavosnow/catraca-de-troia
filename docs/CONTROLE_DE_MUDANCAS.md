@@ -171,3 +171,11 @@ Solicitação: corrigir o download que apareceu como pasta no celular.
 Ajustes: o servidor de desenvolvimento/preview passou a interceptar somente o nome conhecido do APK de aparelho e enviá-lo com tipo `application/vnd.android.package-archive`, disposição de anexo, tamanho e ausência de cache. O download foi repetido pelo endereço LAN e seu SHA-256 coincidiu com o artefato original.
 
 Limites: a rota existe apenas enquanto o servidor local estiver ativo e o arquivo ignorado estiver em `public/`. APK permanece exclusivo de Android; iOS não instala esse formato.
+
+## MC-023 — Separação dos acessos, gestão de contas e fila demonstrativa de entrega
+
+Solicitação: aprimorar os dois portais antes de gerar outro APK, corrigindo a autenticação sobreposta, separando os acessos por perfil e avançando os incrementos funcionais gratuitos já previstos.
+
+Ajustes: cada rota de entrada passou a aceitar exclusivamente o perfil correspondente e a exibir somente suas contas demonstrativas. O build móvel permanece restrito a responsáveis. O modal fecha no sucesso, a troca entre portais encerra a sessão anterior e os menus deixaram de abrir login ou cadastro fictício sobre uma sessão ativa. Coordenação/Direção ganharam administração local de contas fictícias, com busca, bloqueio/desbloqueio, revogação remota de sessões, controle otimista, justificativa obrigatória e auditoria. Contas bloqueadas perdem as sessões imediatamente e não autenticam até o desbloqueio. Cada nova notificação interna também cria, na mesma transação, uma entrega `PUSH_DEMO` persistente; o painel permite exercitar sucesso, indisponibilidade, backoff e reenfileiramento, sempre identificando que nenhum canal externo está conectado. Os indicadores do painel deixaram de somar bases fixas e percentuais inventados, passando a derivar somente estudantes e eventos demonstrativos carregados. Foram adicionados testes de autorização, bloqueio, revogação e retentativa.
+
+Limites: contas, credenciais e entregas continuam fictícias. Não há identidade institucional, recuperação real de senha, MFA, push nativo, WhatsApp, comprovante de entrega ao aparelho ou processamento automático por provedor externo. A execução móvel ficou deliberadamente adiada: este ciclo é validado na interface web responsiva, sem gerar um novo APK.

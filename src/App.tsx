@@ -15,6 +15,8 @@ import { AuthModal } from './components/AuthModal';
 import { JustificationsManager } from './components/JustificationsManager';
 import { LinkRequestsManager } from './components/LinkRequestsManager';
 import { AuditLogPanel } from './components/AuditLogPanel';
+import { AccountsAdministrationPanel } from './components/AccountsAdministrationPanel';
+import { NotificationDeliveryPanel } from './components/NotificationDeliveryPanel';
 import { 
   STUDENTS_DATABASE, 
   INITIAL_TURNSTILES, 
@@ -35,7 +37,11 @@ import { communicationsApi } from './services/communicationsApi';
 import { useConnectivity } from './hooks/useConnectivity';
 import { linkRequestsApi } from './services/linkRequestsApi';
 import { auditApi } from './services/auditApi';
+import { accountsApi } from './services/accountsApi';
+import { notificationDeliveryApi } from './services/notificationDeliveryApi';
 import type { AuditLogRecord } from '../shared/contracts/audit';
+import type { ManagedAccount } from '../shared/contracts/accountAdministration';
+import type { NotificationDeliverySnapshot } from '../shared/contracts/notificationDelivery';
 import type { AccessEventSyncStatus } from '../shared/contracts/accessEventSync';
 import type {
   GuardianLinkRequestRecord,
@@ -140,13 +146,6 @@ export default function App() {
   const [turnstiles, setTurnstiles] = useState<Turnstile[]>(INITIAL_TURNSTILES);
   const [alerts, setAlerts] = useState<SecurityAlert[]>(INITIAL_ALERTS);
 
-  // Helper to open AuthModal
-  const openAuthModal = (mode: 'login' | 'register' = 'login', role: 'parent' | 'staff' = 'parent') => {
-    setAuthModalMode(mode);
-    setAuthModalRole(role);
-    setIsAuthModalOpen(true);
-  };
-
   // Handle successful login
   const handleLoginSuccess = (user: AuthUser) => {
     if (isParentOnlyBuild && user.role === 'staff') {
@@ -157,6 +156,8 @@ export default function App() {
       return;
     }
     setAuthenticatedUser(user);
+    setIsAuthModalOpen(false);
+    setAuthModalMode('login');
     if (user.role === 'parent') {
       let matchedGuardian = guardiansList.find(g => g.id === user.id);
       if (!matchedGuardian) {
@@ -185,6 +186,15 @@ export default function App() {
     setIsAuthModalOpen(true);
   };
 
+  const handleSwitchAccess = async (target: ViewMode) => {
+    await authApi.logout().catch(() => authApi.clear());
+    setAuthenticatedUser(null);
+    setAuthModalMode('login');
+    setAuthModalRole(target === 'parent_app' ? 'parent' : 'staff');
+    navigateToView(target);
+    setIsAuthModalOpen(true);
+  };
+
   
   // Shared Notices and Notifications across Management and Parent App
   const [notices, setNotices] = useState<SchoolNotice[]>([]);
@@ -204,6 +214,13 @@ export default function App() {
   const [auditState, setAuditState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
   const [auditError, setAuditError] = useState<string>();
   const [auditRefreshKey, setAuditRefreshKey] = useState(0);
+  const [managedAccounts, setManagedAccounts] = useState<ManagedAccount[]>([]);
+  const [accountsState, setAccountsState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
+  const [accountsError, setAccountsError] = useState<string>();
+  const [deliverySnapshot, setDeliverySnapshot] = useState<NotificationDeliverySnapshot>();
+  const [deliveryState, setDeliveryState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
+  const [deliveryError, setDeliveryError] = useState<string>();
+  const [deliveryBusy, setDeliveryBusy] = useState(false);
 
   const canReviewLinks = authenticatedUser?.role === 'staff'
     && ['Coordenação Pedagógica', 'Direção Escolar'].includes(currentStaffUser.staffRole || '');
@@ -266,18 +283,84 @@ export default function App() {
     }
     let active = true;
     setAuditState('loading');
-    auditApi.list().then((records) => {
+    setAccountsState('loading');
+    setDeliveryState('loading');
+    Promise.allSettled([auditApi.list(), accountsApi.list(), notificationDeliveryApi.snapshot()]).then(([auditResult, accountsResult, deliveryResult]) => {
       if (!active) return;
-      setAuditRecords(records);
-      setAuditState('persistent');
-      setAuditError(undefined);
-    }).catch((error: unknown) => {
-      if (!active) return;
-      setAuditState('unavailable');
-      setAuditError(error instanceof Error ? error.message : 'Auditoria indisponível.');
+      if (auditResult.status === 'fulfilled') {
+        setAuditRecords(auditResult.value);
+        setAuditState('persistent');
+        setAuditError(undefined);
+      } else {
+        setAuditState('unavailable');
+        setAuditError(auditResult.reason instanceof Error ? auditResult.reason.message : 'Auditoria indisponível.');
+      }
+      if (accountsResult.status === 'fulfilled') {
+        setManagedAccounts(accountsResult.value);
+        setAccountsState('persistent');
+        setAccountsError(undefined);
+      } else {
+        setAccountsState('unavailable');
+        setAccountsError(accountsResult.reason instanceof Error ? accountsResult.reason.message : 'Contas indisponíveis.');
+      }
+      if (deliveryResult.status === 'fulfilled') {
+        setDeliverySnapshot(deliveryResult.value);
+        setDeliveryState('persistent');
+        setDeliveryError(undefined);
+      } else {
+        setDeliveryState('unavailable');
+        setDeliveryError(deliveryResult.reason instanceof Error ? deliveryResult.reason.message : 'Fila de entrega indisponível.');
+      }
     });
     return () => { active = false; };
   }, [authenticatedUser, auditRefreshKey, canReviewLinks, isOnline, managementTab]);
+
+  const handleUpdateAccountStatus = async (account: ManagedAccount, reason: string) => {
+    const updated = await accountsApi.updateStatus(account.id, {
+      status: account.status === 'ACTIVE' ? 'BLOCKED' : 'ACTIVE',
+      expectedVersion: account.version,
+      reason,
+    });
+    setManagedAccounts((current) => current.map((item) => item.id === updated.id ? updated : item));
+    setAuditRefreshKey((current) => current + 1);
+  };
+
+  const handleRevokeAccountSessions = async (account: ManagedAccount, reason: string) => {
+    await accountsApi.revokeSessions(account.id, { reason });
+    setManagedAccounts((current) => current.map((item) => item.id === account.id ? { ...item, activeSessionCount: 0 } : item));
+    setAuditRefreshKey((current) => current + 1);
+  };
+
+  const handleProcessDeliveries = async (outcome: 'DELIVER' | 'FAIL_RETRY') => {
+    setDeliveryBusy(true);
+    setDeliveryError(undefined);
+    try {
+      await notificationDeliveryApi.process({ outcome });
+      setDeliverySnapshot(await notificationDeliveryApi.snapshot());
+      setDeliveryState('persistent');
+      setAuditRefreshKey((current) => current + 1);
+    } catch (error) {
+      setDeliveryState('unavailable');
+      setDeliveryError(error instanceof Error ? error.message : 'Não foi possível processar a fila.');
+    } finally {
+      setDeliveryBusy(false);
+    }
+  };
+
+  const handleRetryDeliveries = async () => {
+    setDeliveryBusy(true);
+    try {
+      await notificationDeliveryApi.retry();
+      setDeliverySnapshot(await notificationDeliveryApi.snapshot());
+      setDeliveryState('persistent');
+      setDeliveryError(undefined);
+    } catch (error) {
+      setDeliveryState('unavailable');
+      setDeliveryError(error instanceof Error ? error.message : 'Não foi possível reenfileirar as entregas.');
+    } finally {
+      setDeliveryBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (!authenticatedUser) return;
@@ -767,9 +850,14 @@ export default function App() {
   ].filter((value): value is string => Boolean(value)).sort().at(-1);
 
   // Dynamic calculations for KPI cards
-  const totalRegistered = 1240;
-  const entriesCount = logs.length + 887; // Base count + live session items
-  const presenceRate = Math.min(100, (entriesCount / totalRegistered) * 100);
+  const totalRegistered = students.length;
+  const entriesCount = logs.filter((log) => log.direction === 'entry').length;
+  const latestDirectionByStudent = new Map<string, AccessDirection>();
+  [...logs]
+    .sort((left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime())
+    .forEach((log) => latestDirectionByStudent.set(log.studentId, log.direction));
+  const studentsOnCampus = [...latestDirectionByStudent.values()].filter((direction) => direction === 'entry').length;
+  const presenceRate = totalRegistered === 0 ? 0 : Math.min(100, (studentsOnCampus / totalRegistered) * 100);
   const activeAlertsCount = alerts.filter(a => !a.resolved).length;
 
   if (isRestoringSession) {
@@ -785,6 +873,9 @@ export default function App() {
         onClose={() => undefined}
         initialMode="login"
         initialRole={isParentOnlyBuild || viewMode === 'parent_app' ? 'parent' : 'staff'}
+        allowedRole={isParentOnlyBuild || viewMode === 'parent_app' ? 'parent' : 'staff'}
+        dismissible={false}
+        onSwitchAccess={isParentOnlyBuild ? undefined : () => navigateToView(viewMode === 'parent_app' ? 'management_dashboard' : 'parent_app')}
         onLoginSuccess={handleLoginSuccess}
         studentsDatabase={students}
       />
@@ -799,6 +890,9 @@ export default function App() {
         onClose={() => navigateToView(authenticatedUser.role === 'parent' ? 'parent_app' : 'management_dashboard')}
         initialMode="login"
         initialRole={requiredRole}
+        allowedRole={requiredRole}
+        dismissible
+        onSwitchAccess={() => navigateToView(authenticatedUser.role === 'parent' ? 'parent_app' : 'management_dashboard')}
         onLoginSuccess={handleLoginSuccess}
         studentsDatabase={students}
       />
@@ -809,7 +903,7 @@ export default function App() {
     return (
       <>
         <ParentAppView 
-          onSwitchToManagement={isParentOnlyBuild ? undefined : () => navigateToView('management_dashboard')}
+          onSwitchToManagement={isParentOnlyBuild ? undefined : () => void handleSwitchAccess('management_dashboard')}
           sharedNotices={notices}
           onUpdateSharedNotices={setNotices}
           sharedNotifications={notifications}
@@ -819,7 +913,6 @@ export default function App() {
           guardiansList={[currentGuardian]}
           currentGuardianExternal={currentGuardian}
           onSelectGuardianExternal={setCurrentGuardian}
-          onOpenAuthModal={(mode) => openAuthModal(mode, 'parent')}
           studentsList={students}
           sharedAccessLogs={logs}
           sharedJustifications={justifications}
@@ -845,6 +938,7 @@ export default function App() {
           onClose={() => setIsAuthModalOpen(false)}
           initialMode={authModalMode}
           initialRole={authModalRole}
+          allowedRole="parent"
           onLoginSuccess={handleLoginSuccess}
           studentsDatabase={students}
         />
@@ -867,9 +961,8 @@ export default function App() {
         onSelectTab={setManagementTab}
         noticesCount={notices.length}
         pendingJustificationsCount={justifications.filter((item) => item.status === 'Em Análise').length}
-        onSwitchToParentApp={() => navigateToView('parent_app')}
+        onSwitchToParentApp={() => void handleSwitchAccess('parent_app')}
         currentStaffUser={currentStaffUser}
-        onOpenAuthModal={(mode, role) => openAuthModal(mode, role)}
         onLogout={handleLogout}
         canViewAudit={canReviewLinks}
       />
@@ -897,6 +990,7 @@ export default function App() {
             <MetricCards
               totalStudents={totalRegistered}
               entriesToday={entriesCount}
+              studentsOnCampus={studentsOnCampus}
               presencePercentage={presenceRate}
               alertsCount={activeAlertsCount}
               onOpenAlerts={() => setIsAlertsOpen(true)}
@@ -998,7 +1092,25 @@ export default function App() {
         )}
 
         {managementTab === 'auditoria' && canReviewLinks && (
-          <div className="animate-in fade-in duration-150">
+          <div className="space-y-5 animate-in fade-in duration-150">
+            <AccountsAdministrationPanel
+              accounts={managedAccounts}
+              currentUserId={authenticatedUser.id}
+              state={accountsState}
+              error={accountsError}
+              onRefresh={() => setAuditRefreshKey((current) => current + 1)}
+              onUpdateStatus={handleUpdateAccountStatus}
+              onRevokeSessions={handleRevokeAccountSessions}
+            />
+            <NotificationDeliveryPanel
+              snapshot={deliverySnapshot}
+              state={deliveryState}
+              error={deliveryError}
+              busy={deliveryBusy}
+              onRefresh={() => setAuditRefreshKey((current) => current + 1)}
+              onProcess={(outcome) => void handleProcessDeliveries(outcome)}
+              onRetry={() => void handleRetryDeliveries()}
+            />
             <AuditLogPanel
               records={auditRecords}
               state={auditState}
@@ -1069,6 +1181,7 @@ export default function App() {
         onClose={() => setIsAuthModalOpen(false)}
         initialMode={authModalMode}
         initialRole={authModalRole}
+        allowedRole="staff"
         onLoginSuccess={handleLoginSuccess}
         studentsDatabase={students}
       />
