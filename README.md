@@ -86,9 +86,15 @@ Para conferir a versão instalável local, mantenha a API ativa e abra `http://l
 
 Os projetos nativos ficam em `android/` e `ios/`. O build móvel oculta os controles web de demonstração e a troca para o painel escolar, ocupa a tela do aparelho, respeita as áreas seguras e desativa o service worker dentro do Capacitor. Para consumir uma API fora do navegador local, configure `VITE_API_BASE_URL` com uma URL HTTPS alcançável pelo aparelho antes de `npm run cap:sync`; `localhost` no celular não é este computador.
 
-`cap:sync:android:demo` prepara exclusivamente um teste no emulador Android: usa `http://10.0.2.2:3001`, origem `http://localhost` e tráfego HTTP apenas no manifesto `debug`. A API aceita somente as origens Capacitor explicitadas em `CORS_ORIGINS`. Para aparelho físico, use uma URL HTTPS; expor `API_HOST=0.0.0.0` em rede local é uma alternativa somente de laboratório, exige firewall/rede confiável e uma URL alcançável configurada no build. `android:debug` requer JDK compatível e Android SDK 36; o APK resultante é um artefato local não assinado para publicação e permanece ignorado pelo Git.
+`cap:sync:android:demo` prepara exclusivamente um teste no emulador Android: usa `http://10.0.2.2:3001`, origem `http://localhost` e tráfego HTTP apenas no manifesto `debug`. A API aceita somente as origens Capacitor explicitadas em `CORS_ORIGINS`. Para aparelho físico, use uma URL HTTPS; expor `API_HOST=0.0.0.0` em rede local é uma alternativa somente de laboratório, exige firewall/rede confiável e uma URL alcançável configurada no build.
 
-O identificador `com.gustavosnow.catracatroia` é provisório e deve ser confirmado com o domínio institucional antes de assinatura ou publicação. Android exige JDK compatível, Android Studio/SDK 36 e aceite dos termos do SDK; iOS exige macOS e Xcode. Não há APK concluído, assinatura de distribuição, push nativo nem publicação em loja nesta etapa.
+`android:debug` usa o JDK e Android SDK locais em `.tools/`, sincroniza o conteúdo e grava o resultado em `.artifacts/catraca-de-troia-responsaveis-debug.apk`. Essas pastas permanecem ignoradas pelo Git. O APK demonstrativo atual tem aproximadamente 7,3 MB, `minSdk 24`, `targetSdk 36` e assinatura automática de depuração; não é assinado para distribuição. Com um emulador ativo, ele pode ser instalado por:
+
+```bash
+.tools/android-sdk/platform-tools/adb install -r .artifacts/catraca-de-troia-responsaveis-debug.apk
+```
+
+O identificador `com.gustavosnow.catracatroia` é provisório e deve ser confirmado com o domínio institucional antes de assinatura ou publicação. Foi gerado um APK Android de depuração, mas ainda faltam teste em emulador/aparelho, assinatura de distribuição, push nativo e qualquer publicação. iOS continua exigindo macOS e Xcode.
 
 ## Documentação
 

@@ -15,7 +15,7 @@
     "db:backup": "tsx server/maintenance/runBackup.ts",
     "cap:sync": "npm run build:parent && cap sync",
     "cap:sync:android:demo": "cross-env CAPACITOR_ANDROID_SCHEME=http VITE_API_BASE_URL=http://10.0.2.2:3001 npm run build:parent && cross-env CAPACITOR_ANDROID_SCHEME=http cap sync android",
-    "android:debug": "npm run cap:sync:android:demo && cd android && ./gradlew assembleDebug",
+    "android:debug": "bash scripts/build-android-debug.sh",
     "cap:open:android": "cap open android",
     "cap:open:ios": "cap open ios",
     "clean": "rm -rf dist server.js",

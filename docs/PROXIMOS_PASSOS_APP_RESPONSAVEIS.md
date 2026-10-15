@@ -7,7 +7,7 @@ Diagnóstico técnico em 14/10/2026, após o corte de fila local e sincronizaç�
 - interface React/TypeScript dedicada aos responsáveis e build que exclui o painel escolar;
 - PWA instalável com cache apenas do shell, sem armazenar respostas pessoais da API;
 - projetos-base Capacitor Android/iOS;
-- build Android dedicado sincronizado, layout de tela inteira e configuração local isolada para emulador;
+- APK Android de depuração gerado, com layout de tela inteira e configuração local isolada para emulador;
 - login e sessão demonstrativos, autorização por papel e vínculo no backend;
 - solicitação de vínculo por matrícula e aprovação/rejeição auditada pela Coordenação/Direção;
 - consulta administrativa, revogação imediata e revalidação posterior de vínculos, com trilha de auditoria restrita;
@@ -33,6 +33,6 @@ A fila resolve a preservação dos eventos no servidor da escola quando o destin
 
 ## Próximo incremento recomendado
 
-Os incrementos de infraestrutura compartilhada, conectividade, solicitação/administração de vínculos, auditoria restrita, anexos, endurecimento HTTP básico, backup verificado, limpeza de uploads órfãos e preparação do contêiner Android foram concluídos. Para materializar o APK de depuração gratuito, o ambiente ainda precisa de JDK compatível, Android SDK 36 e aceite dos termos do SDK; depois disso, deve-se executar `npm run android:debug` e testar login, reconexão, anexos e segregação em emulador/aparelho. Em paralelo, os próximos incrementos funcionais gratuitos são administrar contas/sessões fictícias e criar uma fila demonstrativa de entrega de notificações. Antivírus homologado, HTTPS, limitação distribuída, criptografia em repouso e agenda externa de backups dependem de ferramenta e decisão institucional.
+Os incrementos de infraestrutura compartilhada, conectividade, solicitação/administração de vínculos, auditoria restrita, anexos, endurecimento HTTP básico, backup verificado, limpeza de uploads órfãos e criação do APK Android de depuração foram concluídos. O próximo passo móvel é instalar o APK em emulador/aparelho e testar login, reconexão, anexos e segregação, registrando evidências. Em paralelo, os próximos incrementos funcionais gratuitos são administrar contas/sessões fictícias e criar uma fila demonstrativa de entrega de notificações. Antivírus homologado, HTTPS, limitação distribuída, criptografia em repouso e agenda externa de backups dependem de ferramenta e decisão institucional.
 
 Não entram automaticamente nesse incremento: reconhecimento facial, integração física das catracas, QR Code de contingência, WhatsApp, publicação em lojas ou uso de dados reais. Cada item depende das aprovações e controles descritos na consolidação do projeto.
