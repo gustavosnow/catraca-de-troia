@@ -1,14 +1,48 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import {createReadStream, statSync} from 'node:fs';
 import path from 'path';
-import {defineConfig} from 'vite';
+import {defineConfig, type Plugin, type ViteDevServer} from 'vite';
 import {VitePWA} from 'vite-plugin-pwa';
+
+const deviceApkName = 'catraca-de-troia-responsaveis-device-debug.apk';
+
+const apkDownloadPlugin = (): Plugin => {
+  const serveApk = (middlewares: ViteDevServer['middlewares']) => {
+    middlewares.use((request, response, next) => {
+      if (request.url?.split('?')[0] !== `/${deviceApkName}`) {
+        next();
+        return;
+      }
+      const apkPath = path.resolve('public', deviceApkName);
+      try {
+        const stats = statSync(apkPath);
+        response.statusCode = 200;
+        response.setHeader('Content-Type', 'application/vnd.android.package-archive');
+        response.setHeader('Content-Disposition', `attachment; filename="${deviceApkName}"`);
+        response.setHeader('Content-Length', stats.size);
+        response.setHeader('Cache-Control', 'no-store');
+        if (request.method === 'HEAD') response.end();
+        else createReadStream(apkPath).pipe(response);
+      } catch {
+        next();
+      }
+    });
+  };
+
+  return {
+    name: 'catraca-apk-download',
+    configureServer: (server) => serveApk(server.middlewares),
+    configurePreviewServer: (server) => serveApk(server.middlewares),
+  };
+};
 
 export default defineConfig(() => {
   return {
     plugins: [
       react(),
       tailwindcss(),
+      apkDownloadPlugin(),
       VitePWA({
         injectRegister: null,
         registerType: 'prompt',

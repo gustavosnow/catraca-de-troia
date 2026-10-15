@@ -163,3 +163,11 @@ Solicitação: configurar o aplicativo para teste em um celular real.
 Ajustes: o script Android passou a oferecer modos separados para emulador e aparelho. O modo de aparelho detecta o IPv4 da rota local, incorpora a API correspondente no build e gera `catraca-de-troia-responsaveis-device-debug.apk`. Foram adicionados comandos para iniciar API e frontend na rede local. No ambiente desta revisão, a variante aponta para `192.168.0.121:3001`, teve assinatura verificada, contém a URL esperada e concluiu login demonstrativo pela interface LAN. O APK foi disponibilizado temporariamente pelo servidor web local para transferência ao celular.
 
 Limites: celular e computador precisam permanecer na mesma rede confiável, o servidor deve continuar em execução e o endereço IPv4 pode mudar. O APK deve ser regenerado após mudança de IP. A instalação de fonte desconhecida é uma decisão explícita do usuário. O HTTP continua limitado ao build de depuração e não é configuração de produção.
+
+## MC-022 — Entrega correta do APK pelo servidor local
+
+Solicitação: corrigir o download que apareceu como pasta no celular.
+
+Ajustes: o servidor de desenvolvimento/preview passou a interceptar somente o nome conhecido do APK de aparelho e enviá-lo com tipo `application/vnd.android.package-archive`, disposição de anexo, tamanho e ausência de cache. O download foi repetido pelo endereço LAN e seu SHA-256 coincidiu com o artefato original.
+
+Limites: a rota existe apenas enquanto o servidor local estiver ativo e o arquivo ignorado estiver em `public/`. APK permanece exclusivo de Android; iOS não instala esse formato.

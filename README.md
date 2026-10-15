@@ -104,6 +104,8 @@ npm run dev:device
 
 O artefato fica em `.artifacts/catraca-de-troia-responsaveis-device-debug.apk`. Durante `dev:device`, copie-o para `public/` — ignorado pelo Git — ou transfira-o por USB. O IP pode mudar ao reconectar o computador à rede; nesse caso, gere novamente o APK. Não use esse modo HTTP fora de uma rede de laboratório confiável.
 
+Quando o APK com esse nome está em `public/`, o servidor Vite o entrega com `application/vnd.android.package-archive` e `Content-Disposition: attachment`, evitando que navegadores móveis o interpretem como ZIP/pasta.
+
 O identificador `com.gustavosnow.catracatroia` é provisório e deve ser confirmado com o domínio institucional antes de assinatura ou publicação. Foi gerado um APK Android de depuração, mas ainda faltam teste em emulador/aparelho, assinatura de distribuição, push nativo e qualquer publicação. iOS continua exigindo macOS e Xcode.
 
 ## Documentação
