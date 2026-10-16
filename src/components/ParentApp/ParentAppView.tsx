@@ -369,6 +369,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             onOpenNotifications={() => setIsNotificationsOpen(true)}
             onOpenDigitalBadge={() => setIsBadgeModalOpen(true)}
             activeTab={activeTab}
+            compact={isAppLikeExperience || deviceMode === 'mobile_frame'}
             onLogout={onLogout}
           />
 

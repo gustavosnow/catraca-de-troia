@@ -4,6 +4,7 @@ interface CatracaTroiaLogoProps {
   className?: string;
   size?: number;
   showText?: boolean;
+  compact?: boolean;
   variant?: 'light' | 'dark' | 'contrast';
   subtitle?: string;
 }
@@ -17,6 +18,7 @@ export const CatracaTroiaLogo: React.FC<CatracaTroiaLogoProps> = ({
   className = '',
   size = 40,
   showText = true,
+  compact = false,
   variant = 'dark',
   subtitle = 'Ensino Fundamental • Rede Pública',
 }) => {
@@ -29,7 +31,7 @@ export const CatracaTroiaLogo: React.FC<CatracaTroiaLogoProps> = ({
   const logoWidth = Math.round(size * 1.55);
 
   return (
-    <div className={`inline-flex items-center gap-3 shrink-0 ${className}`}>
+    <div className={`inline-flex min-w-0 max-w-full items-center ${compact ? 'gap-2' : 'gap-3'} ${className}`}>
       <span
         className={`shrink-0 inline-flex items-center justify-center overflow-hidden rounded-xl shadow-lg shadow-black/20 transition-[width,height] duration-300 ${imageFrame}`}
         style={{ width: `${logoWidth}px`, height: `${size}px` }}
@@ -46,21 +48,21 @@ export const CatracaTroiaLogo: React.FC<CatracaTroiaLogoProps> = ({
 
       {/* Tipografia da Marca (Opcional) */}
       {showText && (
-        <div className="flex flex-col min-w-0">
+        <div className="flex min-w-0 flex-col">
           <div className="flex items-center gap-1.5 leading-none">
             <span
-              className={`font-black tracking-tight text-sm sm:text-lg ${
+              className={`truncate font-black tracking-tight ${compact ? 'text-sm' : 'text-sm sm:text-lg'} ${
                 isDark ? 'text-white' : 'text-slate-900'
               }`}
             >
               Catraca de Troia
             </span>
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-orange-500/20 text-orange-400 border border-orange-500/30 shrink-0">
+            <span className={`${compact ? 'hidden' : ''} px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-orange-500/20 text-orange-400 border border-orange-500/30 shrink-0`}>
               EMEF
             </span>
           </div>
           <span
-            className={`hidden text-[10px] font-medium tracking-wide mt-1 truncate sm:block sm:text-[11px] ${
+            className={`${compact ? 'hidden' : 'hidden sm:block'} text-[10px] font-medium tracking-wide mt-1 truncate sm:text-[11px] ${
               isDark ? 'text-slate-400' : 'text-slate-500'
             }`}
           >

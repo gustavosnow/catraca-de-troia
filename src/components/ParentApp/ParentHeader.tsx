@@ -8,6 +8,7 @@ import {
   Megaphone,
   UserCheck,
   LogOut,
+  School,
 } from 'lucide-react';
 import { Student } from '../../types';
 import { ParentAccount } from '../../data/mockData';
@@ -24,6 +25,7 @@ interface ParentHeaderProps {
   onOpenNotifications: () => void;
   onOpenDigitalBadge: () => void;
   activeTab: 'home' | 'history' | 'notices';
+  compact?: boolean;
   onLogout?: () => void;
 }
 
@@ -38,6 +40,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
   onOpenNotifications,
   onOpenDigitalBadge,
   activeTab,
+  compact = false,
   onLogout,
 }) => {
 
@@ -53,11 +56,16 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
       <div className="relative z-10 space-y-3.5 max-w-2xl mx-auto">
         
         {/* 1. Header Superior: Identidade Oficial da Escola + Ações Rápidas */}
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center justify-between gap-3">
           
           {/* Logo e Nome da Escola com visualização garantida sem truncagem */}
-          <div className="flex items-center min-w-0">
-            <CatracaTroiaLogo size={46} variant="dark" subtitle="Portal dos responsáveis • Rede Pública" />
+          <div className="flex min-w-0 flex-1 items-center">
+            <CatracaTroiaLogo
+              size={compact ? 40 : 46}
+              compact={compact}
+              variant="dark"
+              subtitle="Portal dos responsáveis"
+            />
           </div>
 
           {/* Botões de Ação Rápida (Carteirinha e Central de Avisos) */}
@@ -67,11 +75,11 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
               <button
                 id="btn-parent-digital-badge"
                 onClick={onOpenDigitalBadge}
-                className="px-2.5 py-1.5 rounded-xl bg-orange-600/25 hover:bg-orange-600/40 text-orange-200 border border-orange-500/40 transition-all hover:scale-105 active:scale-95 shadow-sm flex items-center gap-1.5 cursor-pointer font-bold text-xs"
+                className={`${compact ? 'p-2' : 'px-2.5 py-1.5'} rounded-xl bg-orange-600/25 hover:bg-orange-600/40 text-orange-200 border border-orange-500/40 transition-all hover:scale-105 active:scale-95 shadow-sm flex items-center gap-1.5 cursor-pointer font-bold text-xs`}
                 title="Abrir Carteirinha Digital do Estudante"
               >
                 <QrCode className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                <span className="hidden sm:inline">Carteirinha</span>
+                <span className={compact ? 'sr-only' : 'hidden sm:inline'}>Carteirinha</span>
               </button>
             )}
 
@@ -79,11 +87,11 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
             <button
               id="btn-parent-notifications"
               onClick={onOpenNotifications}
-              className="relative p-2 sm:px-2.5 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all hover:scale-105 active:scale-95 shadow-sm flex items-center gap-1.5 cursor-pointer font-semibold text-xs"
+              className={`relative ${compact ? 'p-2' : 'p-2 sm:px-2.5 sm:py-1.5'} rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all hover:scale-105 active:scale-95 shadow-sm flex items-center gap-1.5 cursor-pointer font-semibold text-xs`}
               title="Notificações e Avisos"
             >
               <Bell className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-              <span className="hidden sm:inline">Avisos</span>
+              <span className={compact ? 'sr-only' : 'hidden sm:inline'}>Avisos</span>
               {unreadNotificationsCount > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center border-2 border-[#0B192C] animate-pulse">
                   {unreadNotificationsCount}
@@ -92,6 +100,14 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
             </button>
           </div>
 
+        </div>
+
+        <div className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-700/70 bg-slate-800/45 px-2.5 py-1.5 text-[11px]">
+          <School className="h-3.5 w-3.5 shrink-0 text-orange-400" aria-hidden="true" />
+          <span className="min-w-0 font-bold leading-tight text-slate-200">EMEF Profª. Cecília Meireles</span>
+          <span className="ml-auto shrink-0 rounded-full bg-orange-500/10 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-orange-300">
+            Rede pública
+          </span>
         </div>
 
         {/* ------------------------------------------------------------- */}
@@ -109,7 +125,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
                 <h2 className="text-xs sm:text-sm font-extrabold text-white leading-tight">
                   Canal de Avisos & Comunicados da Direção
                 </h2>
-                <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                <p className={`text-[11px] text-slate-400 mt-0.5 ${compact ? 'leading-snug' : 'truncate'}`}>
                   Informes gerais e convocações oficiais para a comunidade escolar
                 </p>
               </div>
@@ -119,7 +135,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
 
         {/* CASO B: ABA HISTÓRICO SEMANAL (Apenas seletor sutil se houver múltiplos filhos) */}
         {activeTab === 'history' && (
-          <div className="bg-slate-800/60 rounded-xl p-2.5 border border-slate-700/60 flex items-center justify-between gap-3 animate-in fade-in">
+          <div className={`bg-slate-800/60 rounded-xl p-2.5 border border-slate-700/60 flex gap-3 animate-in fade-in ${compact ? 'flex-col items-stretch' : 'items-center justify-between'}`}>
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 border border-orange-500/30">
                 <CalendarDays className="w-4 h-4" />
@@ -128,7 +144,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
                 <h2 className="text-xs sm:text-sm font-extrabold text-white leading-tight">
                   Histórico Semanal de Acesso
                 </h2>
-                <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                <p className={`text-[11px] text-slate-400 mt-0.5 ${compact ? 'leading-snug' : 'truncate'}`}>
                   Registro de presenças e pontualidade de <span className="text-orange-300 font-bold">{selectedStudent.name.split(' ')[0]}</span>
                 </p>
               </div>
@@ -136,7 +152,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
 
             {/* Alternador compacto de aluno para a semana (somente se tiver > 1 filho) */}
             {myChildren.length > 1 && (
-              <div className="relative shrink-0">
+              <div className={`relative shrink-0 ${compact ? 'self-end' : ''}`}>
                 <button
                   onClick={() => setChildDropdownOpen(!childDropdownOpen)}
                   className="px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold flex items-center gap-2 transition-colors border border-slate-600 cursor-pointer shadow-xs"
@@ -199,8 +215,8 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
                 <span className="font-extrabold text-white truncate">
                   Olá, {currentGuardian.name.split(' ')[0]} 👋
                 </span>
-                <span className="text-slate-500 hidden sm:inline">•</span>
-                <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
+                <span className={`text-slate-500 ${compact ? 'hidden' : 'hidden sm:inline'}`}>•</span>
+                <span className={`text-[11px] text-slate-400 font-mono ${compact ? 'hidden' : 'hidden sm:inline'}`}>
                   {currentGuardian.phone}
                 </span>
               </div>
@@ -275,7 +291,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
             </div>
 
             {/* Chips de Seleção de Filhos Conectados */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className={`grid gap-2 ${compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
               {myChildren.map((child) => {
                 const isSelected = child.id === selectedStudent.id;
                 return (
@@ -301,12 +317,12 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
                         <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#0B192C]"></span>
                       </div>
                       <div className="min-w-0">
-                        <h3 className={`text-xs font-extrabold truncate ${
+                        <h3 className={`text-xs font-extrabold ${compact ? 'leading-snug' : 'truncate'} ${
                           isSelected ? 'text-white' : 'text-slate-300'
                         }`}>
                           {child.name}
                         </h3>
-                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] leading-snug text-slate-400">
                           <span className="font-bold text-orange-400">{child.turma}</span>
                           <span>•</span>
                           <span className="font-mono">#{child.matricula}</span>

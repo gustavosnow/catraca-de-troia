@@ -235,3 +235,11 @@ Solicitação: fazer os atalhos de login demonstrativo seguirem diretamente para
 Ajustes: a autenticação bem-sucedida deixou de chamar também o fechamento cancelável do modal. Essa chamada concorria com a navegação do login e substituía o destino pelo retorno à apresentação. Agora o retorno autenticado controla sozinho a troca para o portal correspondente; os atalhos ficam temporariamente desabilitados durante a validação para evitar solicitações duplicadas.
 
 Limites: as contas e credenciais continuam fictícias e dependem da API local. A correção não altera autorização, perfis, vínculos ou persistência de sessão e não gera novo APK.
+
+## MC-031 — Cabeçalho responsivo do portal dos responsáveis
+
+Solicitação: corrigir sobreposições e textos cortados no portal dos responsáveis e identificar a unidade escolar.
+
+Ajustes: o modo compacto deixou de depender dos breakpoints da janela externa e passou a ser informado pela experiência exibida, inclusive dentro da moldura de smartphone em desktop. A marca reduz espaçamentos e preserva o nome completo do projeto; Carteirinha e Avisos usam ações compactas acessíveis. A unidade "EMEF Profª. Cecília Meireles" ganhou identificação própria e sempre visível. A linha da conta omite dados secundários no espaço reduzido, e os seletores de dependentes passam a uma coluna, permitindo exibir nome, turma e matrícula sem colisão. O componente foi inspecionado a 360 px e 440 px.
+
+Limites: os dados da escola, responsáveis e estudantes continuam demonstrativos. O ajuste não representa homologação em aparelhos, integração institucional ou geração de novo APK.
