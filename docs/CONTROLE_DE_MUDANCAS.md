@@ -211,3 +211,11 @@ Solicitação: corrigir a ausência aparente da landing no servidor atual.
 Ajustes: a restauração automática de uma sessão salva deixou de redirecionar a raiz antes da apresentação. `/` e `/#/apresentacao` agora mantêm a landing visível; os hashes de responsáveis e escola continuam abrindo seus fluxos específicos. Fechar um modal de entrada substitui a rota atual por `/#/apresentacao`, evitando que o histórico recoloque o login no recarregamento, e o rodapé da autenticação ganhou uma ação textual de retorno.
 
 Limites: a sessão local continua disponível para os fluxos demonstrativos, mas não é restaurada enquanto a pessoa permanece na página pública.
+
+## MC-028 — Navegação fluida e valorização da marca oficial
+
+Solicitação: tornar a landing mais fluida, fazer a navegação do cabeçalho chegar aos blocos e melhorar a presença da logo na apresentação e nas demais telas.
+
+Ajustes: os atalhos do cabeçalho passaram a rolar suavemente até as seções, indicar o bloco ativo e mostrar o progresso da leitura; o menu móvel oferece os mesmos destinos. A arte oficial em `logo-catraca-troia.png` foi mantida sem redesenho ou substituição e recebeu um enquadramento horizontal maior, com recorte apenas do espaço de respiro e assinatura textual. A mesma composição visual passou a identificar landing, autenticação, painel escolar, portal dos responsáveis e carteirinha demonstrativa. O nome exibido foi padronizado como "Catraca de Troia", sem acento, inclusive nos metadados web e nomes dos contêineres móveis.
+
+Limites: a alteração é de navegação e identidade visual; não adiciona integração com hardware, biometria, serviço externo ou resultados de homologação. Nenhum novo APK foi gerado.

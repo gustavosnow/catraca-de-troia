@@ -9,8 +9,7 @@ import {
   Sparkles,
   RefreshCw,
   Copy,
-  Check,
-  School
+  Check
 } from 'lucide-react';
 import { Student } from '../../types';
 import { CatracaTroiaLogo } from '../CatracaTroiaLogo';
@@ -61,13 +60,7 @@ export const StudentDigitalBadgeModal: React.FC<StudentDigitalBadgeModalProps> =
         {/* Top Header */}
         <div className="p-4 flex items-center justify-between border-b border-slate-800 relative z-10">
           <div className="flex items-center gap-2">
-            <CatracaTroiaLogo size={32} variant="dark" showText={false} />
-            <div>
-              <div className="text-xs font-extrabold uppercase tracking-wider text-orange-400 flex items-center gap-1">
-                <span>Catraca de Tróia</span>
-              </div>
-              <div className="text-[10px] text-slate-400">EMEF Profª. Cecília Meireles</div>
-            </div>
+            <CatracaTroiaLogo size={38} variant="dark" subtitle="EMEF Profª. Cecília Meireles" />
           </div>
 
           <button

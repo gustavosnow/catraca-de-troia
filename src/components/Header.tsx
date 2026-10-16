@@ -8,7 +8,6 @@ import {
   Activity, 
   SlidersHorizontal, 
   FileText, 
-  School,
   Volume2, 
   VolumeX, 
   Clock, 
@@ -95,28 +94,13 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 py-2">
           
           {/* 1. Left: Brand & School Identification */}
-          <div className="flex items-center space-x-2.5 sm:space-x-3 shrink-0 min-w-0">
+          <div className="flex items-center shrink-0 min-w-0">
             <CatracaTroiaLogo 
-              size={38} 
+              size={46}
               variant="dark" 
-              showText={false}
+              subtitle="EMEF Profª. Cecília Meireles • Rede Pública"
               className="cursor-pointer"
             />
-
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h1 className="text-sm sm:text-base font-extrabold text-white tracking-tight leading-none truncate">
-                  Catraca de Tróia
-                </h1>
-                <span className="hidden sm:inline px-1.5 py-0.5 text-[10px] font-extrabold bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded shrink-0">
-                  EMEF
-                </span>
-              </div>
-              <p className="text-[10px] sm:text-[11px] text-slate-400 hidden sm:flex items-center gap-1 mt-0.5 leading-none truncate">
-                <School className="w-3 h-3 text-orange-400 inline shrink-0" />
-                <span className="truncate">EMEF Profª. Cecília Meireles • Rede Pública</span>
-              </p>
-            </div>
           </div>
 
           {/* 2. Center: Navigation Tabs */}

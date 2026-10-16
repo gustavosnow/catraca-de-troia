@@ -287,7 +287,7 @@ export const StudentsManagementList: React.FC<StudentsManagementListProps> = ({
                       Contato Geral da Coordenação
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5">
-                      "Olá, aqui é da coordenação da E.E. Tróia a respeito de {whatsappTemplateStudent.name}..."
+                      "Olá, aqui é da coordenação da E.E. Troia a respeito de {whatsappTemplateStudent.name}..."
                     </div>
                   </div>
                   <Send className="w-4 h-4 text-slate-300 group-hover:text-emerald-600" />

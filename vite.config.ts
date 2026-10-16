@@ -49,8 +49,8 @@ export default defineConfig(() => {
         includeAssets: ['pwa-192.png', 'pwa-512.png', 'logo-catraca-troia.png'],
         manifest: {
           id: '/#/responsaveis',
-          name: 'Catraca de Tróia — Responsáveis',
-          short_name: 'Catraca de Tróia',
+          name: 'Catraca de Troia — Responsáveis',
+          short_name: 'Catraca de Troia',
           description: 'Acompanhamento demonstrativo de acesso escolar para responsáveis.',
           lang: 'pt-BR',
           start_url: '/#/responsaveis',

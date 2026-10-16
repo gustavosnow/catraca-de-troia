@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+}
+
 :focus-visible {
   outline: 3px solid #f97316;
   outline-offset: 3px;

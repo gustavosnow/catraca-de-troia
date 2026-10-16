@@ -265,21 +265,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Header Superior */}
         <div className="p-5 sm:p-6 border-b border-slate-800/80 relative z-10 flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <CatracaTroiaLogo size={42} variant="dark" showText={false} />
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span id="auth-modal-title" className="text-base sm:text-lg font-black text-white tracking-tight">Catraca de Tróia</span>
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                  EMEF
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 font-medium">
-                {mode === 'login' && (role === 'parent' ? 'Acesso de Pais e Responsáveis' : 'Acesso da Equipe Escolar')}
-                {mode === 'register' && 'Novo Cadastro no Sistema'}
-                {mode === 'forgot_password' && 'Recuperação de Senha Segura'}
-              </p>
-            </div>
+          <div id="auth-modal-title">
+            <CatracaTroiaLogo
+              size={48}
+              variant="dark"
+              subtitle={mode === 'login'
+                ? (role === 'parent' ? 'Acesso de Pais e Responsáveis' : 'Acesso da Equipe Escolar')
+                : mode === 'register'
+                  ? 'Novo Cadastro no Sistema'
+                  : 'Recuperação de Senha Segura'}
+            />
           </div>
 
           {dismissible && (

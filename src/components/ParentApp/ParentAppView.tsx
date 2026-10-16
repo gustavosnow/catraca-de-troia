@@ -279,21 +279,8 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
         <div className="max-w-7xl mx-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:gap-3">
           
           {/* Logo & Mode indicator */}
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <CatracaTroiaLogo size={36} variant="dark" showText={false} />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="truncate text-sm font-extrabold text-white tracking-tight">
-                  Catraca de Tróia
-                </h1>
-                <span className="hidden sm:inline text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
-                  App dos Pais
-                </span>
-              </div>
-              <p className="hidden sm:block truncate text-xs text-slate-400">
-                Acesso exclusivo para responsáveis • EMEF Profª. Cecília Meireles
-              </p>
-            </div>
+          <div className="flex min-w-0 items-center">
+            <CatracaTroiaLogo size={44} variant="dark" subtitle="Portal dos responsáveis • EMEF Profª. Cecília Meireles" />
           </div>
 
           {/* Quick controls */}

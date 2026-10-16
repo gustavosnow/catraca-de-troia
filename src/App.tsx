@@ -760,10 +760,10 @@ export default function App() {
   // Direct WhatsApp Contact from School Staff with Parent
   const handleDirectWhatsapp = (phone: string, studentName: string, templateType?: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
-    let msg = `Olá, aqui é da equipe de Gestão Escolar da E.E. Tróia Educação Integrada. Entramos em contato a respeito do(a) estudante ${studentName}.`;
+    let msg = `Olá, aqui é da equipe de Gestão Escolar da E.E. Troia Educação Integrada. Entramos em contato a respeito do(a) estudante ${studentName}.`;
     
     if (templateType === 'atraso') {
-      msg = `Olá, informamos que o(a) estudante ${studentName} registrou entrada após o horário regular de tolerância na E.E. Tróia. Ficamos à disposição para quaisquer esclarecimentos.`;
+      msg = `Olá, informamos que o(a) estudante ${studentName} registrou entrada após o horário regular de tolerância na E.E. Troia. Ficamos à disposição para quaisquer esclarecimentos.`;
     } else if (templateType === 'documento') {
       msg = `Olá, solicitamos a gentileza de encaminhar a justificativa ou atestado médico referente à ausência recente do(a) estudante ${studentName} pelo App ou secretaria escolar.`;
     }

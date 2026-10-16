@@ -3,7 +3,6 @@ import {
   Bell, 
   QrCode, 
   ChevronDown, 
-  School, 
   Check, 
   CalendarDays,
   Megaphone,
@@ -57,23 +56,8 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
         <div className="flex items-center justify-between gap-3">
           
           {/* Logo e Nome da Escola com visualização garantida sem truncagem */}
-          <div className="flex items-center gap-3 min-w-0">
-            <CatracaTroiaLogo size={40} variant="dark" showText={false} />
-            
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <h1 className="text-sm sm:text-base font-extrabold text-white tracking-tight flex items-center gap-1.5">
-                  <School className="w-4 h-4 text-orange-400 shrink-0" />
-                  <span>EMEF Profª. Cecília Meireles</span>
-                </h1>
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-500/20 text-orange-300 border border-orange-500/30 shrink-0">
-                  Rede Pública
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                Portal dos Pais & Responsáveis • Catraca de Tróia
-              </p>
-            </div>
+          <div className="flex items-center min-w-0">
+            <CatracaTroiaLogo size={46} variant="dark" subtitle="Portal dos responsáveis • Rede Pública" />
           </div>
 
           {/* Botões de Ação Rápida (Carteirinha e Central de Avisos) */}

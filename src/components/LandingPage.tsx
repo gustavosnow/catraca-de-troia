@@ -55,12 +55,69 @@ const plannedGoals = [
   ['≥ 99%', 'meta de disponibilidade no horário escolar'],
 ];
 
+const navigationItems = [
+  ['visao', 'A proposta'],
+  ['fluxo', 'Como funciona'],
+  ['confianca', 'Premissas'],
+] as const;
+
 export const LandingPage: React.FC<LandingPageProps> = ({
   onParentLogin,
   onParentRegister,
   onSchoolLogin,
 }) => {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [activeSection, setActiveSection] = React.useState('topo');
+  const [isScrolled, setIsScrolled] = React.useState(false);
+  const [scrollProgress, setScrollProgress] = React.useState(0);
+
+  React.useEffect(() => {
+    const updateScrollState = () => {
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      setIsScrolled(window.scrollY > 12);
+      setScrollProgress(scrollable > 0 ? Math.min(100, (window.scrollY / scrollable) * 100) : 0);
+    };
+    updateScrollState();
+    window.addEventListener('scroll', updateScrollState, { passive: true });
+
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+      if (visible?.target.id) setActiveSection(visible.target.id);
+    }, { rootMargin: '-22% 0px -62% 0px', threshold: [0, 0.1, 0.35] });
+
+    ['topo', ...navigationItems.map(([id]) => id)].forEach((id) => {
+      const section = document.getElementById(id);
+      if (section) observer.observe(section);
+    });
+
+    const requestedSection = window.location.hash.slice(1);
+    const knownSections = ['topo', ...navigationItems.map(([id]) => id)];
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        if (!knownSections.includes(requestedSection)) return;
+        document.getElementById(requestedSection)?.scrollIntoView({ behavior: 'auto', block: 'start' });
+        setActiveSection(requestedSection);
+      });
+    });
+
+    return () => {
+      window.removeEventListener('scroll', updateScrollState);
+      observer.disconnect();
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, []);
+
+  const navigateToSection = (id: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${id}`);
+    setActiveSection(id);
+    setMenuOpen(false);
+  };
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#07111f] font-sans text-white selection:bg-orange-500 selection:text-white">
@@ -68,16 +125,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         Ir para o conteúdo principal
       </a>
 
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#07111f]/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
-          <a href="#topo" aria-label="Catraca de Tróia — início" className="rounded-xl">
-            <CatracaTroiaLogo size={42} showText variant="dark" subtitle="Monitoramento escolar • Protótipo acadêmico" />
+      <header className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-300 ${isScrolled ? 'border-white/10 bg-[#07111f]/95 shadow-2xl shadow-black/25 backdrop-blur-2xl' : 'border-transparent bg-[#07111f]/75 backdrop-blur-xl'}`}>
+        <div className={`mx-auto flex max-w-7xl items-center justify-between px-5 transition-[height] duration-300 sm:px-8 ${isScrolled ? 'h-[4.5rem]' : 'h-24'}`}>
+          <a href="#topo" onClick={navigateToSection('topo')} aria-label="Catraca de Troia — início" className="rounded-xl">
+            <CatracaTroiaLogo size={isScrolled ? 46 : 54} showText variant="dark" subtitle="Monitoramento escolar • Protótipo acadêmico" />
           </a>
 
           <nav aria-label="Navegação da apresentação" className="hidden items-center gap-7 text-sm font-semibold text-slate-300 lg:flex">
-            <a href="#visao" className="transition-colors hover:text-white">A proposta</a>
-            <a href="#fluxo" className="transition-colors hover:text-white">Como funciona</a>
-            <a href="#confianca" className="transition-colors hover:text-white">Premissas</a>
+            {navigationItems.map(([id, label]) => (
+              <a key={id} href={`#${id}`} onClick={navigateToSection(id)} aria-current={activeSection === id ? 'location' : undefined} className={`relative rounded-lg px-1 py-2 transition-colors after:absolute after:inset-x-0 after:-bottom-1 after:mx-auto after:h-0.5 after:rounded-full after:bg-orange-500 after:transition-all ${activeSection === id ? 'text-white after:w-full' : 'text-slate-400 after:w-0 hover:text-white hover:after:w-1/2'}`}>
+                {label}
+              </a>
+            ))}
           </nav>
 
           <div className="hidden items-center gap-2 sm:flex">
@@ -97,17 +156,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {menuOpen && (
           <div id="landing-mobile-menu" className="border-t border-white/10 bg-[#07111f] p-4 sm:hidden">
             <div className="mx-auto grid max-w-7xl gap-2">
-              <a href="#visao" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-300">A proposta</a>
-              <a href="#fluxo" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-300">Como funciona</a>
+              {navigationItems.map(([id, label]) => (
+                <a key={id} href={`#${id}`} onClick={navigateToSection(id)} aria-current={activeSection === id ? 'location' : undefined} className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${activeSection === id ? 'bg-orange-500/10 text-orange-300' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>{label}</a>
+              ))}
               <button type="button" onClick={onSchoolLogin} className="rounded-xl border border-white/10 px-3 py-2.5 text-left text-sm font-bold text-slate-200">Acesso da escola</button>
               <button type="button" onClick={onParentLogin} className="rounded-xl bg-orange-600 px-3 py-2.5 text-left text-sm font-extrabold text-white">Entrar no portal</button>
             </div>
           </div>
         )}
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-px bg-white/5">
+          <div className="h-full bg-gradient-to-r from-orange-600 to-amber-400 transition-[width] duration-150" style={{ width: `${scrollProgress}%` }} />
+        </div>
       </header>
 
       <main id="landing-content" tabIndex={-1}>
-        <section id="topo" className="relative isolate overflow-hidden px-5 pb-24 pt-36 sm:px-8 sm:pb-32 sm:pt-44">
+        <section id="topo" className="relative isolate scroll-mt-24 overflow-hidden px-5 pb-24 pt-40 sm:px-8 sm:pb-32 sm:pt-48">
           <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_15%_20%,rgba(234,88,12,0.17),transparent_28%),radial-gradient(circle_at_82%_28%,rgba(14,165,233,0.15),transparent_30%),linear-gradient(180deg,#07111f_0%,#0b192c_72%,#0a1626_100%)]" />
           <div className="absolute inset-0 -z-10 opacity-30 [background-image:linear-gradient(rgba(148,163,184,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,.08)_1px,transparent_1px)] [background-size:52px_52px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" />
 
@@ -193,7 +256,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </section>
 
-        <section id="visao" className="border-y border-white/8 bg-[#0b192c] px-5 py-24 sm:px-8">
+        <section id="visao" className="scroll-mt-20 border-y border-white/8 bg-[#0b192c] px-5 py-24 sm:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="max-w-3xl">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-orange-400">Uma visão compartilhada</p>
@@ -213,7 +276,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </section>
 
-        <section id="fluxo" className="px-5 py-24 sm:px-8">
+        <section id="fluxo" className="scroll-mt-20 px-5 py-24 sm:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-14 lg:grid-cols-[.75fr_1.25fr] lg:items-start">
               <div className="lg:sticky lg:top-28">
@@ -240,7 +303,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </section>
 
-        <section id="confianca" className="px-5 pb-24 sm:px-8 sm:pb-32">
+        <section id="confianca" className="scroll-mt-20 px-5 pb-24 pt-4 sm:px-8 sm:pb-32">
           <div className="mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#11243b] to-[#0b192c]">
             <div className="grid lg:grid-cols-[1.1fr_.9fr]">
               <div className="p-7 sm:p-12">

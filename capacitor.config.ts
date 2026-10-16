@@ -5,7 +5,7 @@ const localAndroidDemo = process.env.CAPACITOR_ANDROID_SCHEME === 'http';
 const config: CapacitorConfig = {
   // Identificador provisório: confirmar domínio institucional antes de assinar/publicar.
   appId: 'com.gustavosnow.catracatroia',
-  appName: 'Catraca de Tróia — Responsáveis',
+  appName: 'Catraca de Troia — Responsáveis',
   webDir: 'dist',
   server: {
     // HTTPS permanece o padrão. HTTP existe somente para o APK local de depuração

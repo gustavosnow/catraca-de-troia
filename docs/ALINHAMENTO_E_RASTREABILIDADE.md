@@ -51,7 +51,7 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 - As entradas `#/responsaveis` e `#/escola` estão separadas por perfil; a troca encerra a sessão anterior. Coordenação/Direção administram o estado das contas fictícias e revogam sessões remotas com motivo e auditoria.
 - A fila `PUSH_DEMO` persiste uma entrega para cada nova notificação interna e demonstra falha, backoff e reenfileiramento. Ela não envia push/WhatsApp nem comprova entrega ao aparelho.
 - Em telas pequenas e no modo PWA instalado, o portal remove automaticamente a moldura de apresentação e usa o mesmo contêiner de tela cheia do aplicativo. O painel escolar gera link e QR Code da sessão; o roteiro HTTPS temporário está em `APRESENTACAO_SEM_APK.md`.
-- A raiz pública e `/#/apresentacao` apresentam a proposta de monitoramento mesmo com sessão anterior no navegador e encaminham para cadastro/login dos responsáveis ou login escolar. Rotas diretas preservam o modo escolhido após recarregar a página.
+- A raiz pública e `/#/apresentacao` apresentam a proposta de monitoramento mesmo com sessão anterior no navegador e encaminham para cadastro/login dos responsáveis ou login escolar. Rotas diretas preservam o modo escolhido após recarregar a página. O cabeçalho conduz suavemente aos blocos da apresentação e identifica a seção ativa; landing, autenticação e portais usam a mesma arte oficial, em enquadramento horizontal com o nome do projeto.
 - Nenhum resultado de acurácia, latência, disponibilidade, segurança ou carga foi medido.
 
 ## Próxima sequência de desenvolvimento

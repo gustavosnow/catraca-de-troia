@@ -41,7 +41,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 id="project-docs-title" className="text-base font-bold tracking-tight">Catraca de Tróia • Documentação do Projeto</h3>
+                <h3 id="project-docs-title" className="text-base font-bold tracking-tight">Catraca de Troia • Documentação do Projeto</h3>
                 <span className="px-2 py-0.5 text-[10px] font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded">
                   Rede Pública
                 </span>

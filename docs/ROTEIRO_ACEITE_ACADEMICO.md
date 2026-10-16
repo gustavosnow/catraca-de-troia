@@ -1,6 +1,6 @@
 # Roteiro de aceite acadêmico dos portais
 
-Este roteiro valida o corte web responsivo do Catraca de Tróia com dados fictícios, API local e integrações simuladas. Ele não inclui geração de APK, publicação em lojas, acionamento de catracas, câmeras ou reconhecimento facial real.
+Este roteiro valida o corte web responsivo do Catraca de Troia com dados fictícios, API local e integrações simuladas. Ele não inclui geração de APK, publicação em lojas, acionamento de catracas, câmeras ou reconhecimento facial real.
 
 ## Critério deste ciclo
 

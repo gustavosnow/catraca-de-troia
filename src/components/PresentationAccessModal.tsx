@@ -37,7 +37,7 @@ export const PresentationAccessModal: React.FC<PresentationAccessModalProps> = (
       return;
     }
     await navigator.share({
-      title: 'Catraca de Tróia — Portal dos Responsáveis',
+      title: 'Catraca de Troia — Portal dos Responsáveis',
       text: 'Abra a demonstração do portal dos responsáveis.',
       url: parentUrl,
     });
