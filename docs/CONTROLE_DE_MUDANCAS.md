@@ -219,3 +219,11 @@ Solicitação: tornar a landing mais fluida, fazer a navegação do cabeçalho c
 Ajustes: os atalhos do cabeçalho passaram a rolar suavemente até as seções, indicar o bloco ativo e mostrar o progresso da leitura; o menu móvel oferece os mesmos destinos. A arte oficial em `logo-catraca-troia.png` foi mantida sem redesenho ou substituição e recebeu um enquadramento horizontal maior, com recorte apenas do espaço de respiro e assinatura textual. A mesma composição visual passou a identificar landing, autenticação, painel escolar, portal dos responsáveis e carteirinha demonstrativa. O nome exibido foi padronizado como "Catraca de Troia", sem acento, inclusive nos metadados web e nomes dos contêineres móveis.
 
 Limites: a alteração é de navegação e identidade visual; não adiciona integração com hardware, biometria, serviço externo ou resultados de homologação. Nenhum novo APK foi gerado.
+
+## MC-029 — Atualização da landing sob cache PWA
+
+Solicitação: impedir que o recarregamento de `/#/apresentacao` volte a mostrar uma tela de autenticação antiga.
+
+Ajustes: a versão web publicada passou a ativar automaticamente as atualizações do service worker. No servidor de desenvolvimento, registros e caches Workbox anteriores são removidos e `/sw.js` entrega um trabalhador de limpeza, evitando que uma PWA instalada anteriormente continue servindo um bundle obsoleto sobre `localhost`. A rota pública permanece prioritária e não restaura sessão nem autenticação sobre a landing.
+
+Limites: a limpeza automática em desenvolvimento é restrita aos registros da origem e aos caches identificados como Workbox/precache. Não remove contas ou dados persistidos pela API e não gera novo APK.

@@ -7,6 +7,37 @@ import {VitePWA} from 'vite-plugin-pwa';
 
 const deviceApkName = 'catraca-de-troia-responsaveis-device-debug.apk';
 
+const developmentServiceWorkerCleanupPlugin = (): Plugin => ({
+  name: 'catraca-development-service-worker-cleanup',
+  configureServer: (server) => {
+    server.middlewares.use((request, response, next) => {
+      if (request.url?.split('?')[0] !== '/sw.js') {
+        next();
+        return;
+      }
+
+      response.statusCode = 200;
+      response.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      response.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      response.setHeader('Service-Worker-Allowed', '/');
+      response.end(`
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames
+      .filter((name) => name.includes('workbox') || name.includes('precache'))
+      .map((name) => caches.delete(name)));
+    await self.registration.unregister();
+    const windows = await self.clients.matchAll({ type: 'window' });
+    await Promise.all(windows.map((client) => client.navigate(client.url)));
+  })());
+});
+`);
+    });
+  },
+});
+
 const apkDownloadPlugin = (): Plugin => {
   const serveApk = (middlewares: ViteDevServer['middlewares']) => {
     middlewares.use((request, response, next) => {
@@ -43,9 +74,10 @@ export default defineConfig(() => {
       react(),
       tailwindcss(),
       apkDownloadPlugin(),
+      developmentServiceWorkerCleanupPlugin(),
       VitePWA({
         injectRegister: null,
-        registerType: 'prompt',
+        registerType: 'autoUpdate',
         includeAssets: ['pwa-192.png', 'pwa-512.png', 'logo-catraca-troia.png'],
         manifest: {
           id: '/#/responsaveis',
