@@ -966,11 +966,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Footer do Modal */}
-        <div className="p-4 bg-slate-950/70 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+        <div className="p-4 bg-slate-950/70 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-400">
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span>Ambiente Seguro • Rede Pública de Ensino</span>
           </div>
+          {dismissible && (
+            <button type="button" onClick={onClose} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-bold text-orange-300 transition-colors hover:bg-orange-500/10 hover:text-orange-200">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Voltar à apresentação
+            </button>
+          )}
           <span className="font-mono text-slate-500">INEP #35019284</span>
         </div>
 

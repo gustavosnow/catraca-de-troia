@@ -208,6 +208,6 @@ Limites: o cadastro, as contas e os dados continuam demonstrativos. A landing n�
 
 Solicitação: corrigir a ausência aparente da landing no servidor atual.
 
-Ajustes: a restauração automática de uma sessão salva deixou de redirecionar a raiz antes da apresentação. `/` e `/#/apresentacao` agora mantêm a landing visível; os hashes de responsáveis e escola continuam abrindo seus fluxos específicos. Fechar um modal de entrada retorna para a apresentação explícita.
+Ajustes: a restauração automática de uma sessão salva deixou de redirecionar a raiz antes da apresentação. `/` e `/#/apresentacao` agora mantêm a landing visível; os hashes de responsáveis e escola continuam abrindo seus fluxos específicos. Fechar um modal de entrada substitui a rota atual por `/#/apresentacao`, evitando que o histórico recoloque o login no recarregamento, e o rodapé da autenticação ganhou uma ação textual de retorno.
 
 Limites: a sessão local continua disponível para os fluxos demonstrativos, mas não é restaurada enquanto a pessoa permanece na página pública.

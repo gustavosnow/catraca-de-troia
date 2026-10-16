@@ -148,7 +148,8 @@ export default function App() {
 
   const navigateToLanding = () => {
     if (isParentOnlyBuild) return;
-    window.location.hash = '/apresentacao';
+    const landingUrl = `${window.location.pathname}${window.location.search}#/apresentacao`;
+    window.history.replaceState(null, '', landingUrl);
     setViewMode('landing');
     setIsAuthModalOpen(false);
   };
