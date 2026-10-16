@@ -17,6 +17,7 @@ import { LinkRequestsManager } from './components/LinkRequestsManager';
 import { AuditLogPanel } from './components/AuditLogPanel';
 import { AccountsAdministrationPanel } from './components/AccountsAdministrationPanel';
 import { NotificationDeliveryPanel } from './components/NotificationDeliveryPanel';
+import { LandingPage } from './components/LandingPage';
 import { 
   STUDENTS_DATABASE, 
   INITIAL_TURNSTILES, 
@@ -65,15 +66,23 @@ import {
   Activity
 } from 'lucide-react';
 
-type ViewMode = 'parent_app' | 'management_dashboard';
+type ViewMode = 'landing' | 'parent_app' | 'management_dashboard';
+type AccessMode = 'login' | 'register';
 
 const PresentationAccessModal = React.lazy(async () => {
   const module = await import('./components/PresentationAccessModal');
   return { default: module.PresentationAccessModal };
 });
 
-const getViewModeFromHash = (): ViewMode =>
-  !isParentOnlyBuild && window.location.hash === '#/escola' ? 'management_dashboard' : 'parent_app';
+const getViewModeFromHash = (): ViewMode => {
+  if (isParentOnlyBuild) return 'parent_app';
+  if (window.location.hash.startsWith('#/escola')) return 'management_dashboard';
+  if (window.location.hash.startsWith('#/responsaveis')) return 'parent_app';
+  return 'landing';
+};
+
+const getAccessModeFromHash = (): AccessMode =>
+  window.location.hash.includes('/cadastro') ? 'register' : 'login';
 
 export default function App() {
   const isOnline = useConnectivity();
@@ -87,7 +96,17 @@ export default function App() {
   const [managementTab, setManagementTab] = useState<'catracas' | 'avisos' | 'alunos' | 'justificativas' | 'auditoria'>('catracas');
 
   useEffect(() => {
-    const handleHashChange = () => setViewMode(getViewModeFromHash());
+    const handleHashChange = () => {
+      const nextView = getViewModeFromHash();
+      setViewMode(nextView);
+      if (nextView === 'landing') {
+        setIsAuthModalOpen(false);
+        return;
+      }
+      setAuthModalMode(getAccessModeFromHash());
+      setAuthModalRole(nextView === 'parent_app' ? 'parent' : 'staff');
+      if (!authApi.hasStoredSession()) setIsAuthModalOpen(true);
+    };
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
@@ -100,7 +119,7 @@ export default function App() {
     window.addEventListener('catraca:session-ended', endSession);
     if (!authApi.hasStoredSession()) {
       setIsRestoringSession(false);
-      setIsAuthModalOpen(true);
+      setIsAuthModalOpen(viewMode !== 'landing');
       return () => window.removeEventListener('catraca:session-ended', endSession);
     }
     authApi.restore()
@@ -114,10 +133,20 @@ export default function App() {
     return () => window.removeEventListener('catraca:session-ended', endSession);
   }, []);
 
-  const navigateToView = (mode: ViewMode) => {
+  const navigateToView = (mode: Exclude<ViewMode, 'landing'>, accessMode?: AccessMode) => {
     if (isParentOnlyBuild && mode === 'management_dashboard') return;
-    window.location.hash = mode === 'management_dashboard' ? '/escola' : '/responsaveis';
+    const basePath = mode === 'management_dashboard' ? '/escola' : '/responsaveis';
+    window.location.hash = accessMode
+      ? `${basePath}/${accessMode === 'register' ? 'cadastro' : 'login'}`
+      : basePath;
     setViewMode(mode);
+  };
+
+  const navigateToLanding = () => {
+    if (isParentOnlyBuild) return;
+    window.history.pushState(null, '', `${window.location.pathname}${window.location.search}`);
+    setViewMode('landing');
+    setIsAuthModalOpen(false);
   };
 
   // Auth & Accounts State
@@ -136,8 +165,17 @@ export default function App() {
   });
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
-  const [authModalRole, setAuthModalRole] = useState<'parent' | 'staff'>('parent');
+  const [authModalMode, setAuthModalMode] = useState<AccessMode>(getAccessModeFromHash);
+  const [authModalRole, setAuthModalRole] = useState<'parent' | 'staff'>(() =>
+    getViewModeFromHash() === 'management_dashboard' ? 'staff' : 'parent',
+  );
+
+  const openAccess = (role: 'parent' | 'staff', mode: AccessMode = 'login') => {
+    setAuthModalRole(role);
+    setAuthModalMode(mode);
+    navigateToView(role === 'parent' ? 'parent_app' : 'management_dashboard', mode);
+    setIsAuthModalOpen(true);
+  };
 
   const [students, setStudents] = useState<Student[]>(STUDENTS_DATABASE);
   const [logs, setLogs] = useState<AccessLog[]>([]);
@@ -191,7 +229,7 @@ export default function App() {
     setIsAuthModalOpen(true);
   };
 
-  const handleSwitchAccess = async (target: ViewMode) => {
+  const handleSwitchAccess = async (target: Exclude<ViewMode, 'landing'>) => {
     await authApi.logout().catch(() => authApi.clear());
     setAuthenticatedUser(null);
     setAuthModalMode('login');
@@ -872,16 +910,24 @@ export default function App() {
     </div>;
   }
 
+  if (viewMode === 'landing') {
+    return <LandingPage
+      onParentLogin={() => openAccess('parent', 'login')}
+      onParentRegister={() => openAccess('parent', 'register')}
+      onSchoolLogin={() => openAccess('staff', 'login')}
+    />;
+  }
+
   if (!authenticatedUser) {
     return <div className="min-h-screen bg-slate-950">
       <AuthModal
         isOpen
-        onClose={() => undefined}
-        initialMode="login"
-        initialRole={isParentOnlyBuild || viewMode === 'parent_app' ? 'parent' : 'staff'}
+        onClose={navigateToLanding}
+        initialMode={authModalMode}
+        initialRole={authModalRole}
         allowedRole={isParentOnlyBuild || viewMode === 'parent_app' ? 'parent' : 'staff'}
-        dismissible={false}
-        onSwitchAccess={isParentOnlyBuild ? undefined : () => navigateToView(viewMode === 'parent_app' ? 'management_dashboard' : 'parent_app')}
+        dismissible={!isParentOnlyBuild}
+        onSwitchAccess={isParentOnlyBuild ? undefined : () => openAccess(viewMode === 'parent_app' ? 'staff' : 'parent')}
         onLoginSuccess={handleLoginSuccess}
         studentsDatabase={students}
       />

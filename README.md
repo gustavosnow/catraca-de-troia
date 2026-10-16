@@ -4,6 +4,8 @@ Protótipo acadêmico de controle de entrada e saída em uma escola pública de 
 
 **Estado: demonstração em evolução.** A API local já valida credenciais fictícias, emite sessões revogáveis e aplica perfil e vínculo no servidor. Eventos de entrada/saída, justificativas, avisos, notificações internas e solicitações de vínculo usam SQLite, idempotência ou controle de versão conforme o fluxo e auditoria das ações escolares. Coordenação/Direção também podem consultar e revogar vínculos, com bloqueio imediato no backend, revalidação posterior e visualização restrita dos metadados de auditoria. Eventos novos entram atomicamente em uma fila local durável, preparada para sincronizar com outra instância da API. Anexos novos de justificativas podem ser armazenados no SQLite com validação básica e autorização; anexos de avisos continuam apenas nominais. A origem das passagens e a entrega por canais externos ainda são simuladas. A experiência dos responsáveis também possui PWA instalável e projetos-base Capacitor; isso não equivale a identidade institucional, aplicativo publicado ou integração com hardware/serviços externos.
 
+A raiz `/` apresenta publicamente a ideia do sistema e encaminha para o cadastro demonstrativo ou login. Os acessos diretos continuam disponíveis em `/#/responsaveis`, `/#/responsaveis/cadastro` e `/#/escola`.
+
 ## Executar
 
 Requisito: Node.js com npm. A demonstração atual não exige chave Gemini.

@@ -195,3 +195,11 @@ Solicitação: avançar os próximos passos do projeto acadêmico sem gerar novo
 Ajustes: foi criado um roteiro reproduzível de aceite para sessão, perfis, vínculos, eventos, justificativas, anexos, avisos, fila, reconexão, estados vazios/erro, acessibilidade e responsividade. Os diálogos de alertas, liberação, ficha, documentação, justificativa, carteirinha e notificações passaram a conter o foco, responder a `Escape` quando seguro, restaurar o foco anterior e expor nome e papel semânticos. Foi adicionado foco visível global, respeito à preferência de redução de movimento, atalhos para o conteúdo principal e anúncios de estado. Textos que sugeriam push entregue ou hardware conectado foram substituídos por descrições explícitas da simulação.
 
 Limites: este ciclo não gera APK nem implementa catracas, câmeras, reconhecimento facial, push externo ou infraestrutura institucional. Os casos do roteiro ainda precisam ser executados manualmente e registrados; os comandos automatizados validam o código, mas não equivalem ao aceite final nem às metas de homologação da EAP.
+
+## MC-026 — Landing pública e rotas de entrada
+
+Solicitação: publicar o incremento anterior, restaurar a API local e criar uma página visual para apresentar a ideia do sistema antes do cadastro/login.
+
+Ajustes: a raiz da aplicação passou a exibir uma landing responsiva com proposta de valor, públicos, fluxo conceitual, premissas e metas explicitamente planejadas. Os botões encaminham para cadastro ou login de responsáveis e login da escola. As rotas `/#/responsaveis/cadastro`, `/#/responsaveis/login` e `/#/escola/login` preservam o modo de entrada após recarregar. A composição mantém a identidade azul-marinho/laranja, usa o ativo oficial e diferencia API local, simulações acadêmicas e resultados ainda não medidos. A página foi inspecionada em 1440 px e 390 px; o cadastro direto também foi conferido visualmente.
+
+Limites: o cadastro, as contas e os dados continuam demonstrativos. A landing não comprova implantação, monitoramento real, hardware, biometria, canal externo ou atingimento das metas. Nenhum APK foi gerado.

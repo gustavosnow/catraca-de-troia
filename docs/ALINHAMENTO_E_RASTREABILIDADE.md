@@ -6,7 +6,7 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 |---|---|---|---|
 | 1.1.1–1.1.4 | TAP, custos, riscos, acompanhamento e encerramento | Consolidação e links das fontes | Documentação acadêmica existente; aceite e encerramento pendentes |
 | 1.2.1 | Requisitos funcionais e não funcionais | Linha de base e metas centralizadas em `projectBaseline.ts` | Refinar histórias e plano de aceite |
-| 1.2.2–1.2.3 | Jornadas e protótipo de alta fidelidade | React: painel e `ParentAppView` | Demonstração; formalizar fluxogramas |
+| 1.2.2–1.2.3 | Jornadas e protótipo de alta fidelidade | Landing pública, painel escolar e `ParentAppView` em React | A proposta, os públicos e os limites acadêmicos são apresentados antes do cadastro/login; formalizar fluxogramas |
 | 1.3.1 | Backend e banco | API Express/SQLite consumida por justificativas, eventos, avisos e notificações internas; fila de saída e receptor de sincronização | Corte integrado com idempotência, controle de versão, auditoria e retentativas; implantar destino remoto e ampliar os demais módulos |
 | 1.3.2 | Reconhecimento facial | Passagens geradas por simulação | Fora do corte implementável deste protótipo acadêmico; manter como lacuna documentada, sem alegar integração ou homologação |
 | 1.3.3 | Painel escolar | `Header`, `LiveStreamFeed`, cadastros, avisos, fila de justificativas, vínculos, auditoria e estado da sincronização | Fluxos integrados usam API local; cadastro geral de estudantes continua demonstrativo |
@@ -51,6 +51,7 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 - As entradas `#/responsaveis` e `#/escola` estão separadas por perfil; a troca encerra a sessão anterior. Coordenação/Direção administram o estado das contas fictícias e revogam sessões remotas com motivo e auditoria.
 - A fila `PUSH_DEMO` persiste uma entrega para cada nova notificação interna e demonstra falha, backoff e reenfileiramento. Ela não envia push/WhatsApp nem comprova entrega ao aparelho.
 - Em telas pequenas e no modo PWA instalado, o portal remove automaticamente a moldura de apresentação e usa o mesmo contêiner de tela cheia do aplicativo. O painel escolar gera link e QR Code da sessão; o roteiro HTTPS temporário está em `APRESENTACAO_SEM_APK.md`.
+- A raiz pública apresenta a proposta de monitoramento e encaminha para cadastro/login dos responsáveis ou login escolar. Rotas diretas preservam o modo escolhido após recarregar a página.
 - Nenhum resultado de acurácia, latência, disponibilidade, segurança ou carga foi medido.
 
 ## Próxima sequência de desenvolvimento
