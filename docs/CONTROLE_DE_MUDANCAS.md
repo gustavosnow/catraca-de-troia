@@ -203,3 +203,11 @@ Solicitação: publicar o incremento anterior, restaurar a API local e criar uma
 Ajustes: a raiz da aplicação passou a exibir uma landing responsiva com proposta de valor, públicos, fluxo conceitual, premissas e metas explicitamente planejadas. Os botões encaminham para cadastro ou login de responsáveis e login da escola. As rotas `/#/responsaveis/cadastro`, `/#/responsaveis/login` e `/#/escola/login` preservam o modo de entrada após recarregar. A composição mantém a identidade azul-marinho/laranja, usa o ativo oficial e diferencia API local, simulações acadêmicas e resultados ainda não medidos. A página foi inspecionada em 1440 px e 390 px; o cadastro direto também foi conferido visualmente.
 
 Limites: o cadastro, as contas e os dados continuam demonstrativos. A landing não comprova implantação, monitoramento real, hardware, biometria, canal externo ou atingimento das metas. Nenhum APK foi gerado.
+
+## MC-027 — Entrada pública independente da sessão anterior
+
+Solicitação: corrigir a ausência aparente da landing no servidor atual.
+
+Ajustes: a restauração automática de uma sessão salva deixou de redirecionar a raiz antes da apresentação. `/` e `/#/apresentacao` agora mantêm a landing visível; os hashes de responsáveis e escola continuam abrindo seus fluxos específicos. Fechar um modal de entrada retorna para a apresentação explícita.
+
+Limites: a sessão local continua disponível para os fluxos demonstrativos, mas não é restaurada enquanto a pessoa permanece na página pública.

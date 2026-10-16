@@ -117,6 +117,10 @@ export default function App() {
       setIsAuthModalOpen(true);
     };
     window.addEventListener('catraca:session-ended', endSession);
+    if (!isParentOnlyBuild && viewMode === 'landing') {
+      setIsRestoringSession(false);
+      return () => window.removeEventListener('catraca:session-ended', endSession);
+    }
     if (!authApi.hasStoredSession()) {
       setIsRestoringSession(false);
       setIsAuthModalOpen(viewMode !== 'landing');
@@ -144,7 +148,7 @@ export default function App() {
 
   const navigateToLanding = () => {
     if (isParentOnlyBuild) return;
-    window.history.pushState(null, '', `${window.location.pathname}${window.location.search}`);
+    window.location.hash = '/apresentacao';
     setViewMode('landing');
     setIsAuthModalOpen(false);
   };
