@@ -147,7 +147,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
       setLoginSuccess(`Sessão autorizada. Olá, ${authUser.name.split(' ')[0]}.`);
       onLoginSuccess(authUser);
-      onClose();
     } catch (error) {
       setLoginSuccess('');
       setLoginError(error instanceof Error ? error.message : 'Não foi possível autenticar.');
@@ -482,7 +481,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   {role === 'parent' && <button
                     type="button"
                     onClick={() => handleQuickDemoLogin('claudia')}
-                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors cursor-pointer"
+                    disabled={isAuthenticating}
+                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-wait border border-slate-700/60 text-left transition-colors cursor-pointer"
                   >
                     <div className="text-xs font-bold text-white truncate">Cláudia Mendes</div>
                     <div className="text-[10px] text-slate-400 truncate">Mãe de 2 alunos (Ana e Arthur)</div>
@@ -491,7 +491,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   {role === 'parent' && <button
                     type="button"
                     onClick={() => handleQuickDemoLogin('rodrigo')}
-                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors cursor-pointer"
+                    disabled={isAuthenticating}
+                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-wait border border-slate-700/60 text-left transition-colors cursor-pointer"
                   >
                     <div className="text-xs font-bold text-white truncate">Rodrigo Oliveira</div>
                     <div className="text-[10px] text-slate-400 truncate">Pai de Gabriel e Sophia</div>
@@ -500,7 +501,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   {role === 'parent' && <button
                     type="button"
                     onClick={() => handleQuickDemoLogin('sem_vinculo')}
-                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors cursor-pointer"
+                    disabled={isAuthenticating}
+                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-wait border border-slate-700/60 text-left transition-colors cursor-pointer"
                   >
                     <div className="text-xs font-bold text-white truncate">Responsável sem vínculo</div>
                     <div className="text-[10px] text-amber-400 font-medium truncate">Testar solicitação escolar</div>
@@ -509,7 +511,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   {role === 'staff' && <button
                     type="button"
                     onClick={() => handleQuickDemoLogin('carlos')}
-                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors cursor-pointer"
+                    disabled={isAuthenticating}
+                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-wait border border-slate-700/60 text-left transition-colors cursor-pointer"
                   >
                     <div className="text-xs font-bold text-white truncate">Carlos Mendes</div>
                     <div className="text-[10px] text-orange-400 font-medium truncate">Inspetor & Operador</div>
@@ -518,7 +521,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   {role === 'staff' && <button
                     type="button"
                     onClick={() => handleQuickDemoLogin('mariana')}
-                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors cursor-pointer"
+                    disabled={isAuthenticating}
+                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-wait border border-slate-700/60 text-left transition-colors cursor-pointer"
                   >
                     <div className="text-xs font-bold text-white truncate">Profª Mariana Costa</div>
                     <div className="text-[10px] text-orange-400 font-medium truncate">Coordenação Pedagógica</div>

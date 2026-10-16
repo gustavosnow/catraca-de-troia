@@ -227,3 +227,11 @@ Solicitação: impedir que o recarregamento de `/#/apresentacao` volte a mostrar
 Ajustes: a versão web publicada passou a ativar automaticamente as atualizações do service worker. No servidor de desenvolvimento, registros e caches Workbox anteriores são removidos e `/sw.js` entrega um trabalhador de limpeza, evitando que uma PWA instalada anteriormente continue servindo um bundle obsoleto sobre `localhost`. A rota pública permanece prioritária e não restaura sessão nem autenticação sobre a landing.
 
 Limites: a limpeza automática em desenvolvimento é restrita aos registros da origem e aos caches identificados como Workbox/precache. Não remove contas ou dados persistidos pela API e não gera novo APK.
+
+## MC-030 — Entrada imediata pelas contas demonstrativas
+
+Solicitação: fazer os atalhos de login demonstrativo seguirem diretamente para o portal da conta escolhida.
+
+Ajustes: a autenticação bem-sucedida deixou de chamar também o fechamento cancelável do modal. Essa chamada concorria com a navegação do login e substituía o destino pelo retorno à apresentação. Agora o retorno autenticado controla sozinho a troca para o portal correspondente; os atalhos ficam temporariamente desabilitados durante a validação para evitar solicitações duplicadas.
+
+Limites: as contas e credenciais continuam fictícias e dependem da API local. A correção não altera autorização, perfis, vínculos ou persistência de sessão e não gera novo APK.
