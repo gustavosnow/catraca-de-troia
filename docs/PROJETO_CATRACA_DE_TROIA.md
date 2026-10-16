@@ -101,6 +101,6 @@ Encerramento exige evidências dos fluxos completos, continuidade local, sincron
 
 ## Estado atual e mudanças
 
-Veja `ALINHAMENTO_E_RASTREABILIDADE.md` para o mapeamento entre EAP e código e `CONTROLE_DE_MUDANCAS.md` para as decisões desta revisão. O frontend demonstra parte das jornadas; autenticação/sessão, justificativas, eventos e fila de saída possuem backend local. Biometria, hardware, identidade institucional, demais serviços, infraestrutura remota e homologação da sincronização estão pendentes.
+Veja `ALINHAMENTO_E_RASTREABILIDADE.md` para o mapeamento entre EAP e código e `CONTROLE_DE_MUDANCAS.md` para as decisões desta revisão. O frontend demonstra parte das jornadas; autenticação/sessão, justificativas, eventos e fila de saída possuem backend local. Por decisão do corte acadêmico atual, hardware e biometria real não serão integrados e permanecem como lacunas documentadas; identidade institucional, demais serviços, infraestrutura remota e homologação também não foram demonstrados.
 
 Identidade visual preservada: azul-marinho `#0B192C`/`#1E293B` e laranja `#EA580C`/`#F97316`/`#FF6500`, com os ativos existentes.

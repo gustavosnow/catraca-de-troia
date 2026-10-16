@@ -14,6 +14,7 @@ import {
   Filter
 } from 'lucide-react';
 import { ParentNotification } from '../../types';
+import { useAccessibleDialog } from '../../hooks/useAccessibleDialog';
 
 interface InAppNotificationDrawerProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export const InAppNotificationDrawer: React.FC<InAppNotificationDrawerProps> = (
   onSelectNotification,
 }) => {
   const [filter, setFilter] = useState<'all' | 'access' | 'notices'>('all');
+  const dialogRef = useAccessibleDialog({ isOpen, onClose });
 
   if (!isOpen) return null;
 
@@ -46,7 +48,7 @@ export const InAppNotificationDrawer: React.FC<InAppNotificationDrawerProps> = (
 
   return (
     <div className="absolute inset-0 z-40 flex flex-col bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-900 text-white w-full h-full shadow-2xl flex flex-col animate-in slide-in-from-bottom sm:slide-in-from-right duration-300 border-t sm:border-t-0 sm:border-l border-slate-800">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="notification-drawer-title" tabIndex={-1} className="bg-slate-900 text-white w-full h-full shadow-2xl flex flex-col animate-in slide-in-from-bottom sm:slide-in-from-right duration-300 border-t sm:border-t-0 sm:border-l border-slate-800">
         
         {/* Header */}
         <div className="bg-slate-900/95 text-white p-4 sm:p-5 flex items-center justify-between border-b border-slate-800 sticky top-0 z-10">
@@ -56,7 +58,7 @@ export const InAppNotificationDrawer: React.FC<InAppNotificationDrawerProps> = (
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white">Central de Notificações</h2>
+                <h2 id="notification-drawer-title" className="text-base font-bold text-white">Central de Notificações</h2>
                 {unreadCount > 0 && (
                   <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">
                     {unreadCount} novas
@@ -68,7 +70,9 @@ export const InAppNotificationDrawer: React.FC<InAppNotificationDrawerProps> = (
           </div>
 
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Fechar central de notificações"
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
             title="Fechar Notificações"
           >
@@ -80,7 +84,9 @@ export const InAppNotificationDrawer: React.FC<InAppNotificationDrawerProps> = (
         <div className="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between gap-2">
           <div className="flex gap-1">
             <button
+              type="button"
               onClick={() => setFilter('all')}
+              aria-pressed={filter === 'all'}
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 filter === 'all' ? 'bg-orange-600 text-white shadow-xs font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
               }`}
@@ -88,7 +94,9 @@ export const InAppNotificationDrawer: React.FC<InAppNotificationDrawerProps> = (
               Todas ({notifications.length})
             </button>
             <button
+              type="button"
               onClick={() => setFilter('access')}
+              aria-pressed={filter === 'access'}
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 filter === 'access' ? 'bg-orange-600 text-white shadow-xs font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
               }`}
@@ -96,7 +104,9 @@ export const InAppNotificationDrawer: React.FC<InAppNotificationDrawerProps> = (
               Catraca
             </button>
             <button
+              type="button"
               onClick={() => setFilter('notices')}
+              aria-pressed={filter === 'notices'}
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 filter === 'notices' ? 'bg-orange-600 text-white shadow-xs font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
               }`}
@@ -106,6 +116,7 @@ export const InAppNotificationDrawer: React.FC<InAppNotificationDrawerProps> = (
           </div>
 
           <button
+            type="button"
             onClick={onMarkAllAsRead}
             disabled={!canMarkAsRead}
             className="text-xs text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1 cursor-pointer transition-colors disabled:cursor-not-allowed disabled:text-slate-600"

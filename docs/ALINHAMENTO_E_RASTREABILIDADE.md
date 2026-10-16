@@ -8,10 +8,10 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 | 1.2.1 | Requisitos funcionais e não funcionais | Linha de base e metas centralizadas em `projectBaseline.ts` | Refinar histórias e plano de aceite |
 | 1.2.2–1.2.3 | Jornadas e protótipo de alta fidelidade | React: painel e `ParentAppView` | Demonstração; formalizar fluxogramas |
 | 1.3.1 | Backend e banco | API Express/SQLite consumida por justificativas, eventos, avisos e notificações internas; fila de saída e receptor de sincronização | Corte integrado com idempotência, controle de versão, auditoria e retentativas; implantar destino remoto e ampliar os demais módulos |
-| 1.3.2 | Reconhecimento facial | Passagens geradas por simulação | Pendente: Python/OpenCV e homologação |
+| 1.3.2 | Reconhecimento facial | Passagens geradas por simulação | Fora do corte implementável deste protótipo acadêmico; manter como lacuna documentada, sem alegar integração ou homologação |
 | 1.3.3 | Painel escolar | `Header`, `LiveStreamFeed`, cadastros, avisos, fila de justificativas, vínculos, auditoria e estado da sincronização | Fluxos integrados usam API local; cadastro geral de estudantes continua demonstrativo |
 | 1.3.4 | Portal responsivo dos responsáveis | `ParentAppView`, PWA, Capacitor Android/iOS e APK Android de depuração verificado | APK demonstrativo criado; teste em aparelho, API HTTPS remota, armazenamento seguro nativo, assinatura de distribuição, homologação e publicação permanecem pendentes |
-| 1.3.5 | Integração e acionamento | Duas catracas em `mockData.ts`, liberação manual visual | Pendente: hardware, operador validado e auditoria persistente |
+| 1.3.5 | Integração e acionamento | Duas catracas em `mockData.ts`, liberação manual visual e identificação explícita da simulação | Hardware fora do corte implementável deste protótipo acadêmico; preservar somente os cenários fictícios e a rastreabilidade da lacuna |
 | 1.3.6 | Notificações | Caixa interna persistente e fila `PUSH_DEMO` com estados, falha, backoff e reenfileiramento | Corte demonstrativo funcional; pendentes canal externo aprovado, trabalhador/provedor real e comprovação da meta |
 | 1.3.7 | Gestão biométrica | Cadastro visual e ficha do aluno | Pendente: ciclo de dados biométricos e proteção institucional |
 | 1.3.8 | Autenticação e autorização | Login separado por perfil, sessão opaca, APIs validando papéis/vínculos, bloqueio de conta, revogação de sessões e auditoria | Corte funcional testado com contas fictícias; integrar identidade institucional, HTTPS e controles distribuídos de produção |
@@ -55,9 +55,9 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 
 ## Próxima sequência de desenvolvimento
 
-1. Implantar e observar a fila/sincronização já implementada entre servidor escolar e destino remoto, incluindo teste real de desconexão, conflito, backup e restauração.
-2. Definir agenda, retenção, destino protegido e teste operacional dos backups; definir criptografia e verificação antimalware institucionais.
-3. Continuar o roteiro de acessibilidade e aceite dos dois portais; navegação semântica, diálogos críticos e experiência PWA responsiva já receberam o primeiro refinamento.
-4. Quando a interface estiver estabilizada, gerar uma única nova variante do APK, executar o roteiro móvel e registrar evidências; depois confirmar identificador institucional, distribuição e iOS em macOS/Xcode.
-5. Integrar um canal externo aprovado e trabalhador real à fila demonstrativa somente se houver decisão institucional.
-6. Integrar hardware e reconhecimento facial, executar homologação e produzir evidências da EAP.
+1. Executar o roteiro de aceite acadêmico dos dois portais, cobrindo acessibilidade, estados vazios/erro, segregação, reconexão e responsividade; corrigir e registrar os achados.
+2. Consolidar localmente as evidências da fila, conflitos, backup e restauração, sem apresentar a simulação como implantação escolar ou destino remoto real.
+3. Documentar como requisitos institucionais não implementados a retenção, o destino protegido, a criptografia, a verificação antimalware e a identidade de produção.
+4. Manter a geração de novo APK suspensa até nova decisão; a PWA responsiva é o canal de apresentação deste ciclo.
+5. Tratar canal externo, hardware e reconhecimento facial apenas como lacunas de escopo e itens de estudo, sem integração real neste protótipo acadêmico.
+6. Consolidar relatório acadêmico, evidências executadas e limitações antes do encerramento.

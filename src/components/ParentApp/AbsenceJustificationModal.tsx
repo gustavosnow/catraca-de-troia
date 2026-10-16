@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Student, AbsenceJustification } from '../../types';
 import { attachmentsApi } from '../../services/attachmentsApi';
+import { useAccessibleDialog } from '../../hooks/useAccessibleDialog';
 
 interface AbsenceJustificationModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
   const [successMessage, setSuccessMessage] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'nova' | 'historico'>('nova');
   const [submitError, setSubmitError] = useState<string>();
+  const dialogRef = useAccessibleDialog({ isOpen, onClose, closeOnEscape: !isSubmitting });
 
   if (!isOpen) return null;
 
@@ -76,7 +78,12 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
 
   return (
     <div className="absolute inset-0 z-40 flex items-end sm:items-center justify-center bg-slate-950/80 backdrop-blur-xs animate-in fade-in">
-      <div 
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="absence-modal-title"
+        tabIndex={-1}
         className="bg-white w-full h-full sm:h-auto sm:max-w-lg sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-full sm:max-h-[90vh] animate-in slide-in-from-bottom duration-300"
         onClick={(e) => e.stopPropagation()}
       >
@@ -87,7 +94,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white leading-tight">
+              <h2 id="absence-modal-title" className="text-base sm:text-lg font-bold text-white leading-tight">
                 Notificação de Ausência
               </h2>
               <p className="text-xs text-slate-400">
@@ -97,8 +104,10 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
           </div>
 
           <button
+            type="button"
             id="btn-close-absence-modal"
             onClick={onClose}
+            disabled={isSubmitting}
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
             aria-label="Fechar"
           >
@@ -107,8 +116,11 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
         </div>
 
         {/* Tab switch */}
-        <div className="flex border-b border-slate-200 bg-slate-50 px-4 pt-2 gap-2 text-xs font-semibold">
+        <div role="tablist" aria-label="Seções da justificativa" className="flex border-b border-slate-200 bg-slate-50 px-4 pt-2 gap-2 text-xs font-semibold">
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'nova'}
             onClick={() => setActiveTab('nova')}
             className={`pb-2.5 px-3 border-b-2 transition-colors ${
               activeTab === 'nova'
@@ -119,6 +131,9 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
             Nova Justificativa
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'historico'}
             onClick={() => setActiveTab('historico')}
             className={`pb-2.5 px-3 border-b-2 transition-colors flex items-center gap-1.5 ${
               activeTab === 'historico'

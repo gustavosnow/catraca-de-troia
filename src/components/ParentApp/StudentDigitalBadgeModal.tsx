@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Student } from '../../types';
 import { CatracaTroiaLogo } from '../CatracaTroiaLogo';
+import { useAccessibleDialog } from '../../hooks/useAccessibleDialog';
 
 interface StudentDigitalBadgeModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export const StudentDigitalBadgeModal: React.FC<StudentDigitalBadgeModalProps> =
 }) => {
   const [copied, setCopied] = useState(false);
   const [qrToken, setQrToken] = useState('TROIA-AUTH-' + Math.floor(100000 + Math.random() * 900000));
+  const dialogRef = useAccessibleDialog({ isOpen, onClose });
 
   if (!isOpen) return null;
 
@@ -43,7 +45,12 @@ export const StudentDigitalBadgeModal: React.FC<StudentDigitalBadgeModalProps> =
 
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-xs animate-in fade-in">
-      <div 
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="student-badge-title"
+        tabIndex={-1}
         className="bg-slate-900 text-white w-full max-w-xs sm:max-w-sm rounded-3xl shadow-2xl border border-slate-700/80 overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
@@ -64,7 +71,9 @@ export const StudentDigitalBadgeModal: React.FC<StudentDigitalBadgeModalProps> =
           </div>
 
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Fechar carteirinha demonstrativa"
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -93,7 +102,7 @@ export const StudentDigitalBadgeModal: React.FC<StudentDigitalBadgeModalProps> =
                     </span>
                   )}
                 </div>
-                <h3 className="text-sm font-bold text-white truncate mt-1">
+                <h3 id="student-badge-title" className="text-sm font-bold text-white truncate mt-1">
                   {student.name} {student.age ? `(${student.age} anos)` : ''}
                 </h3>
                 <div className="text-xs text-slate-300 font-medium truncate">
@@ -114,7 +123,9 @@ export const StudentDigitalBadgeModal: React.FC<StudentDigitalBadgeModalProps> =
               <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-600 mt-2">
                 <span>Token dinâmico: {qrToken}</span>
                 <button
+                  type="button"
                   onClick={handleRefreshQr}
+                  aria-label="Gerar novo código ilustrativo"
                   className="text-orange-600 hover:text-orange-800 p-0.5"
                   title="Atualizar QR Code"
                 >
@@ -132,7 +143,7 @@ export const StudentDigitalBadgeModal: React.FC<StudentDigitalBadgeModalProps> =
                 <div className="text-[10px] text-slate-400">Matrícula EMEF</div>
                 <div className="font-mono font-bold text-white flex items-center justify-between">
                   <span>{student.matricula}</span>
-                  <button onClick={handleCopyMatricula} className="text-slate-400 hover:text-white">
+                  <button type="button" onClick={handleCopyMatricula} aria-label="Copiar matrícula" className="text-slate-400 hover:text-white">
                     {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
                   </button>
                 </div>
@@ -165,6 +176,7 @@ export const StudentDigitalBadgeModal: React.FC<StudentDigitalBadgeModalProps> =
         {/* Footer */}
         <div className="p-3 bg-slate-950 border-t border-slate-800 text-center relative z-10">
           <button
+            type="button"
             onClick={onClose}
             className="w-full py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold transition-colors cursor-pointer"
           >

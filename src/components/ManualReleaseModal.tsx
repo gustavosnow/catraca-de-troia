@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Student, Turnstile } from '../types';
 import { soundManager } from '../utils/sound';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 
 interface ManualReleaseModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export const ManualReleaseModal: React.FC<ManualReleaseModalProps> = ({
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [successAuthorized, setSuccessAuthorized] = useState(false);
   const [authorizationError, setAuthorizationError] = useState<string>();
+  const dialogRef = useAccessibleDialog({ isOpen, onClose, closeOnEscape: !isAuthorizing });
 
   if (!isOpen) return null;
 
@@ -82,7 +84,13 @@ export const ManualReleaseModal: React.FC<ManualReleaseModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div 
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="manual-release-title"
+        aria-describedby="manual-release-description"
+        tabIndex={-1}
         className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -94,16 +102,19 @@ export const ManualReleaseModal: React.FC<ManualReleaseModalProps> = ({
               <KeyRound className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base tracking-tight text-white">
+              <h3 id="manual-release-title" className="font-extrabold text-base tracking-tight text-white">
                 Liberação Manual de Catraca
               </h3>
-              <p className="text-orange-100 text-xs font-medium">
+              <p id="manual-release-description" className="text-orange-100 text-xs font-medium">
                 Portaria & Acesso Assistido
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
+            disabled={isAuthorizing}
+            aria-label="Fechar liberação manual"
             className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/20 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -115,11 +126,11 @@ export const ManualReleaseModal: React.FC<ManualReleaseModalProps> = ({
           
           {/* Success state animation */}
           {successAuthorized ? (
-            <div className="py-8 text-center space-y-3 animate-in zoom-in-95 duration-200">
+            <div className="py-8 text-center space-y-3 animate-in zoom-in-95 duration-200" role="status" aria-live="polite">
               <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
                 <CheckCircle2 className="w-10 h-10" />
               </div>
-              <h4 className="text-lg font-extrabold text-slate-900">Catraca Destravada com Sucesso!</h4>
+              <h4 className="text-lg font-extrabold text-slate-900">Liberação demonstrativa registrada</h4>
               <p className="text-xs text-slate-500 max-w-xs mx-auto">
                 Liberação demonstrativa registrada. Nenhum hardware físico foi acionado.
               </p>

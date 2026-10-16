@@ -954,6 +954,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-orange-500 selection:text-white">
+      <a href="#school-main-content" className="fixed left-3 top-3 z-[100] -translate-y-24 rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition-transform focus:translate-y-0">
+        Ir para o conteúdo principal
+      </a>
       <DemoNotice />
       
       {/* Streamlined Unified Header (Navigation, Brand, Status & Actions in one place) */}
@@ -975,8 +978,8 @@ export default function App() {
       />
 
       {/* Main Dashboard Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5">
-        <div className={`mb-4 rounded-xl border px-4 py-2 text-xs ${
+      <main id="school-main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5">
+        <div role="status" aria-live="polite" className={`mb-4 rounded-xl border px-4 py-2 text-xs ${
           accessEventsState === 'persistent'
             ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
             : accessEventsState === 'loading'
@@ -1146,7 +1149,7 @@ export default function App() {
               </p>
               <div className="flex items-center gap-1.5 text-[11px] text-sky-700 font-medium mt-1">
                 <Smartphone className="w-3.5 h-3.5 text-sky-600" />
-                <span>Notificação enviada ao App dos Pais (Push Entregue)</span>
+                <span>Notificação interna registrada nesta demonstração</span>
               </div>
             </div>
           </div>

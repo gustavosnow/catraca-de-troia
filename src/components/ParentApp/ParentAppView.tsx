@@ -269,6 +269,9 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
 
   return (
     <div className={`${isAppLikeExperience ? 'h-dvh overflow-hidden' : 'min-h-screen'} bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-orange-500 selection:text-white`}>
+      <a href="#parent-app-content" className="fixed left-3 top-3 z-[100] -translate-y-24 rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition-transform focus:translate-y-0">
+        Ir para o conteúdo principal
+      </a>
       <DemoNotice />
       
       {/* Top Navigation / Perspective Bar */}
@@ -341,7 +344,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
       </header>}
 
       {/* Main Container */}
-      <main id="parent-app-content" className={`flex-1 min-h-0 flex items-center justify-center relative ${isAppLikeExperience ? 'p-0' : 'p-2 sm:p-6 lg:p-8'}`}>
+      <main id="parent-app-content" tabIndex={-1} className={`flex-1 min-h-0 flex items-center justify-center relative ${isAppLikeExperience ? 'p-0' : 'p-2 sm:p-6 lg:p-8'}`}>
         {/* Device Container */}
         <div className={`w-full transition-all duration-300 ${isAppLikeExperience
           ? 'h-full bg-slate-900 overflow-hidden relative flex flex-col native-app-shell'

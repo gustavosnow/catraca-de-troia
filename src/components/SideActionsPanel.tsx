@@ -322,16 +322,16 @@ export const SideActionsPanel: React.FC<SideActionsPanelProps> = ({
         )}
       </div>
 
-      {/* 5. Hardware Status (Catracas Físicas Conectadas) */}
+      {/* 5. Academic turnstile simulation */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-3.5">
           <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
             <Cpu className="w-4 h-4 text-orange-600" />
-            Catracas Físicas (Hardware)
+            Cenários de Catraca (Simulação)
           </h3>
           <span className="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
             <Wifi className="w-3 h-3 text-emerald-600" />
-            {turnstiles.filter(t => t.status === 'Online').length}/{turnstiles.length} online (simulado)
+            {turnstiles.length} cenários demonstrativos
           </span>
         </div>
 

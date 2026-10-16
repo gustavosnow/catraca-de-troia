@@ -16,6 +16,7 @@ import {
   Building,
   ArrowRight
 } from 'lucide-react';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 
 interface ProjectDocsModalProps {
   isOpen: boolean;
@@ -24,12 +25,13 @@ interface ProjectDocsModalProps {
 
 export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onClose }) => {
   const [activeDocTab, setActiveDocTab] = useState<'charter' | 'smart' | 'budget' | 'lifecycle' | 'risks' | 'identity'>('charter');
+  const dialogRef = useAccessibleDialog({ isOpen, onClose });
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="project-docs-title" tabIndex={-1} className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
@@ -39,7 +41,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold tracking-tight">Catraca de Tróia • Documentação do Projeto</h3>
+                <h3 id="project-docs-title" className="text-base font-bold tracking-tight">Catraca de Tróia • Documentação do Projeto</h3>
                 <span className="px-2 py-0.5 text-[10px] font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded">
                   Rede Pública
                 </span>
@@ -51,7 +53,9 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
           </div>
 
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Fechar documentação do projeto"
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />

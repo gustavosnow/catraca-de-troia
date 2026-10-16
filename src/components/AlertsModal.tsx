@@ -9,6 +9,7 @@ import {
   Check
 } from 'lucide-react';
 import { SecurityAlert } from '../types';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 
 interface AlertsModalProps {
   alerts: SecurityAlert[];
@@ -23,11 +24,18 @@ export const AlertsModal: React.FC<AlertsModalProps> = ({
   onClose,
   onResolveAlert,
 }) => {
+  const dialogRef = useAccessibleDialog({ isOpen, onClose });
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div 
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="alerts-modal-title"
+        tabIndex={-1}
         className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -39,7 +47,7 @@ export const AlertsModal: React.FC<AlertsModalProps> = ({
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base tracking-tight text-slate-950">
+              <h3 id="alerts-modal-title" className="font-extrabold text-base tracking-tight text-slate-950">
                 Alertas de Acesso & Inconsistências
               </h3>
               <p className="text-slate-900/80 text-xs font-medium">
@@ -48,7 +56,9 @@ export const AlertsModal: React.FC<AlertsModalProps> = ({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Fechar alertas"
             className="p-1.5 rounded-lg text-slate-950/70 hover:text-slate-950 hover:bg-black/10 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -101,6 +111,7 @@ export const AlertsModal: React.FC<AlertsModalProps> = ({
 
                   {!alert.resolved && (
                     <button
+                      type="button"
                       onClick={() => onResolveAlert(alert.id)}
                       className="px-2.5 py-1 bg-white hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold shrink-0 transition-colors flex items-center gap-1 cursor-pointer"
                       title="Marcar como verificado"
@@ -118,6 +129,7 @@ export const AlertsModal: React.FC<AlertsModalProps> = ({
         {/* Footer */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
           <button
+            type="button"
             onClick={onClose}
             className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer"
           >

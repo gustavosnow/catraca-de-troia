@@ -114,6 +114,7 @@ O identificador `com.gustavosnow.catracatroia` é provisório e deve ser confirm
 - [Rastreabilidade da EAP, estado atual e próximos passos](docs/ALINHAMENTO_E_RASTREABILIDADE.md)
 - [Controle de mudanças](docs/CONTROLE_DE_MUDANCAS.md)
 - [Apresentação do app sem APK](docs/APRESENTACAO_SEM_APK.md)
+- [Roteiro de aceite acadêmico dos portais](docs/ROTEIRO_ACEITE_ACADEMICO.md)
 - [Instruções de desenvolvimento](AGENTS.md)
 - [Política de contribuição e commits](CONTRIBUTING.md)
 

@@ -15,6 +15,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { Student, AccessLog } from '../types';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 
 interface StudentDetailModalProps {
   student: Student | null;
@@ -31,13 +32,20 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
   onClose,
   onSendWhatsappDirect,
 }) => {
+  const dialogRef = useAccessibleDialog({ isOpen, onClose });
+
   if (!isOpen || !student) return null;
 
   const studentLogs = logs.filter(l => l.studentId === student.id || l.studentName === student.name);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div 
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="student-detail-title"
+        tabIndex={-1}
         className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
@@ -45,7 +53,9 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         {/* Header */}
         <div className="p-6 bg-slate-900 text-white relative">
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Fechar ficha do estudante"
             className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -59,7 +69,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             />
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white tracking-tight">{student.name}</h3>
+                <h3 id="student-detail-title" className="text-lg font-bold text-white tracking-tight">{student.name}</h3>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                   {student.status}
                 </span>
@@ -133,6 +143,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="font-bold font-mono text-slate-800">{student.guardianPhone}</span>
                   <button
+                    type="button"
                     onClick={() => onSendWhatsappDirect(student.guardianPhone, student.name)}
                     className="inline-flex items-center gap-1 px-2 py-1 text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg font-bold text-[11px] transition-colors"
                     title="Abrir WhatsApp para contato direto com o responsável"
@@ -211,6 +222,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
           </div>
 
           <button
+            type="button"
             onClick={onClose}
             className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer"
           >
