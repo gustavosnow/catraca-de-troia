@@ -243,3 +243,11 @@ Solicitação: corrigir sobreposições e textos cortados no portal dos respons�
 Ajustes: o modo compacto deixou de depender dos breakpoints da janela externa e passou a ser informado pela experiência exibida, inclusive dentro da moldura de smartphone em desktop. A marca reduz espaçamentos e preserva o nome completo do projeto; Carteirinha e Avisos usam ações compactas acessíveis. A unidade "EMEF Profª. Cecília Meireles" ganhou identificação própria e sempre visível. A linha da conta omite dados secundários no espaço reduzido, e os seletores de dependentes passam a uma coluna, permitindo exibir nome, turma e matrícula sem colisão. O componente foi inspecionado a 360 px e 440 px.
 
 Limites: os dados da escola, responsáveis e estudantes continuam demonstrativos. O ajuste não representa homologação em aparelhos, integração institucional ou geração de novo APK.
+
+## MC-032 — Regressão visual, desempenho e evidências operacionais
+
+Solicitação: executar os próximos passos de qualidade, exceto a preparação do relatório final.
+
+Ajustes: foi criado um executor visual reproduzível com Firefox/WebDriver BiDi para 360 px, 440 px, 768 px e 1440 px. Ele cobre Início, Histórico, Avisos, Carteirinha, Notificações e Justificativa, verifica rolagem horizontal, colisões, identificação da escola, navegação ativa, `Escape`, restauração de foco, movimento reduzido e estados offline/online. A carteirinha passou a permitir quebra do nome, turma e turno sem truncagem. O build separa React, ícones e QR Code, reduzindo o chunk da aplicação de cerca de 600 kB para 331,85 kB. Uma verificação específica confirma o manifesto PWA e a exclusão de `/api` do cache. Foram executados 26 testes da API, backup da base local e restauração verificada em arquivo novo; as evidências estão em `EVIDENCIAS_ACEITE_ACADEMICO_2026-10-16.md`.
+
+Limites: capturas, backup e restauração ficam em diretórios locais ignorados pelo Git. Interrupção operacional observada da API, percurso manual integral por teclado e instalação standalone ainda exigem execução manual. Não houve relatório final, novo APK, hardware real ou homologação institucional.

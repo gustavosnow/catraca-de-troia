@@ -48,7 +48,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
   const [childDropdownOpen, setChildDropdownOpen] = useState(false);
 
   return (
-    <header className="bg-[#0B192C] text-white pt-4 pb-3 px-4 sm:px-5 relative shadow-xl border-b border-slate-800/90">
+    <header data-testid="parent-header" className="bg-[#0B192C] text-white pt-4 pb-3 px-4 sm:px-5 relative shadow-xl border-b border-slate-800/90">
       {/* Background glow ambient effects */}
       <div className="absolute top-0 right-0 w-64 h-28 bg-orange-600/10 pointer-events-none rounded-full blur-3xl" />
       <div className="absolute top-0 left-0 w-36 h-28 bg-blue-600/10 pointer-events-none rounded-full blur-2xl" />
@@ -59,7 +59,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
         <div className="flex min-w-0 items-center justify-between gap-3">
           
           {/* Logo e Nome da Escola com visualização garantida sem truncagem */}
-          <div className="flex min-w-0 flex-1 items-center">
+          <div data-testid="parent-brand" className="flex min-w-0 flex-1 items-center">
             <CatracaTroiaLogo
               size={compact ? 40 : 46}
               compact={compact}
@@ -69,7 +69,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
           </div>
 
           {/* Botões de Ação Rápida (Carteirinha e Central de Avisos) */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div data-testid="parent-header-actions" className="flex items-center gap-2 shrink-0">
             {/* Carteirinha Digital do Aluno (apenas se houver aluno selecionado) */}
             {activeTab !== 'notices' && (
               <button
@@ -102,7 +102,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
 
         </div>
 
-        <div className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-700/70 bg-slate-800/45 px-2.5 py-1.5 text-[11px]">
+        <div data-testid="parent-school" className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-700/70 bg-slate-800/45 px-2.5 py-1.5 text-[11px]">
           <School className="h-3.5 w-3.5 shrink-0 text-orange-400" aria-hidden="true" />
           <span className="min-w-0 font-bold leading-tight text-slate-200">EMEF Profª. Cecília Meireles</span>
           <span className="ml-auto shrink-0 rounded-full bg-orange-500/10 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-orange-300">
@@ -291,7 +291,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
             </div>
 
             {/* Chips de Seleção de Filhos Conectados */}
-            <div className={`grid gap-2 ${compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
+            <div data-testid="parent-students" className={`grid gap-2 ${compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
               {myChildren.map((child) => {
                 const isSelected = child.id === selectedStudent.id;
                 return (

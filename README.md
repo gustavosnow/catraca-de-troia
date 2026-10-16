@@ -15,15 +15,20 @@ npm ci
 npm run dev
 ```
 
-Abra `http://localhost:3000`. O comando inicia a API na porta `3001` e o Vite na porta `3000`; o proxy do Vite mantém as chamadas da interface no mesmo endereço. O portal inicia na visão dos responsáveis, e o botão de painel escolar permite explorar o outro perfil da demonstração.
+Abra `http://localhost:3000`. O comando inicia a API na porta `3001` e o Vite na porta `3000`; o proxy do Vite mantém as chamadas da interface no mesmo endereço. A raiz abre a apresentação pública, que encaminha para o portal dos responsáveis ou para o painel escolar.
 
 As interfaces também possuem entradas demonstrativas identificáveis: `http://localhost:3000/#/responsaveis` e `http://localhost:3000/#/escola`. Eventos de entrada/saída, histórico derivado, justificativas, avisos e notificações internas são persistidos pela API local. A leitura dos avisos é individual por responsável; notificações de passagem e do fluxo de justificativas também aparecem na caixa interna do portal.
 
 ```bash
 npm run lint
 npm run build
+npm run test:api
+npm run test:visual
+npm run test:pwa
 npm run preview
 ```
+
+`test:visual` usa Firefox local em modo headless para verificar 360 px, 440 px, 768 px e 1440 px. As capturas e o resultado estruturado ficam em `.artifacts/visual-acceptance/`, fora do Git. `test:pwa` deve ser executado depois do build.
 
 ## API local, autenticação e sessões
 
@@ -117,6 +122,7 @@ O identificador `com.gustavosnow.catracatroia` é provisório e deve ser confirm
 - [Controle de mudanças](docs/CONTROLE_DE_MUDANCAS.md)
 - [Apresentação do app sem APK](docs/APRESENTACAO_SEM_APK.md)
 - [Roteiro de aceite acadêmico dos portais](docs/ROTEIRO_ACEITE_ACADEMICO.md)
+- [Evidências do ciclo de aceite de 16/10/2026](docs/EVIDENCIAS_ACEITE_ACADEMICO_2026-10-16.md)
 - [Instruções de desenvolvimento](AGENTS.md)
 - [Política de contribuição e commits](CONTRIBUTING.md)
 

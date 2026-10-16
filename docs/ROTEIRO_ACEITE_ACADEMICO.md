@@ -6,7 +6,7 @@ Este roteiro valida o corte web responsivo do Catraca de Troia com dados fictíc
 
 O ciclo é aprovado quando:
 
-- `npm run lint`, `npm run test:api` e `npm run build` terminam sem erro;
+- `npm run lint`, `npm run test:api`, `npm run build`, `npm run test:visual` e `npm run test:pwa` terminam sem erro;
 - todos os casos críticos abaixo passam nos perfis autorizados;
 - nenhuma tela apresenta dado de estudante sem sessão e vínculo aprovados;
 - indisponibilidade e simulações são identificadas sem alegar operação real;
@@ -63,3 +63,5 @@ Para cada falha, registrar:
 - correção aplicada ou justificativa de aceite da limitação.
 
 Ao concluir, registrar no controle de mudanças a data, os casos executados, os bloqueios restantes e os comandos de validação. Não marcar hardware, biometria, push externo ou indicadores de homologação como aprovados.
+
+O ciclo automatizado de 16/10/2026 está registrado em `EVIDENCIAS_ACEITE_ACADEMICO_2026-10-16.md`. As capturas são geradas localmente em `.artifacts/visual-acceptance/` e não devem ser versionadas.

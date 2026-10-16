@@ -77,7 +77,7 @@ export const StudentDigitalBadgeModal: React.FC<StudentDigitalBadgeModalProps> =
         <div className="p-5 relative z-10 space-y-4">
           {/* Card Body */}
           <div className="bg-gradient-to-b from-slate-800 to-slate-850 rounded-2xl p-4 border border-slate-700 shadow-xl space-y-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-start gap-3">
               <img
                 src={student.avatar}
                 alt={student.name}
@@ -95,10 +95,10 @@ export const StudentDigitalBadgeModal: React.FC<StudentDigitalBadgeModalProps> =
                     </span>
                   )}
                 </div>
-                <h3 id="student-badge-title" className="text-sm font-bold text-white truncate mt-1">
+                <h3 id="student-badge-title" className="mt-1 break-words text-sm font-bold leading-snug text-white">
                   {student.name} {student.age ? `(${student.age} anos)` : ''}
                 </h3>
-                <div className="text-xs text-slate-300 font-medium truncate">
+                <div className="mt-0.5 text-xs font-medium leading-snug text-slate-300">
                   {student.turma} • Turno {student.shift}
                 </div>
               </div>

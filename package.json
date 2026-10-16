@@ -16,6 +16,8 @@
     "api:device": "cross-env API_HOST=0.0.0.0 tsx watch server/index.ts",
     "api:start": "tsx server/index.ts",
     "test:api": "tsx --test server/test/*.test.ts",
+    "test:visual": "node scripts/run-visual-acceptance.mjs",
+    "test:pwa": "node scripts/verify-pwa-build.mjs",
     "db:backup": "tsx server/maintenance/runBackup.ts",
     "cap:sync": "npm run build:parent && cap sync",
     "cap:sync:android:demo": "cross-env CAPACITOR_ANDROID_SCHEME=http VITE_API_BASE_URL=http://10.0.2.2:3001 npm run build:parent && cross-env CAPACITOR_ANDROID_SCHEME=http cap sync android",

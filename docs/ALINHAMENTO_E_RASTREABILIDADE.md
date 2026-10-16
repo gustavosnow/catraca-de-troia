@@ -15,7 +15,7 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 | 1.3.6 | Notificações | Caixa interna persistente e fila `PUSH_DEMO` com estados, falha, backoff e reenfileiramento | Corte demonstrativo funcional; pendentes canal externo aprovado, trabalhador/provedor real e comprovação da meta |
 | 1.3.7 | Gestão biométrica | Cadastro visual e ficha do aluno | Pendente: ciclo de dados biométricos e proteção institucional |
 | 1.3.8 | Autenticação e autorização | Login separado por perfil, sessão opaca, APIs validando papéis/vínculos, bloqueio de conta, revogação de sessões e auditoria | Corte funcional testado com contas fictícias; integrar identidade institucional, HTTPS e controles distribuídos de produção |
-| 1.4.1 | Plano e testes automatizados/manuais | Typecheck, build e verificação dos cenários desta revisão | Não equivale à cobertura funcional/QA da EAP |
+| 1.4.1 | Plano e testes automatizados/manuais | Typecheck, build, 26 testes de API, 26 cenários visuais em quatro larguras e verificação do artefato PWA | Evidências do ciclo em `EVIDENCIAS_ACEITE_ACADEMICO_2026-10-16.md`; percurso manual integral ainda pendente |
 | 1.4.2–1.4.3 | Carga, segurança e correções | Sem resultados de homologação | Pendente: plano, execução, retestes e relatório |
 | 1.5.1 | Servidor, backup e continuidade local | Fila SQLite, retentativas, receptor idempotente, backup verificado e restauração testada em arquivo novo | Pendente: implantação em servidor escolar/destino, agenda e retenção operacional, monitoramento e teste real de desconexão/restauração |
 | 1.5.2 | Instalação de duas catracas | Quantidade refletida na demonstração | Pendente: instalação física e comissionamento |
@@ -56,9 +56,8 @@ Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
 
 ## Próxima sequência de desenvolvimento
 
-1. Executar o roteiro de aceite acadêmico dos dois portais, cobrindo acessibilidade, estados vazios/erro, segregação, reconexão e responsividade; corrigir e registrar os achados.
-2. Consolidar localmente as evidências da fila, conflitos, backup e restauração, sem apresentar a simulação como implantação escolar ou destino remoto real.
-3. Documentar como requisitos institucionais não implementados a retenção, o destino protegido, a criptografia, a verificação antimalware e a identidade de produção.
-4. Manter a geração de novo APK suspensa até nova decisão; a PWA responsiva é o canal de apresentação deste ciclo.
-5. Tratar canal externo, hardware e reconhecimento facial apenas como lacunas de escopo e itens de estudo, sem integração real neste protótipo acadêmico.
-6. Consolidar relatório acadêmico, evidências executadas e limitações antes do encerramento.
+1. Concluir as passagens manuais restantes do roteiro em navegador gráfico: teclado integral dos dois portais, interrupção real da API e instalação standalone da PWA.
+2. Documentar como requisitos institucionais não implementados a retenção, o destino protegido, a criptografia, a verificação antimalware e a identidade de produção.
+3. Manter a geração de novo APK suspensa até nova decisão; a PWA responsiva é o canal de apresentação deste ciclo.
+4. Tratar canal externo, hardware e reconhecimento facial apenas como lacunas de escopo e itens de estudo, sem integração real neste protótipo acadêmico.
+5. Preparar o relatório acadêmico final somente em ciclo posterior, conforme decisão do responsável pelo projeto.
