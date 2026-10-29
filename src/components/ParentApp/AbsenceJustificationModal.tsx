@@ -14,7 +14,6 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import { Student, AbsenceJustification } from '../../types';
-import { attachmentsApi } from '../../services/attachmentsApi';
 import { useAccessibleDialog } from '../../hooks/useAccessibleDialog';
 
 interface AbsenceJustificationModalProps {
@@ -24,7 +23,6 @@ interface AbsenceJustificationModalProps {
   existingJustifications: AbsenceJustification[];
   onSubmitJustification: (
     justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
-    attachment?: File,
   ) => Promise<void>;
 }
 
@@ -36,9 +34,8 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
   onSubmitJustification,
 }) => {
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [reasonCategory, setReasonCategory] = useState<AbsenceJustification['reasonCategory']>('Médico / Saúde');
+  const [reasonCategory, setReasonCategory] = useState<AbsenceJustification['reasonCategory']>('Motivo de Força Maior');
   const [description, setDescription] = useState<string>('');
-  const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'nova' | 'historico'>('nova');
@@ -60,13 +57,11 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
         date,
         reasonCategory,
         description,
-        attachmentName: attachedFile?.name,
-      }, attachedFile || undefined);
+      });
       setSuccessMessage(true);
       setTimeout(() => {
         setSuccessMessage(false);
         setDescription('');
-        setAttachedFile(null);
         setActiveTab('historico');
       }, 1500);
     } catch (error) {
@@ -159,7 +154,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
                 Justificativa Enviada com Sucesso!
               </h3>
               <p className="text-xs text-emerald-800 max-w-sm mx-auto leading-relaxed">
-                A secretaria escolar e a coordenação disciplinar já foram notificadas no painel administrativo para análise do documento.
+                A justificativa textual está disponível no painel para análise da Coordenação ou Direção.
               </p>
             </div>
           ) : activeTab === 'nova' ? (
@@ -230,57 +225,16 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   required
-                  placeholder="Ex: Ana Clara teve febre durante a noite e passará por consulta pediátrica às 10h. Segue atestado anexo."
+                  placeholder="Ex: houve um problema no transporte e o estudante não pôde comparecer."
                   className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white placeholder:text-slate-400"
                 />
-              </div>
-
-              {/* Local demonstrative file upload */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
-                  <span>Anexar Comprovante / Atestado (Opcional)</span>
-                  <span className="text-[10px] text-slate-500 font-normal">PDF, JPG ou PNG</span>
-                </label>
-
-                {attachedFile ? (
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-blue-50 border border-blue-200">
-                    <div className="flex items-center gap-2 text-xs font-medium text-blue-900 truncate">
-                      <Paperclip className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span className="truncate">{attachedFile.name} · {(attachedFile.size / 1024).toFixed(0)} KB</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setAttachedFile(null)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-red-600 transition-colors"
-                      title="Remover anexo"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <label className="block border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-4 text-center cursor-pointer transition-colors bg-slate-50/60 hover:bg-blue-50/30">
-                    <input
-                      type="file"
-                      accept="application/pdf,image/jpeg,image/png"
-                      className="sr-only"
-                      onChange={(event) => setAttachedFile(event.target.files?.[0] || null)}
-                    />
-                    <Upload className="w-6 h-6 text-slate-400 mx-auto mb-1" />
-                    <div className="text-xs font-bold text-slate-700">
-                      Selecionar comprovante ou atestado
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      PDF, JPG ou PNG, até 2 MB
-                    </p>
-                  </label>
-                )}
               </div>
 
               {/* Disclaimer */}
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 flex items-start gap-2">
                 <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <span>
-                  O arquivo recebe validação de tipo e assinatura, mas não passa por antivírus homologado. Use somente dados fictícios neste ambiente acadêmico.
+                  Informe apenas o motivo necessário para comunicar a ausência. Não inclua diagnóstico ou outros detalhes de saúde. Este piloto não recebe arquivos; use somente dados fictícios.
                 </span>
               </div>
 
@@ -341,18 +295,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
                       {just.description}
                     </p>
 
-                    {just.attachmentName && (
-                      <button
-                        type="button"
-                        disabled={!just.attachmentId}
-                        onClick={() => just.attachmentId && void attachmentsApi.download(just.attachmentId, just.attachmentName!)}
-                        className="flex items-center gap-1.5 text-[11px] text-blue-700 font-medium disabled:cursor-not-allowed disabled:text-slate-500"
-                        title={just.attachmentId ? 'Baixar anexo autorizado' : 'Registro legado sem conteúdo armazenado'}
-                      >
-                        <Paperclip className="w-3.5 h-3.5" />
-                        <span>{just.attachmentId ? 'Baixar' : 'Somente nome registrado'}: {just.attachmentName}</span>
-                      </button>
-                    )}
+
                   </div>
                 ))
               )}

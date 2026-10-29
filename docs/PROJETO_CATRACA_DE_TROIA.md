@@ -1,6 +1,6 @@
 # Catraca de Troia — Controle de Acesso Inteligente
 
-Consolidação técnica consultada em **13/10/2026**. Referências acadêmicas revisadas em outubro de 2026; entregas e metas planejadas, sem homologação comprovada neste protótipo.
+Consolidação técnica atualizada em **29/10/2026**. Referências acadêmicas revisadas em outubro de 2026; entregas e metas planejadas, sem homologação comprovada neste protótipo.
 
 ## Fontes de referência
 
@@ -17,22 +17,24 @@ O registro ineficiente de entrada e saída dificulta o acompanhamento pela gest�
 
 Cada evento deve identificar aluno, data, hora e entrada ou saída. A gestão terá painel web; responsáveis terão portal responsivo com acesso somente aos alunos vinculados. Também fazem parte do escopo histórico, notificações, avisos, justificativas, cadastro e gestão biométrica, autenticação, autorização, testes, implantação e treinamento.
 
-A extensão para outras escolas não integra a entrega-piloto. RFID, biometria digital, integração com diário pedagógico e acompanhamento de aulas não são entregas aprovadas. A carteirinha visual existente é recurso demonstrativo adicional, sem comprovar QR Code seguro ou mecanismo de autorização.
+A extensão para outras escolas não integra a entrega-piloto. RFID, biometria digital, integração com diário pedagógico e acompanhamento de aulas não são entregas aprovadas. Carteirinha digital, campos de saúde, anexos e gestão de acesso de terceiros foram retirados do fluxo do piloto.
 
 ## App dos responsáveis e painel escolar
 
-A decisão de trabalho desta conversa é evoluir o portal para experiência de app, preservando a interface React/TypeScript. O painel escolar permanece web. Ambos devem consumir os mesmos serviços e regras, com permissões distintas.
+O produto contempla o portal responsivo e sua evolução para aplicativo Android (APK), mantendo o painel escolar web e os serviços comuns. Para a apresentação acadêmica, a mesma experiência móvel deve abrir no navegador por link ou QR Code, sem instalação obrigatória. PWA e adição à tela inicial são opcionais. Não é necessário gerar novo APK ou publicar em lojas para apresentar.
 
-A distribuição PWA e a base de empacotamento Android/iOS com Capacitor foram implementadas como **corte técnico demonstrativo**. O Android possui layout nativo em tela inteira, configuração de laboratório para emulador e um APK de depuração compilado e verificado localmente. Publicação em lojas, assinatura de distribuição, serviços push, infraestrutura externa e critérios de aceite móveis devem ser detalhados antes de serem tratados como obrigações do piloto. O APK ainda não foi executado em aparelho/emulador; não há build iOS, publicação ou homologação móvel nesta revisão.
+O QR da central de apresentação compartilha somente a URL e não autentica usuários nem funciona como crachá de estudante. O endereço deve ser alcançável pelo celular, via rede local ou HTTPS temporário. A central não gera QR para localhost ou endereços de loopback.
 
-O protótipo oferece uma landing pública de apresentação e entradas separadas por hash para responsáveis e escola, permitindo alternar os perfis na versão web com encerramento da sessão anterior. O build móvel dedicado abre somente a experiência dos responsáveis. A API Express/SQLite valida credenciais fictícias, sessões opacas, estado da conta, papéis e vínculos; Coordenação/Direção podem bloquear contas e revogar sessões com auditoria. Justificativas e eventos de entrada/saída também usam idempotência e auditoria. Eventos novos são registrados com uma fila SQLite local e um trabalhador opcional de sincronização, com retentativas, retomada e isolamento de conflitos. Avisos, leitura individual e notificações internas do portal são persistidos; cada nova notificação gera uma entrega `PUSH_DEMO` com estados e retentativas. Não há canal push/WhatsApp real, implantação remota nem sincronização homologada entre equipamentos.
+Justificativas textuais são enviadas pelos responsáveis e analisadas pela Coordenação/Direção. Atendidos os vínculos e perfis, o backend mantém histórico e auditoria. Não integram o piloto atestados e outros anexos, ficha de saúde, carteirinha digital, RFID ou controle de acesso de terceiros. A contingência física continua sujeita ao procedimento institucional previsto no plano de riscos.
+
+A API local valida contas fictícias, sessões, papéis e vínculos; mantém eventos simulados, avisos, notificações internas, auditoria, fila e backup. Biometria, hardware, identidade institucional e canais externos continuam pendentes. A pilha Express/SQLite é usada pelo protótipo; Python/OpenCV permanece como tecnologia prevista para o módulo facial. Isso não comprova a integração ou homologação do piloto físico.
 
 ## Arquitetura prevista e continuidade
 
 - Servidor local: identificação facial Python/OpenCV, aplicação das regras de acesso, registro persistente e integração física das duas catracas.
 - Fila local: corte técnico em SQLite preserva eventos, sincroniza depois, deduplica repetições e isola conflitos; implantação e teste ponta a ponta continuam pendentes.
 - Backend/API: autenticação, sessão, perfis, vínculos familiares validados, avisos, justificativas e auditoria.
-- Anexos de justificativas: armazenamento local demonstrativo no SQLite, limite de 2 MB, PDF/JPG/PNG, assinatura de formato, hash e download autorizado; antivírus, criptografia e retenção institucionais permanecem pendentes.
+- Justificativas: comunicação textual de ausência pelo responsável e análise pela Coordenação/Direção. Não receber atestados ou outros arquivos; dados legados não são eliminados automaticamente.
 - Notificações: canal aprovado, fila, novas tentativas e estados distintos de processamento, envio, entrega e falha.
 - Interfaces: painel escolar e portal/app dos responsáveis com acesso restrito.
 

@@ -8,7 +8,6 @@ import type {
 } from '../../shared/contracts/justifications';
 import type { AbsenceJustification } from '../types';
 import { authenticatedRequest } from './authApi';
-import { attachmentsApi } from './attachmentsApi';
 
 const reasonToApi: Record<AbsenceJustification['reasonCategory'], JustificationReason> = {
   'Médico / Saúde': 'MEDICAL',
@@ -82,16 +81,12 @@ export const justificationsApi = {
 
   create: async (
     input: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
-    attachment?: File,
   ) => {
-    const uploaded = attachment ? await attachmentsApi.upload(attachment) : undefined;
     const payload: CreateJustificationRequest = {
       absenceStartDate: input.date,
       absenceEndDate: input.endDate,
       reasonCategory: reasonToApi[input.reasonCategory],
       description: input.description,
-      attachmentName: uploaded?.fileName || input.attachmentName,
-      attachmentId: uploaded?.id,
     };
     const idempotencyKey = globalThis.crypto?.randomUUID?.()
       ?? `justification-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -106,7 +101,6 @@ export const justificationsApi = {
       );
       return mapJustification(record);
     } catch (error) {
-      if (uploaded) await attachmentsApi.discard(uploaded.id).catch(() => undefined);
       throw error;
     }
   },

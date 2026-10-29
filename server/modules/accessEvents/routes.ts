@@ -38,6 +38,9 @@ const parseCreateRequest = (body: unknown): CreateAccessEventRequest => {
   if (!value.method || !ACCESS_METHODS.includes(value.method)) {
     throw invalidRequest('method inválido.');
   }
+  if (!['FACIAL', 'MANUAL'].includes(value.method)) {
+    throw invalidRequest('O piloto utiliza somente reconhecimento facial ou passagem assistida.');
+  }
   if (!['DELIVERED', 'PENDING'].includes(value.whatsappStatus ?? '')) {
     throw invalidRequest('whatsappStatus inválido.');
   }

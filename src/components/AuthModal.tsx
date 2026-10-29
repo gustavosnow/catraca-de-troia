@@ -398,7 +398,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <form onSubmit={handleLoginSubmit} className="space-y-3.5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    {role === 'parent' ? 'Celular com WhatsApp, CPF ou E-mail' : 'E-mail Institucional ou Reg. Funcional (MAT)'}
+                    {role === 'parent' ? 'Celular, CPF ou E-mail' : 'E-mail Institucional ou Reg. Funcional (MAT)'}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -623,7 +623,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">WhatsApp / Celular *</label>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">Celular *</label>
                       <input
                         type="text"
                         value={parentPhone}
@@ -866,13 +866,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <div className="p-3 bg-slate-900/80 rounded-2xl border border-slate-800 text-xs text-slate-300">
                     <p className="font-semibold text-white mb-1">Recuperar Senha</p>
                     <p className="text-slate-400">
-                      Informe o seu WhatsApp ou e-mail cadastrado. Enviaremos um código de verificação para redefinir sua senha.
+                      Recuperação demonstrativa: nenhum código é enviado por canal externo. A recuperação institucional ainda não está implementada.
                     </p>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                      WhatsApp ou E-mail Cadastrado
+                      Celular ou e-mail cadastrado
                     </label>
                     <input
                       type="text"
@@ -892,7 +892,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       }
                       setForgotStep('code');
                       setLoginError('');
-                      setLoginSuccess('Código de segurança enviado via WhatsApp e E-mail! (Use: 849201)');
+                      setLoginSuccess('Etapa simulada, sem envio externo. Código fictício para teste: 849201');
                     }}
                     className="w-full py-2.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
                   >

@@ -18,8 +18,6 @@ import { createCommunicationRouter } from './modules/communications/routes';
 import { CommunicationService } from './modules/communications/service';
 import { createLinkRequestRouter } from './modules/linkRequests/routes';
 import { LinkRequestService } from './modules/linkRequests/service';
-import { createAttachmentRouter } from './modules/attachments/routes';
-import { AttachmentService } from './modules/attachments/service';
 import { createAuditRouter } from './modules/audit/routes';
 import { AuditService } from './modules/audit/service';
 import { createAccountAdministrationRouter } from './modules/accounts/routes';
@@ -94,10 +92,6 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
     '/api/v1',
     createLinkRequestRouter(new LinkRequestService(database, options.now)),
   );
-  app.use(
-    '/api/v1',
-    createAttachmentRouter(new AttachmentService(database, options.now)),
-  );
   app.use('/api/v1', createAuditRouter(new AuditService(database)));
   app.use('/api/v1', createAccountAdministrationRouter(new AccountAdministrationService(database, options.now)));
   app.use('/api/v1', createNotificationDeliveryRouter(new NotificationDeliveryService(database, options.now)));
@@ -124,7 +118,7 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
     }
     if ((error as { type?: string } | null)?.type === 'entity.too.large') {
       response.status(413).json({
-        error: { code: 'PAYLOAD_TOO_LARGE', message: 'O anexo excede o limite de 2 MB.' },
+        error: { code: 'PAYLOAD_TOO_LARGE', message: 'O corpo da requisição excede o limite permitido.' },
       });
       return;
     }

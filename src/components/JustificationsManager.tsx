@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { CheckCircle2, Clock3, FileText, Paperclip, Search, XCircle } from 'lucide-react';
 import { AbsenceJustification } from '../types';
-import { attachmentsApi } from '../services/attachmentsApi';
 
 interface JustificationsManagerProps {
   justifications: AbsenceJustification[];
@@ -142,22 +141,7 @@ export const JustificationsManager: React.FC<JustificationsManagerProps> = ({
                     {justification.description}
                   </p>
 
-                  {justification.attachmentName && (
-                    <button
-                      type="button"
-                      disabled={!justification.attachmentId || !canReview}
-                      onClick={() => justification.attachmentId && attachmentsApi
-                        .download(justification.attachmentId, justification.attachmentName!)
-                        .catch((error: unknown) => setActionError(
-                          error instanceof Error ? error.message : 'Não foi possível baixar o anexo.',
-                        ))}
-                      className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 disabled:cursor-not-allowed disabled:text-slate-500"
-                      title={justification.attachmentId ? 'Baixar conteúdo armazenado' : 'Registro legado sem conteúdo armazenado'}
-                    >
-                      <Paperclip className="w-3.5 h-3.5" />
-                      <span>{justification.attachmentId ? 'Baixar anexo' : 'Somente nome registrado'}: {justification.attachmentName}</span>
-                    </button>
-                  )}
+
 
                   {justification.reviewedAt && (
                     <p className="text-[11px] text-slate-500">

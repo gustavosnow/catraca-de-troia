@@ -312,7 +312,7 @@ export const Header: React.FC<HeaderProps> = ({
                           <QrCode className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="font-bold text-white">Apresentar app sem APK</div>
+                          <div className="font-bold text-white">Apresentar portal por QR Code</div>
                           <div className="text-[10px] text-slate-400">QR Code, link e instalação pelo navegador</div>
                         </div>
                       </button>

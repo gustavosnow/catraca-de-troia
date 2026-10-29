@@ -122,7 +122,7 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
         role,
         summary,
         fullContent,
-        attachmentName: attachmentName.trim() || undefined,
+        attachmentName: undefined,
       };
       await onUpdateNotice(updated);
     } else {
@@ -137,7 +137,7 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
         summary,
         fullContent,
         isUnread: true,
-        attachmentName: attachmentName.trim() || undefined,
+        attachmentName: undefined,
       };
       await onAddNotice(newNotice, autoBroadcast);
     }
@@ -393,12 +393,7 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
                         Por: <strong>{item.author}</strong> ({item.role})
                       </span>
 
-                      {item.attachmentName && (
-                        <span className="inline-flex items-center gap-1 text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                          <Paperclip className="w-3 h-3" />
-                          <span>{item.attachmentName}</span>
-                        </span>
-                      )}
+
 
                       <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[11px] font-semibold">
                         <CheckCheck className="w-3 h-3 text-emerald-600" />
@@ -533,7 +528,7 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex: Reunião Pedagógica com Pais do Ensino Médio"
+                  placeholder="Ex: Reunião Pedagógica com Pais do Ensino Fundamental"
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
                 />
               </div>
@@ -632,23 +627,6 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
                 ></textarea>
               </div>
 
-              {/* Attachment / Document */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <Paperclip className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Nome do Anexo ou Documento Oficial (Opcional)</span>
-                  </label>
-                </div>
-                <input
-                  type="text"
-                  value={attachmentName}
-                  onChange={(e) => setAttachmentName(e.target.value)}
-                  placeholder="Ex: cronograma_oficial_2026.pdf ou edital_reuniao.docx"
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                />
-              </div>
-
               {/* Broadcast Option */}
               <div className="flex items-center gap-2 text-xs font-medium text-slate-700 pt-1">
                 <input
@@ -730,15 +708,7 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
                 {previewNotice.fullContent}
               </div>
 
-              {previewNotice.attachmentName && (
-                <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 text-blue-900 font-semibold">
-                    <Paperclip className="w-4 h-4 text-blue-600" />
-                    <span>{previewNotice.attachmentName}</span>
-                  </div>
-                  <span className="text-[11px] text-blue-600 font-mono">PDF Anexo</span>
-                </div>
-              )}
+
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                 <span>Publicado por: <strong>{previewNotice.author}</strong> ({previewNotice.role})</span>

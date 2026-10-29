@@ -28,7 +28,6 @@ import { PresenceStatusCard } from './PresenceStatusCard';
 import { WeeklyAccessHistory } from './WeeklyAccessHistory';
 import { SchoolNoticesSection } from './SchoolNoticesSection';
 import { AbsenceJustificationModal } from './AbsenceJustificationModal';
-import { StudentDigitalBadgeModal } from './StudentDigitalBadgeModal';
 import { InAppNotificationDrawer } from './InAppNotificationDrawer';
 import { InstallAppBanner } from './InstallAppBanner';
 import { ParentDataStatus } from './ParentDataStatus';
@@ -76,7 +75,6 @@ interface ParentAppViewProps {
   sharedJustifications: AbsenceJustification[];
   onSubmitJustification: (
     justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
-    attachment?: File,
   ) => Promise<void>;
   justificationsState: 'loading' | 'persistent' | 'unavailable';
   justificationsError?: string;
@@ -192,7 +190,6 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
 
   // Modals & Drawers state
   const [isAbsenceModalOpen, setIsAbsenceModalOpen] = useState(false);
-  const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   // View state: 'home' | 'history' | 'notices'
@@ -219,8 +216,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   // Handler for adding a new absence justification
   const handleAddJustification = (
     newJust: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
-    attachment?: File,
-  ) => onSubmitJustification(newJust, attachment);
+  ) => onSubmitJustification(newJust);
 
   const handleMarkNoticeAsRead = async (id: string) => {
     if (onMarkNoticeRead) {
@@ -367,7 +363,6 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             onSelectStudent={setSelectedStudent}
             unreadNotificationsCount={unreadCount}
             onOpenNotifications={() => setIsNotificationsOpen(true)}
-            onOpenDigitalBadge={() => setIsBadgeModalOpen(true)}
             activeTab={activeTab}
             compact={isAppLikeExperience || deviceMode === 'mobile_frame'}
             onLogout={onLogout}
@@ -392,7 +387,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
                 className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-98 cursor-pointer disabled:cursor-not-allowed disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-400"
               >
                 <FileText className="w-4 h-4" />
-                <span>Notificar Falta / Enviar Atestado</span>
+                <span>Comunicar ausência</span>
               </button>
             </div>
           )}
@@ -529,13 +524,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             />
           )}
 
-          {isBadgeModalOpen && (
-            <StudentDigitalBadgeModal
-              isOpen={isBadgeModalOpen}
-              onClose={() => setIsBadgeModalOpen(false)}
-              student={selectedStudent}
-            />
-          )}
+
 
           {isNotificationsOpen && (
             <InAppNotificationDrawer

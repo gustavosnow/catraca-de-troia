@@ -132,7 +132,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
             <p><strong>Linha de base consultada em 13/10/2026.</strong> Protótipo demonstrativo, sem integração real com hardware ou notificações externas.</p>
             <p>Painel escolar, PWA e projetos-base Capacitor compartilham o escopo demonstrativo. Não há APK/IPA publicado; distribuição em lojas e expansão para outras escolas exigem controle de mudanças.</p>
             <p>Linha de base de custos: R$ 279.000,00. Reserva gerencial de R$ 12.000,00 fora da linha de base. Orçamento global: R$ 291.000,00.</p>
-            <p>Autorização por vínculo deve ocorrer no backend. Preferência de notificação não equivale a autorização biométrica ou condição de frequência escolar.</p>
+            <p>Justificativas são textuais; não há atestados, anexos, ficha de saúde ou carteirinha digital no piloto. Autorização por vínculo deve ocorrer no backend. Preferência de notificação não equivale a autorização biométrica ou condição de frequência escolar.</p>
             <div className="flex flex-wrap gap-3">{projectBaseline.sources.map(source => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="text-blue-700 underline">{source.title}</a>)}</div>
           </aside>
           {activeDocTab === 'smart' && <ul className="list-disc pl-5 space-y-2 text-xs">{projectBaseline.targets.map(target => <li key={target}>{target}</li>)}</ul>}
@@ -478,7 +478,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                     Problemas em câmeras ou catracas mecânicas.
                   </p>
                   <div className="text-[11px] text-slate-700 bg-white/80 p-2 rounded-lg border border-red-100">
-                    <strong>Mitigação:</strong> Manutenção preventiva e procedimento alternativo controlado. QR Code depende de aprovação institucional; RFID e biometria digital são propostas fora da linha de base.
+                    <strong>Mitigação:</strong> Manutenção preventiva e procedimento alternativo controlado. QR Code depende de aprovação institucional; RFID e biometria digital não integram o piloto.
                   </div>
                 </div>
 

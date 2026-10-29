@@ -647,103 +647,27 @@ export default function App() {
     return () => clearInterval(interval);
   }, [currentStaffUser.id, isSimulating, students, turnstiles, viewMode]);
 
-  // Handle manual turnstile authorization
+  // O piloto registra passagem assistida somente para estudante cadastrado.
   const handleConfirmManualRelease = async (data: {
-    turnstileId: string;
-    studentId?: string;
-    visitorName?: string;
-    reason: string;
-    sendWhatsapp: boolean;
+    turnstileId: string; studentId: string; reason: string; sendWhatsapp: boolean;
   }) => {
-    const turnstile = turnstiles.find(t => t.id === data.turnstileId) || turnstiles[0];
-    const now = new Date();
-    let exactTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-    let studentName = data.visitorName || 'Visitante Autorizado';
-    let turma = 'Visitante / Secretaria';
-    let shift: 'Manhã' | 'Tarde' | 'Integral' = 'Manhã';
-    let avatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
-    let matricula = 'VIS-' + Math.floor(1000 + Math.random() * 9000);
-    let guardianPhone = '(11) 98888-0000';
-    let foundStudent: Student | undefined;
-
-    if (data.studentId) {
-      foundStudent = students.find(s => s.id === data.studentId);
-      if (foundStudent) {
-        studentName = foundStudent.name;
-        turma = foundStudent.turma;
-        shift = foundStudent.shift;
-        avatar = foundStudent.avatar;
-        matricula = foundStudent.matricula;
-        guardianPhone = foundStudent.guardianPhone;
-      }
+    const student = students.find(item => item.id === data.studentId);
+    const turnstile = turnstiles.find(item => item.id === data.turnstileId);
+    if (!student || !turnstile) throw new Error('Selecione um estudante e uma catraca válidos.');
+    try {
+      const persisted = await accessEventsApi.create(student, 'entry', turnstile, students, {
+        status: 'MANUAL_RELEASE', method: 'MANUAL',
+        whatsappStatus: 'PENDING', pushStatus: 'PENDING', reason: data.reason,
+      });
+      setLogs(current => [{ ...persisted, operator: currentStaffUser.name, isNew: true }, ...current]);
+      setTurnstiles(current => current.map(item => item.id === turnstile.id ? { ...item, passesToday: item.passesToday + 1 } : item));
+      setAccessEventsState('persistent'); setAccessEventsError(undefined);
+      setAccessEventsUpdatedAt(new Date().toISOString());
+    } catch (error) {
+      setAccessEventsState('unavailable');
+      setAccessEventsError(error instanceof Error ? error.message : 'Não foi possível registrar a passagem.');
+      throw error;
     }
-
-    let manualLog: AccessLog = {
-      id: `manual-log-${Date.now()}`,
-      studentId: data.studentId || 'visitor',
-      studentName: studentName,
-      matricula: matricula,
-      avatar: avatar,
-      turma: turma,
-      shift: shift,
-      timestamp: now.toISOString(),
-      exactTime: exactTime,
-      relativeTime: 'Agora',
-      direction: 'entry',
-      turnstileId: turnstile.id,
-      turnstileName: turnstile.name.split(' - ')[0],
-      status: 'LiberacaoManual',
-      method: 'Manual',
-      reason: data.reason,
-      operator: currentStaffUser.name,
-      notification: {
-        whatsapp: data.sendWhatsapp ? 'Entregue' : 'Pendente',
-        pushApp: 'Entregue',
-        sentAt: exactTime,
-        phoneTarget: guardianPhone,
-      },
-      isNew: true,
-    };
-
-    if (foundStudent) {
-      try {
-        const persisted = await accessEventsApi.create(
-          foundStudent,
-          'entry',
-          turnstile,
-          students,
-          {
-            status: 'MANUAL_RELEASE',
-            method: 'MANUAL',
-            whatsappStatus: data.sendWhatsapp ? 'DELIVERED' : 'PENDING',
-            pushStatus: 'DELIVERED',
-            reason: data.reason,
-          },
-        );
-        exactTime = persisted.exactTime;
-        manualLog = {
-          ...persisted,
-          reason: data.reason,
-          operator: currentStaffUser.name,
-          relativeTime: 'Agora',
-          isNew: true,
-        };
-        setAccessEventsState('persistent');
-        setAccessEventsError(undefined);
-        setAccessEventsUpdatedAt(new Date().toISOString());
-      } catch (error) {
-        setAccessEventsState('unavailable');
-        setAccessEventsError(error instanceof Error ? error.message : 'Não foi possível registrar a liberação.');
-        throw error;
-      }
-    }
-
-    setLogs((prev) => [manualLog, ...prev]);
-    setTurnstiles((prev) =>
-      prev.map(t => t.id === turnstile.id ? { ...t, passesToday: t.passesToday + 1 } : t)
-    );
-
   };
 
   const handleSelectStudent = (studentId: string) => {
@@ -757,20 +681,6 @@ export default function App() {
     setAlerts((prev) => prev.map(a => a.id === alertId ? { ...a, resolved: true } : a));
   };
 
-  // Direct WhatsApp Contact from School Staff with Parent
-  const handleDirectWhatsapp = (phone: string, studentName: string, templateType?: string) => {
-    const cleanPhone = phone.replace(/\D/g, '');
-    let msg = `Olá, aqui é da equipe de Gestão Escolar da E.E. Troia Educação Integrada. Entramos em contato a respeito do(a) estudante ${studentName}.`;
-    
-    if (templateType === 'atraso') {
-      msg = `Olá, informamos que o(a) estudante ${studentName} registrou entrada após o horário regular de tolerância na E.E. Troia. Ficamos à disposição para quaisquer esclarecimentos.`;
-    } else if (templateType === 'documento') {
-      msg = `Olá, solicitamos a gentileza de encaminhar a justificativa ou atestado médico referente à ausência recente do(a) estudante ${studentName} pelo App ou secretaria escolar.`;
-    }
-
-    const text = encodeURIComponent(msg);
-    window.open(`https://wa.me/55${cleanPhone}?text=${text}`, '_blank');
-  };
 
   // Add Notice from Management Hub
   const handleAddNotice = async (noticeData: Omit<SchoolNotice, 'id'>, notifyGuardians: boolean) => {
@@ -811,9 +721,8 @@ export default function App() {
 
   const handleAddJustification = async (
     justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
-    attachment?: File,
   ) => {
-    const created = await justificationsApi.create(justification, attachment);
+    const created = await justificationsApi.create(justification);
     setJustifications((current) => [created, ...current]);
     setJustificationsState('persistent');
     setJustificationsError(undefined);
@@ -1065,12 +974,6 @@ export default function App() {
                 <LiveStreamFeed
                   logs={logs}
                   onSelectStudent={handleSelectStudent}
-                  onResendNotification={(logId) => {
-                    const log = logs.find(l => l.id === logId);
-                    if (log) {
-                      handleDirectWhatsapp(log.notification.phoneTarget, log.studentName);
-                    }
-                  }}
                   selectedTurno={selectedTurno}
                   selectedTurma={selectedTurma}
                 />
@@ -1118,7 +1021,7 @@ export default function App() {
           </div>
         )}
 
-        {/* VIEW TAB 3: Diretório de Alunos & Contato WhatsApp */}
+        {/* VIEW TAB 3: Diretório de estudantes */}
         {managementTab === 'alunos' && (
           <div className="animate-in fade-in duration-150">
             {canReviewLinks && (
@@ -1135,7 +1038,6 @@ export default function App() {
             <StudentsManagementList
               students={students}
               onSelectStudent={handleSelectStudent}
-              onSendWhatsappDirect={handleDirectWhatsapp}
             />
           </div>
         )}
@@ -1221,7 +1123,6 @@ export default function App() {
         logs={logs}
         isOpen={!!selectedStudent}
         onClose={() => setSelectedStudent(null)}
-        onSendWhatsappDirect={handleDirectWhatsapp}
       />
 
       <AlertsModal

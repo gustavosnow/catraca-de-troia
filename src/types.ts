@@ -19,12 +19,10 @@ export interface Student {
   email: string;
   emergencyContact: string;
   status: 'Ativo' | 'Suspenso' | 'Afastado';
-  rfidCard: string;
   age?: number;
   stage?: 'Fundamental I' | 'Fundamental II';
   exitAuthorization?: 'Apenas com Responsável' | 'Transporte Escolar' | 'Saída Desacompanhada Autorizada';
   homeroomTeacher?: string;
-  healthNotes?: string;
 }
 
 export interface AccessLog {

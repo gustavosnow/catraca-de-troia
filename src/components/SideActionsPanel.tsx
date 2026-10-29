@@ -88,7 +88,7 @@ export const SideActionsPanel: React.FC<SideActionsPanelProps> = ({
         </div>
 
         <p className="text-xs text-slate-300 leading-relaxed mt-2.5 mb-4 font-normal">
-          Autorize e registre a passagem assistida de aluno sem crachá, visitante institucional ou responsável com notificação e log imediato.
+          Registre a passagem assistida de um estudante identificado, com operador e motivo. Nenhum hardware real é acionado.
         </p>
 
         <button

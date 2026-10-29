@@ -2,7 +2,9 @@
 
 Protótipo acadêmico de controle de entrada e saída em uma escola pública de ensino fundamental. Painel web da gestão escolar e portal responsivo dos responsáveis, preparado para evolução móvel.
 
-**Estado: demonstração em evolução.** A API local já valida credenciais fictícias, emite sessões revogáveis e aplica perfil e vínculo no servidor. Eventos de entrada/saída, justificativas, avisos, notificações internas e solicitações de vínculo usam SQLite, idempotência ou controle de versão conforme o fluxo e auditoria das ações escolares. Coordenação/Direção também podem consultar e revogar vínculos, com bloqueio imediato no backend, revalidação posterior e visualização restrita dos metadados de auditoria. Eventos novos entram atomicamente em uma fila local durável, preparada para sincronizar com outra instância da API. Anexos novos de justificativas podem ser armazenados no SQLite com validação básica e autorização; anexos de avisos continuam apenas nominais. A origem das passagens e a entrega por canais externos ainda são simuladas. A experiência dos responsáveis também possui PWA instalável e projetos-base Capacitor; isso não equivale a identidade institucional, aplicativo publicado ou integração com hardware/serviços externos.
+**Estado: protótipo acadêmico funcional local.** Painel escolar e portal dos responsáveis compartilham API Express/SQLite, autenticação com contas fictícias, vínculos autorizados, eventos simulados de entrada/saída, avisos, justificativas textuais, notificações internas, auditoria e fila local. Hardware, reconhecimento facial e canais externos não estão integrados. O aplicativo Android (APK) permanece como objetivo; para a apresentação, o portal abre pelo navegador por link ou QR Code, sem instalação obrigatória.
+
+**Escopo vigente em 29/10/2026:** uma escola e duas catracas; justificativas exclusivamente textuais, sem atestados ou outros anexos. Não há ficha de saúde, carteirinha digital, RFID nem gestão de acesso de visitantes e funcionários nas telas do piloto. Rotas de arquivos foram desativadas e novas referências a anexos são rejeitadas. Dados legados em bancos existentes não são apagados por esta revisão.
 
 A raiz `/` apresenta publicamente a ideia do sistema e encaminha para o cadastro demonstrativo ou login, mesmo quando o navegador possui uma sessão anterior. O mesmo conteúdo pode ser aberto explicitamente em `/#/apresentacao`. Os acessos diretos continuam disponíveis em `/#/responsaveis`, `/#/responsaveis/cadastro` e `/#/escola`.
 
@@ -48,9 +50,9 @@ A API inicia em `http://127.0.0.1:3001`. Use os atalhos da tela de entrada ou um
 
 As senhas são derivadas com scrypt e salt; a API armazena somente o hash dos tokens opacos. Sessões expiram em 12 horas ou 30 dias quando “lembrar dispositivo” está ativo, podem ser restauradas e são revogadas no logout. A API aplica cabeçalhos básicos de segurança, impede cache das respostas e limita em memória tentativas repetidas de login e solicitações de vínculo. Este é um corte funcional local: ainda faltam provedor institucional, HTTPS, proteção/armazenamento nativo dos tokens, política de senha, MFA, recuperação real, limitação distribuída/persistente e testes formais de segurança.
 
-O React já consome essas rotas. Contas de Coordenação (`staff-2`) e Direção (`staff-3`) podem analisar justificativas e baixar seus anexos; o operador de portaria (`staff-1`) pode consultar a fila, mas análise e download permanecem bloqueados na interface e no servidor. Anexos novos aceitam PDF/JPG/PNG de até 2 MB, conferem a assinatura do formato, registram SHA-256 e ficam no SQLite. Essa validação não substitui antivírus; use somente arquivos fictícios.
+O React consome as rotas comuns. Coordenação/Direção analisam justificativas textuais; Portaria somente consulta a fila. O responsável consulta somente os estudantes com vínculo aprovado. Não há upload/download de arquivos no piloto.
 
-Os eventos persistidos registram estudante, entrada/saída, instante, catraca, método, ator escolar e estados demonstrativos de notificação. Responsáveis consultam somente estudantes com vínculo aprovado; apenas perfis escolares registram passagens. O botão de simulação e a simulação automática — desativada por padrão — alimentam esse fluxo sem representar hardware ou reconhecimento facial real. Liberações manuais de estudantes também persistem o motivo; visitantes e emergências sem estudante continuam apenas visuais.
+Os eventos persistidos registram estudante, entrada/saída, instante, catraca, método e ator escolar. A simulação automática inicia desativada e não representa hardware real. A passagem assistida exige estudante cadastrado, catraca e motivo, registra a conta escolar autenticada e não envia WhatsApp.
 
 ## Fila local e sincronização de eventos
 
@@ -75,7 +77,7 @@ Com a API parada ou ativa, o mecanismo nativo de backup do SQLite cria uma cópi
 npm run db:backup
 ```
 
-Por padrão, a origem é `.data/catraca-de-troia.sqlite` e o destino é `.data/backups/`. `DATABASE_PATH` e `BACKUP_DIRECTORY` permitem caminhos alternativos. A rotina de restauração usada nos testes copia para um arquivo novo e recusa sobrescrita; a troca da base ativa continua sendo uma decisão operacional manual. Backups podem conter os mesmos dados sensíveis do banco e não devem ser versionados ou compartilhados. Uploads não vinculados são removidos após 24 horas pelo processo da API, com registro de auditoria.
+Por padrão, a origem é `.data/catraca-de-troia.sqlite` e o destino é `.data/backups/`. `DATABASE_PATH` e `BACKUP_DIRECTORY` permitem caminhos alternativos. A rotina de restauração usada nos testes copia para um arquivo novo e recusa sobrescrita; a troca da base ativa continua sendo uma decisão operacional manual. Backups podem conter os mesmos dados sensíveis do banco e não devem ser versionados ou compartilhados. A rotina de limpeza de arquivos legados permanece interna; novos anexos não são aceitos.
 
 ## PWA e projetos móveis
 
@@ -132,7 +134,7 @@ Linha de base: uma escola, duas catracas, processamento facial local, 24 semanas
 
 `src/components/ParentApp/` contém a experiência dos responsáveis. Os demais componentes compõem o painel escolar e as interfaces compartilhadas. `src/services/accessEventsApi.ts` integra o fluxo persistente, e `demoAccessService.ts` deriva linha do tempo e histórico desses registros. `src/data/mockData.ts` ainda reúne dados visuais fictícios; `projectBaseline.ts` centraliza metas e links das fontes.
 
-O corte atual entrega uma PWA instalável e estruturas Capacitor para Android/iOS, reaproveitando o mesmo React/TypeScript. Autenticação/sessão local separada por perfil, administração auditada das contas fictícias, justificativas e seus anexos locais, eventos, histórico derivado, avisos, notificações internas, vínculos, fila de saída dos eventos e fila `PUSH_DEMO` já usam serviços comuns. Identidade institucional, canal externo real, antivírus/retenção institucional, anexos de avisos, infraestrutura remota e validação ponta a ponta da sincronização ainda precisam de implementação real. Veja [o diagnóstico para o app dos responsáveis](docs/PROXIMOS_PASSOS_APP_RESPONSAVEIS.md).
+O corte atual oferece PWA e estrutura Capacitor, além dos serviços locais descritos acima. Na apresentação, use **Ferramentas → Apresentar portal por QR Code** no painel escolar. Se a página estiver em `localhost`, informe um endereço alcançável pelo celular: IP do computador na mesma rede ou HTTPS da apresentação. A central bloqueia QR de loopback, remove parâmetros de consulta e usa somente a rota dos responsáveis. Veja [o roteiro sem APK](docs/APRESENTACAO_SEM_APK.md).
 
 Origem: [protótipo no Google AI Studio](https://ai.studio/apps/b85c5f96-392f-43b3-8272-31d8c99a8592). O primeiro commit de importação preserva essa versão; o seguinte registra o alinhamento documental.
 

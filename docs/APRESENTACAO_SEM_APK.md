@@ -1,30 +1,38 @@
-# Apresentação do app sem APK
+# Apresentação pelo navegador e QR Code
 
-O portal dos responsáveis já é uma PWA: a mesma aplicação web pode abrir no navegador, adaptar-se à tela do celular e ser adicionada à tela inicial. Não é necessário instalar APK para demonstrar a experiência móvel.
+O objetivo do produto continua sendo um aplicativo Android (APK) para responsáveis. Na apresentação acadêmica, a mesma interface será acessada pelo navegador do celular, sem baixar APK, instalar PWA ou alterar configurações de segurança. A PWA e a adição à tela inicial são opcionais.
 
-## Opção recomendada para a apresentação acadêmica
+## Preparar o computador
 
-Use o computador como servidor temporário e compartilhe um endereço HTTPS durante a apresentação:
+1. Atualize o projeto e instale as dependências com `npm ci`.
+2. Execute `npm run presentation:start`. O comando compila a interface, inicia a API local e serve o portal na porta 3000. Mantenha o terminal aberto.
+3. Escolha uma das formas de acesso abaixo. Um endereço `localhost` só funciona no próprio computador e não deve ser compartilhado com o público.
 
-1. No projeto, execute `npm run presentation:start`. O comando gera o build de produção, inicia a API SQLite local e serve a PWA em `http://localhost:3000`.
-2. Em outro terminal, execute `npm run presentation:tunnel`. Esse comando pressupõe que o `cloudflared` esteja instalado e cria um endereço HTTPS temporário `*.trycloudflare.com`.
-3. Abra o endereço informado e acrescente `/#/responsaveis`.
-4. No painel escolar, a opção **Ferramentas → Apresentar app sem APK** exibe o QR Code e permite copiar ou compartilhar o endereço atual.
-5. No Android, use o convite **Instalar** ou a opção **Adicionar à tela inicial**. No iPhone, use **Compartilhar → Adicionar à Tela de Início**.
+## Celulares na mesma rede Wi-Fi
 
-O acesso em uma tela pequena já usa automaticamente o layout de aplicativo, mesmo antes da instalação. Quando instalada, a PWA abre em uma janela própria, com ícone e sem a barra comum do navegador.
+Abra no computador seu endereço IPv4 da rede, por exemplo `http://192.168.0.25:3000/#/escola`. O endereço é apenas exemplo: use o IP real do computador.
 
-## Alternativa sem internet
+Entre com uma conta escolar demonstrativa e abra **Ferramentas → Apresentar portal por QR Code**. O campo aceita o endereço da rede e gera um QR para `/#/responsaveis`. No celular, aponte a câmera, abra o link e escolha uma conta demonstrativa. Não é preciso instalar nada.
 
-Execute `npm run dev:device` e compartilhe o endereço IPv4 do computador, como `http://192.168.x.x:3000/#/responsaveis`, com aparelhos na mesma rede Wi-Fi. Essa alternativa reproduz a interface móvel sem baixar APK, mas o HTTP por IP normalmente não satisfaz o requisito de contexto seguro para instalação da PWA. Ela funciona como demonstração no navegador.
+Celular e computador precisam estar na mesma rede, e a rede deve permitir comunicação entre aparelhos. Redes de convidados ou com isolamento podem impedir o acesso. A instalação PWA não funciona em todo endereço HTTP; isso não impede a demonstração comum no navegador.
 
-## Limites e segurança
+## Aparelhos em redes diferentes
 
-- Quick Tunnels são temporários, não possuem garantia de disponibilidade e mudam de endereço quando reiniciados.
-- Qualquer pessoa com o endereço público pode alcançar a demonstração enquanto o túnel estiver ativo. Encerre-o ao terminar.
-- Use somente as contas e os dados fictícios já incluídos no projeto.
-- A API e o SQLite continuam no computador do apresentador; isso não é hospedagem nem infraestrutura de produção.
-- O cache da PWA contém somente a interface estática. Login e dados pessoais ainda dependem da API ativa.
-- Para uma URL permanente seria necessário um ambiente hospedado com API, HTTPS, persistência e controles institucionais; isso não faz parte da apresentação acadêmica atual.
+Se a rede Wi-Fi da apresentação não permitir o acesso local e houver internet, o apresentador pode iniciar `npm run presentation:tunnel` em outro terminal, desde que `cloudflared` já esteja instalado. O comando cria um endereço HTTPS temporário. Abra esse endereço ou cole-o no campo da central de apresentação para gerar o QR correto.
 
-Referências: [instalação de PWA e requisito de HTTPS](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable) e [Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
+O túnel não inicia automaticamente nem é obrigatório. Enquanto ativo, torna a demonstração alcançável por quem tiver o endereço. Use somente contas e dados fictícios e encerre o terminal do túnel ao terminar. O computador, a API e o servidor web precisam permanecer ativos.
+
+## Ensaio antes da apresentação
+
+1. Leia o QR com outro celular e confirme que ele não contém `localhost`, `127.0.0.1` ou o endereço de uma sessão anterior.
+2. Abra o portal pelo link, sem instalar PWA ou APK, e entre como responsável demonstrativo.
+3. No painel do computador, registre uma passagem simulada; confirme a atualização no celular.
+4. Envie uma justificativa textual pelo portal e analise-a como Coordenação/Direção. Não há upload de atestados ou outros arquivos.
+5. Teste a interrupção e o retorno da API. A interface deve informar a indisponibilidade e não confirmar uma gravação que não aconteceu.
+6. Tenha como alternativa a apresentação do painel e do portal em duas janelas do próprio computador.
+
+## O que o QR Code faz
+
+Ele codifica somente a URL do portal. Não leva senha, token de sessão ou biometria, não autentica o responsável e não autoriza passagem de estudante. É diferente de um crachá de contingência com QR Code.
+
+A sessão e os dados dependem da API ativa. O cache da PWA contém a interface estática e não substitui o backend. A experiência Android continua no repositório, mas não é necessário gerar ou distribuir outro APK para este ciclo.

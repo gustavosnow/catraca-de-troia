@@ -23,7 +23,6 @@ interface ParentHeaderProps {
   onSelectStudent: (student: Student) => void;
   unreadNotificationsCount: number;
   onOpenNotifications: () => void;
-  onOpenDigitalBadge: () => void;
   activeTab: 'home' | 'history' | 'notices';
   compact?: boolean;
   onLogout?: () => void;
@@ -38,7 +37,6 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
   onSelectStudent,
   unreadNotificationsCount,
   onOpenNotifications,
-  onOpenDigitalBadge,
   activeTab,
   compact = false,
   onLogout,
@@ -68,21 +66,8 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
             />
           </div>
 
-          {/* Botões de Ação Rápida (Carteirinha e Central de Avisos) */}
+          {/* Central de avisos */}
           <div data-testid="parent-header-actions" className="flex items-center gap-2 shrink-0">
-            {/* Carteirinha Digital do Aluno (apenas se houver aluno selecionado) */}
-            {activeTab !== 'notices' && (
-              <button
-                id="btn-parent-digital-badge"
-                onClick={onOpenDigitalBadge}
-                className={`${compact ? 'p-2' : 'px-2.5 py-1.5'} rounded-xl bg-orange-600/25 hover:bg-orange-600/40 text-orange-200 border border-orange-500/40 transition-all hover:scale-105 active:scale-95 shadow-sm flex items-center gap-1.5 cursor-pointer font-bold text-xs`}
-                title="Abrir Carteirinha Digital do Estudante"
-              >
-                <QrCode className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                <span className={compact ? 'sr-only' : 'hidden sm:inline'}>Carteirinha</span>
-              </button>
-            )}
-
             {/* Sino de Notificações / Avisos */}
             <button
               id="btn-parent-notifications"

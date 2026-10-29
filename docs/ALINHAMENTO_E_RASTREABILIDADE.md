@@ -1,63 +1,38 @@
-# Alinhamento do protótipo e rastreabilidade
+# Alinhamento e rastreabilidade em 29 de outubro de 2026
 
-Referências consultadas em 13/10/2026; links em `PROJETO_CATRACA_DE_TROIA.md`.
+Referência: TAP, Atividade 01, Dicionário da EAP v1.3 e Plano de Riscos atualizados no Drive. A decisão MC-032 substitui a ampliação anterior para anexos e funcionalidades adicionais.
 
-| Pacote EAP | Requisito | Evidência atual | Situação e próximo trabalho |
+## Escopo vigente
+
+Uma escola pública de ensino fundamental, duas catracas, identificação facial prevista, registro de entrada/saída, painel escolar, portal dos responsáveis, vínculos autorizados, avisos, notificações e justificativas textuais. A Coordenação/Direção analisa a justificativa enviada pelo responsável. O produto prevê APK Android; a apresentação usa o mesmo portal pelo navegador via link ou QR Code, sem instalação obrigatória.
+
+Não integram o piloto atestados ou outros anexos, ficha de saúde, carteirinha digital, RFID, biometria digital, atendimento manual por WhatsApp ou gestão de acesso de terceiros. QR para abrir o portal não é crachá de autorização de estudante.
+
+## Correspondência com a EAP
+
+| Pacote | Requisito | Evidência atual | Limite |
 |---|---|---|---|
-| 1.1.1–1.1.4 | TAP, custos, riscos, acompanhamento e encerramento | Consolidação e links das fontes | Documentação acadêmica existente; aceite e encerramento pendentes |
-| 1.2.1 | Requisitos funcionais e não funcionais | Linha de base e metas centralizadas em `projectBaseline.ts` | Refinar histórias e plano de aceite |
-| 1.2.2–1.2.3 | Jornadas e protótipo de alta fidelidade | Landing pública, painel escolar e `ParentAppView` em React | A proposta, os públicos e os limites acadêmicos são apresentados antes do cadastro/login; formalizar fluxogramas |
-| 1.3.1 | Backend e banco | API Express/SQLite consumida por justificativas, eventos, avisos e notificações internas; fila de saída e receptor de sincronização | Corte integrado com idempotência, controle de versão, auditoria e retentativas; implantar destino remoto e ampliar os demais módulos |
-| 1.3.2 | Reconhecimento facial | Passagens geradas por simulação | Fora do corte implementável deste protótipo acadêmico; manter como lacuna documentada, sem alegar integração ou homologação |
-| 1.3.3 | Painel escolar | `Header`, `LiveStreamFeed`, cadastros, avisos, fila de justificativas, vínculos, auditoria e estado da sincronização | Fluxos integrados usam API local; cadastro geral de estudantes continua demonstrativo |
-| 1.3.4 | Portal responsivo dos responsáveis | `ParentAppView`, PWA, Capacitor Android/iOS e APK Android de depuração verificado | APK demonstrativo criado; teste em aparelho, API HTTPS remota, armazenamento seguro nativo, assinatura de distribuição, homologação e publicação permanecem pendentes |
-| 1.3.5 | Integração e acionamento | Duas catracas em `mockData.ts`, liberação manual visual e identificação explícita da simulação | Hardware fora do corte implementável deste protótipo acadêmico; preservar somente os cenários fictícios e a rastreabilidade da lacuna |
-| 1.3.6 | Notificações | Caixa interna persistente e fila `PUSH_DEMO` com estados, falha, backoff e reenfileiramento | Corte demonstrativo funcional; pendentes canal externo aprovado, trabalhador/provedor real e comprovação da meta |
-| 1.3.7 | Gestão biométrica | Cadastro visual e ficha do aluno | Pendente: ciclo de dados biométricos e proteção institucional |
-| 1.3.8 | Autenticação e autorização | Login separado por perfil, sessão opaca, APIs validando papéis/vínculos, bloqueio de conta, revogação de sessões e auditoria | Corte funcional testado com contas fictícias; integrar identidade institucional, HTTPS e controles distribuídos de produção |
-| 1.4.1 | Plano e testes automatizados/manuais | Typecheck, build, 26 testes de API, 26 cenários visuais em quatro larguras e verificação do artefato PWA | Evidências do ciclo em `EVIDENCIAS_ACEITE_ACADEMICO_2026-10-16.md`; percurso manual integral ainda pendente |
-| 1.4.2–1.4.3 | Carga, segurança e correções | Sem resultados de homologação | Pendente: plano, execução, retestes e relatório |
-| 1.5.1 | Servidor, backup e continuidade local | Fila SQLite, retentativas, receptor idempotente, backup verificado e restauração testada em arquivo novo | Pendente: implantação em servidor escolar/destino, agenda e retenção operacional, monitoramento e teste real de desconexão/restauração |
-| 1.5.2 | Instalação de duas catracas | Quantidade refletida na demonstração | Pendente: instalação física e comissionamento |
-| 1.5.3 | Treinamento e manuais | README para desenvolvimento | Pendente: manuais operacionais e capacitação |
+| 1.1.1–1.1.4 | Planejamento e acompanhamento | Fontes acadêmicas, histórico Git e controle de mudanças | Encerramento e aceite institucionais pendentes |
+| 1.2.1–1.2.3 | Requisitos, jornadas e protótipo | Consolidação, telas React e roteiro de apresentação | Homologação com usuários pendente |
+| 1.3.1 | Backend e banco | API Express/SQLite local | Pilha demonstrativa; arquitetura Python/visão computacional prevista não está integrada |
+| 1.3.2 | Reconhecimento facial | Eventos gerados pela simulação | Sem câmera, modelo ou medição de acurácia |
+| 1.3.3 | Painel escolar | Eventos, alunos, avisos, análise textual, contas, vínculos e auditoria | Contas e dados fictícios |
+| 1.3.4 | Portal responsivo e Android | Consulta, histórico, avisos, notificações internas e justificativas textuais; PWA e projeto Android | Apresentação sem APK; teste em celular real depende da rede e do ensaio |
+| 1.3.5 | Integração de catracas | Duas unidades demonstrativas; passagem assistida de aluno com motivo e operador | Nenhum hardware acionado |
+| 1.3.6 | Notificações | Caixa interna e fila PUSH_DEMO | Sem push/WhatsApp externo ou prova da meta temporal |
+| 1.3.7 | Gestão biométrica | Requisito documentado | Módulo real pendente |
+| 1.3.8 | Perfis e vínculos | Sessões opacas, aprovação/revogação de vínculo e autorização no backend | Sem identidade institucional ou homologação de segurança |
+| 1.4.1–1.4.3 | Testes e qualidade | TypeScript, build, testes API e validação PWA | Não comprova carga, segurança ou metas da EAP |
+| 1.5.1 | Continuidade e backup | Fila local, idempotência, sincronização e backup testados em ambiente local | Implantação escolar e destino remoto pendentes |
+| 1.5.2 | Instalação física | Quantidade de catracas refletida no cenário | Comissionamento pendente |
+| 1.5.3 | Capacitação | README, roteiro e instruções para QR | Treinamento institucional pendente |
 
-## Divergências corrigidas nesta revisão
+## Correções desta revisão
 
-- Quatro catracas foram reduzidas às duas previstas; registros de exemplo usam somente essas unidades.
-- A geração aleatória agora consegue selecionar ambas as catracas; o cálculo anterior excluía a última.
-- Metas herdadas de 99,4%, 99,9%, 1,5s e 45 passagens/min foram substituídas pelas referências oficiais ou removidas.
-- Documentação interna esclarece linha de base de R$ 279.000 e reserva gerencial de R$ 12.000 fora dela; financiamento não é tratado como assegurado.
-- Simulação automática usa reconhecimento facial. Métodos adicionais não são apresentados como integrações aprovadas já implementadas.
-- Painel e portal indicam que são demonstrativos; a tela de autenticação diferencia a sessão funcional local dos fluxos de cadastro/recuperação ainda fictícios.
-- Conta sem vínculo não ganha automaticamente o primeiro estudante nem exibe sua ficha no portal. Isso é apenas uma correção da demonstração; autorização real depende do backend.
-- Preferência demonstrativa de notificações não vem marcada e não condiciona cadastro; não equivale a consentimento biométrico.
+- Atestados e anexos removidos das telas; upload/download desativados e referências novas a anexos rejeitadas pela API. Bancos legados não são apagados.
+- Carteirinha digital retirada; ficha sem dados de saúde e etiquetas RFID. A passagem assistida só aceita estudante cadastrado e registra o operador autenticado.
+- Retiradas ações de contato manual por WhatsApp e campos de anexo em comunicados.
+- Central de apresentação aceita endereço alcançável pelo celular, rejeita localhost/loopback, remove parâmetros de consulta e gera QR somente para a rota dos responsáveis.
+- O modo de apresentação não requer instalação de APK/PWA. Não abre túnel ou publica a aplicação automaticamente.
 
-## Pendências relevantes do protótipo
-
-- A linha do tempo do portal foi limitada aos eventos simulados de entrada e saída; uma agenda pedagógica futura exigirá fonte e escopo próprios.
-- Painel e portal consultam os mesmos eventos persistidos para formar feed, presença, linha do tempo e histórico. A origem ainda é simulada; a fila local e o protocolo de sincronização existem no corte técnico, mas hardware, implantação remota e homologação offline continuam pendentes.
-- O painel escolar consulta o estado real da fila local, diferencia destino não configurado e exibe pendências, processamento, sincronizados, conflitos e última sincronização. Reenfileiramento de conflitos permanece restrito à Coordenação/Direção também no backend.
-- Justificativas já são lidas, criadas e analisadas pelo React por meio da API local, com idempotência, controle otimista, auditoria, papéis e vínculos. Anexos novos de justificativas armazenam conteúdo no SQLite, com tipos/tamanho restritos, assinatura conferida, hash e download autorizado. Registros semeados antigos e anexos de avisos continuam apenas nominais; não há antivírus homologado.
-- Avisos são persistidos na API local, com gestão restrita à Coordenação/Direção, controle otimista, exclusão lógica, auditoria, leitura individual e disparo idempotente para a caixa interna dos responsáveis. Passagens e mudanças em justificativas também geram notificações internas somente para os vínculos aprovados.
-- A PWA armazena somente o shell estático. Cache da interface não substitui a continuidade do servidor escolar; a fila implementada é do servidor escolar e não habilita escritas offline no celular do responsável.
-- Com o portal aberto, a perda de conexão preserva somente o estado já carregado em memória, informa a última atualização, bloqueia escritas e dispara nova consulta no retorno da rede. Uma abertura sem conexão ainda não restaura sessão nem dados pessoais, por decisão de minimização deste corte.
-- Os projetos Capacitor foram gerados e sincronizados, mas ainda exigem URL HTTPS de API acessível ao aparelho, identificador institucional definitivo, SDKs, assinatura, testes em dispositivos e decisão formal de distribuição.
-- O contêiner nativo remove a moldura e os controles exclusivos da apresentação web, ocupa a tela, respeita áreas seguras e possui configuração isolada para a API HTTP do emulador. A API trata preflight somente para origens Capacitor permitidas. Um JDK 21 e Android SDK 36 locais foram instalados após autorização, e o APK de depuração foi compilado e teve pacote, SDKs e assinatura verificados. Isso ainda não constitui teste em dispositivo, assinatura de distribuição ou publicação.
-- Uma variante para celular físico detecta o IP atual do computador, incorpora a URL da API no build e mantém um nome de artefato separado. O modo `dev:device` limita o uso pretendido à mesma rede local; a disponibilidade foi conferida no endereço LAN e o login demonstrativo respondeu com sucesso. A execução visual e funcional no aparelho ainda depende da instalação pelo usuário.
-- O cadastro demonstrativo não lista mais estudantes. Responsáveis autenticados solicitam vínculo pela matrícula; pendências não revelam o nome do estudante, e somente Coordenação/Direção aprova ou rejeita com controle otimista e auditoria.
-- Coordenação/Direção consultam vínculos existentes, revogam com motivo e controle de versão e podem revalidar após nova solicitação. A revogação deixa de autorizar o responsável nas chamadas seguintes; a interface do responsável atualiza os dependentes em até cinco segundos enquanto estiver conectada. A visão de auditoria é restrita e não entrega os estados internos gravados no log.
-- QR da carteirinha é ilustrativo; tokens seguros, validade e procedimento de contingência exigem especificação e aprovação.
-- WhatsApp/push, antivírus, anexos de avisos, câmeras e biometria não estão conectados a serviços reais. Persistência e auditoria existem nos cortes locais de justificativas, anexos locais, eventos, avisos e notificações internas; a fila de eventos existe, mas o destino remoto e a sincronização implantada continuam pendentes.
-- As entradas `#/responsaveis` e `#/escola` estão separadas por perfil; a troca encerra a sessão anterior. Coordenação/Direção administram o estado das contas fictícias e revogam sessões remotas com motivo e auditoria.
-- A fila `PUSH_DEMO` persiste uma entrega para cada nova notificação interna e demonstra falha, backoff e reenfileiramento. Ela não envia push/WhatsApp nem comprova entrega ao aparelho.
-- Em telas pequenas e no modo PWA instalado, o portal remove automaticamente a moldura de apresentação e usa o mesmo contêiner de tela cheia do aplicativo. O cabeçalho compacto preserva a marca, identifica explicitamente a EMEF Profª. Cecília Meireles e apresenta os dependentes sem sobreposição entre textos e ações. O painel escolar gera link e QR Code da sessão; o roteiro HTTPS temporário está em `APRESENTACAO_SEM_APK.md`.
-- A raiz pública e `/#/apresentacao` apresentam a proposta de monitoramento mesmo com sessão anterior no navegador e encaminham para cadastro/login dos responsáveis ou login escolar. Rotas diretas preservam o modo escolhido após recarregar a página. O cabeçalho conduz suavemente aos blocos da apresentação e identifica a seção ativa; landing, autenticação e portais usam a mesma arte oficial, em enquadramento horizontal com o nome do projeto.
-- Nenhum resultado de acurácia, latência, disponibilidade, segurança ou carga foi medido.
-
-## Próxima sequência de desenvolvimento
-
-1. Concluir as passagens manuais restantes do roteiro em navegador gráfico: teclado integral dos dois portais, interrupção real da API e instalação standalone da PWA.
-2. Documentar como requisitos institucionais não implementados a retenção, o destino protegido, a criptografia, a verificação antimalware e a identidade de produção.
-3. Manter a geração de novo APK suspensa até nova decisão; a PWA responsiva é o canal de apresentação deste ciclo.
-4. Tratar canal externo, hardware e reconhecimento facial apenas como lacunas de escopo e itens de estudo, sem integração real neste protótipo acadêmico.
-5. Preparar o relatório acadêmico final somente em ciclo posterior, conforme decisão do responsável pelo projeto.
+Os registros MC-001 a MC-031 e as evidências datadas de ciclos anteriores são históricos. Não comprovam que recursos retirados continuam no escopo. Metas quantitativas permanecem planejadas, sem resultados de homologação.

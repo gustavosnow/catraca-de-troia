@@ -24,6 +24,9 @@ const parseNotice = (body: unknown, updating: boolean) => {
     || (value.attachmentName !== undefined && (typeof value.attachmentName !== 'string' || value.attachmentName.length > 255))) {
     throw invalidRequest('Dados do comunicado são inválidos ou excedem os limites permitidos.');
   }
+  if (value.attachmentName !== undefined) {
+    throw invalidRequest('O piloto publica comunicados textuais, sem anexos.');
+  }
   if (updating && (!Number.isInteger(value.expectedVersion) || (value.expectedVersion ?? 0) < 1)) {
     throw invalidRequest('expectedVersion deve ser um inteiro positivo.');
   }

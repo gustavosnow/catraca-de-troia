@@ -251,3 +251,14 @@ Solicitação: executar os próximos passos de qualidade, exceto a preparação 
 Ajustes: foi criado um executor visual reproduzível com Firefox/WebDriver BiDi para 360 px, 440 px, 768 px e 1440 px. Ele cobre Início, Histórico, Avisos, Carteirinha, Notificações e Justificativa, verifica rolagem horizontal, colisões, identificação da escola, navegação ativa, `Escape`, restauração de foco, movimento reduzido e estados offline/online. A carteirinha passou a permitir quebra do nome, turma e turno sem truncagem. O build separa React, ícones e QR Code, reduzindo o chunk da aplicação de cerca de 600 kB para 331,85 kB. Uma verificação específica confirma o manifesto PWA e a exclusão de `/api` do cache. Foram executados 26 testes da API, backup da base local e restauração verificada em arquivo novo; as evidências estão em `EVIDENCIAS_ACEITE_ACADEMICO_2026-10-16.md`.
 
 Limites: capturas, backup e restauração ficam em diretórios locais ignorados pelo Git. Interrupção operacional observada da API, percurso manual integral por teclado e instalação standalone ainda exigem execução manual. Não houve relatório final, novo APK, hardware real ou homologação institucional.
+
+
+## MC-032 — Escopo enxuto e apresentação pelo navegador em 29/10/2026
+
+Solicitação: corrigir funcionalidades adicionais após comparar o código com os documentos acadêmicos e permitir apresentar a experiência móvel sem exigir instalação do APK.
+
+Decisão vigente: manter justificativas textuais enviadas pelos responsáveis e analisadas pela Coordenação/Direção; retirar atestados/anexos, ficha de saúde, carteirinha digital, RFID, contato manual por WhatsApp e gestão de acesso de terceiros das telas do piloto. Upload/download ficam indisponíveis na API e novas referências a anexos são rejeitadas. Métodos novos de acesso ficam restritos a facial e manual. Bases existentes não são apagadas.
+
+APK Android continua como objetivo do produto. O modo de apresentação usa o mesmo portal responsivo pelo navegador via URL/QR Code. Instalar PWA ou APK é opcional e não faz parte do requisito da apresentação. A central aceita endereço alcançável pelo celular, não gera QR de localhost/loopback, remove parâmetros de consulta e aponta à rota dos responsáveis sem credenciais. Não inicia túnel, publica site ou gera novo APK automaticamente.
+
+Atualizados TAP, Atividade 01, Plano de Riscos e Dicionário da EAP v1.3 no Drive, além da consolidação técnica, instruções e roteiro no repositório. Os registros anteriores de desenvolvimento de anexos são históricos e ficam superados por esta decisão de escopo.

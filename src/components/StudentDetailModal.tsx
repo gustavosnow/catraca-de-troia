@@ -22,7 +22,6 @@ interface StudentDetailModalProps {
   logs: AccessLog[];
   isOpen: boolean;
   onClose: () => void;
-  onSendWhatsappDirect: (phone: string, studentName: string) => void;
 }
 
 export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
@@ -30,7 +29,6 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
   logs,
   isOpen,
   onClose,
-  onSendWhatsappDirect,
 }) => {
   const dialogRef = useAccessibleDialog({ isOpen, onClose });
 
@@ -86,7 +84,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
               <div className="flex items-center gap-3 mt-2 text-xs text-slate-400 font-mono">
                 <span>Matrícula: #{student.matricula}</span>
                 <span>•</span>
-                <span>Crachá: {student.rfidCard}</span>
+                <span>Identificação: reconhecimento facial ou passagem assistida</span>
                 {student.homeroomTeacher && (
                   <>
                     <span>•</span>
@@ -112,14 +110,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
               </p>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs">
-              <span className="text-[11px] font-bold text-rose-900 uppercase tracking-wider block mb-1">
-                Observações de Saúde & Cuidados
-              </span>
-              <p className="text-slate-700 font-medium leading-relaxed">
-                {student.healthNotes || 'Sem restrições ou alergias registradas'}
-              </p>
-            </div>
+
           </div>
           
           {/* Guardian Info Card */}
@@ -139,18 +130,10 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
               </div>
 
               <div>
-                <span className="text-slate-400 block text-[11px]">Telefone p/ Contato no WhatsApp:</span>
+                <span className="text-slate-400 block text-[11px]">Telefone de contato:</span>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="font-bold font-mono text-slate-800">{student.guardianPhone}</span>
-                  <button
-                    type="button"
-                    onClick={() => onSendWhatsappDirect(student.guardianPhone, student.name)}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg font-bold text-[11px] transition-colors"
-                    title="Abrir WhatsApp para contato direto com o responsável"
-                  >
-                    <MessageSquare className="w-3 h-3" />
-                    <span>WhatsApp</span>
-                  </button>
+
                 </div>
               </div>
 

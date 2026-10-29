@@ -27,7 +27,6 @@ import { AccessLog } from '../types';
 interface LiveStreamFeedProps {
   logs: AccessLog[];
   onSelectStudent: (studentId: string) => void;
-  onResendNotification: (logId: string) => void;
   selectedTurno: string;
   selectedTurma: string;
 }
@@ -35,7 +34,6 @@ interface LiveStreamFeedProps {
 export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
   logs,
   onSelectStudent,
-  onResendNotification,
   selectedTurno,
   selectedTurma,
 }) => {
@@ -97,7 +95,7 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300">
           <CreditCard className="w-3.5 h-3.5 text-slate-600" />
-          <span>Crachá RFID</span>
+          <span>Método legado</span>
         </span>
       );
     }
@@ -105,7 +103,7 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
           <QrCode className="w-3.5 h-3.5 text-purple-600" />
-          <span>QR Dinâmico</span>
+          <span>Método legado</span>
         </span>
       );
     }
@@ -113,7 +111,7 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-cyan-50 text-cyan-800 border border-cyan-200">
           <Fingerprint className="w-3.5 h-3.5 text-cyan-600" />
-          <span>Biometria</span>
+          <span>Método legado</span>
         </span>
       );
     }
@@ -375,14 +373,7 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
                       {/* Actions */}
                       <td className="py-3.5 px-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => onResendNotification(log.id)}
-                            className="px-2.5 py-1.5 text-emerald-800 hover:text-white bg-emerald-50 hover:bg-emerald-600 rounded-lg transition-all cursor-pointer border border-emerald-200 font-bold text-xs flex items-center gap-1 shadow-xs"
-                            title="Entrar em contato com o responsável via WhatsApp"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                            <span className="hidden lg:inline">WhatsApp</span>
-                          </button>
+
                           
                           <button
                             onClick={() => onSelectStudent(log.studentId)}
@@ -455,14 +446,6 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onResendNotification(log.id)}
-                      className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 px-2 py-1 bg-emerald-50 rounded-lg hover:bg-emerald-100 border border-emerald-200 cursor-pointer"
-                      title="Contatar responsável no WhatsApp"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>WhatsApp</span>
-                    </button>
 
                     <button
                       onClick={() => onSelectStudent(log.studentId)}

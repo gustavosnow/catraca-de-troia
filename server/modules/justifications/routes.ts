@@ -34,20 +34,14 @@ const parseCreateRequest = (body: unknown): CreateJustificationRequest => {
   if (typeof value.description !== 'string' || value.description.trim().length < 5 || value.description.length > 2000) {
     throw invalidRequest('description deve ter entre 5 e 2000 caracteres.');
   }
-  if (value.attachmentName !== undefined && (typeof value.attachmentName !== 'string' || value.attachmentName.length > 255)) {
-    throw invalidRequest('attachmentName deve ter no máximo 255 caracteres.');
-  }
-  if (value.attachmentId !== undefined
-    && (typeof value.attachmentId !== 'string' || value.attachmentId.length < 10 || value.attachmentId.length > 100)) {
-    throw invalidRequest('attachmentId é inválido.');
+  if (value.attachmentName !== undefined || value.attachmentId !== undefined) {
+    throw invalidRequest('O piloto recebe somente justificativas textuais, sem anexos.');
   }
   return {
     absenceStartDate: value.absenceStartDate,
     absenceEndDate: value.absenceEndDate,
     reasonCategory: value.reasonCategory,
     description: value.description,
-    attachmentName: value.attachmentName,
-    attachmentId: value.attachmentId,
   };
 };
 
