@@ -5,6 +5,7 @@ import {
   HttpAccessEventSyncTransport,
 } from './modules/accessEvents/syncService';
 import { cleanupOrphanAttachments } from './modules/attachments/service';
+import { listPresentationOrigins } from './presentationAccess';
 
 const port = Number(process.env.API_PORT ?? 3001);
 const host = process.env.API_HOST ?? '127.0.0.1';
@@ -15,13 +16,19 @@ const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost,https://local
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+let presentationOrigins: string[] = [];
+try {
+  presentationOrigins = listPresentationOrigins(Number(process.env.PRESENTATION_WEB_PORT ?? 3000));
+} catch (error) {
+  console.warn('Não foi possível descobrir automaticamente o endereço da apresentação.', error);
+}
 const syncService = syncRemoteUrl && syncSharedSecret
   ? new AccessEventSyncService(
       database,
       new HttpAccessEventSyncTransport(syncRemoteUrl, syncSharedSecret),
     )
   : undefined;
-const app = createApp(database, { syncSharedSecret, syncService, corsOrigins });
+const app = createApp(database, { syncSharedSecret, syncService, corsOrigins, presentationOrigins });
 
 let syncTimer: NodeJS.Timeout | undefined;
 const cleanupAttachments = () => {
@@ -46,6 +53,7 @@ const server = app.listen(port, host, () => {
   console.log(syncService
     ? `Sincronização de eventos ativa para ${syncRemoteUrl}.`
     : 'Eventos permanecem na fila local: SYNC_REMOTE_URL/SYNC_SHARED_SECRET não configurados.');
+  if (presentationOrigins[0]) console.log(`Apresentação por QR disponível em ${presentationOrigins[0]}/#/responsaveis`);
 });
 
 const shutdown = () => {

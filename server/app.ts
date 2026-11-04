@@ -32,6 +32,7 @@ export interface AppOptions {
   syncSharedSecret?: string;
   syncService?: AccessEventSyncService;
   corsOrigins?: string[];
+  presentationOrigins?: string[];
 }
 
 export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
@@ -65,6 +66,10 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
 
   app.get('/api/health', (_request, response) => {
     response.json({ status: 'ok', persistence: 'sqlite' });
+  });
+
+  app.get('/api/presentation-access', (_request, response) => {
+    response.json({ data: { origins: options.presentationOrigins ?? [] } });
   });
 
   if (options.syncSharedSecret) {

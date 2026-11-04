@@ -262,3 +262,11 @@ Decisão vigente: manter justificativas textuais enviadas pelos responsáveis e 
 APK Android continua como objetivo do produto. O modo de apresentação usa o mesmo portal responsivo pelo navegador via URL/QR Code. Instalar PWA ou APK é opcional e não faz parte do requisito da apresentação. A central aceita endereço alcançável pelo celular, não gera QR de localhost/loopback, remove parâmetros de consulta e aponta à rota dos responsáveis sem credenciais. Não inicia túnel, publica site ou gera novo APK automaticamente.
 
 Atualizados TAP, Atividade 01, Plano de Riscos e Dicionário da EAP v1.3 no Drive, além da consolidação técnica, instruções e roteiro no repositório. Os registros anteriores de desenvolvimento de anexos são históricos e ficam superados por esta decisão de escopo.
+
+## MC-033 — Responsividade, rolagem e QR direto em 04/11/2026
+
+Solicitação: corrigir o formulário cortado e a rolagem do portal dos responsáveis e tornar direto o acesso da apresentação por QR Code.
+
+Ajustes: o formulário de vínculo passou a responder à largura real do card, inclusive dentro da moldura de smartphone em uma janela desktop. Nessa prévia, a moldura mantém proporções de celular, com largura e altura limitadas, enquanto a rolagem externa do navegador movimenta o conteúdo exibido; a navegação inferior integra o rodapé da moldura sem flutuar sobre os cartões. No celular real, PWA e modo expandido, a área interna continua rolável para preservar o comportamento de aplicativo. A justificativa possui rolagem própria e o diálogo da prévia abre sobre a janela para não depender da posição vertical da moldura. A API passou a listar endereços IPv4 utilizáveis, priorizando a interface Wi-Fi; a central escolhe automaticamente esse endereço quando a página está em localhost e gera o QR diretamente para `/#/responsaveis`. O aceite visual cobre o final da aba de avisos, a justificativa rolável e a moldura estreita em desktop.
+
+Limites: o endereço local só funciona quando celular e computador estão na mesma rede e a rede permite comunicação entre aparelhos. O QR não leva sessão, senha ou token e não evita a autenticação demonstrativa. A descoberta não abre túnel, não publica o sistema e não altera o escopo do piloto.

@@ -23,7 +23,7 @@ A extensão para outras escolas não integra a entrega-piloto. RFID, biometria d
 
 O produto contempla o portal responsivo e sua evolução para aplicativo Android (APK), mantendo o painel escolar web e os serviços comuns. Para a apresentação acadêmica, a mesma experiência móvel deve abrir no navegador por link ou QR Code, sem instalação obrigatória. PWA e adição à tela inicial são opcionais. Não é necessário gerar novo APK ou publicar em lojas para apresentar.
 
-O QR da central de apresentação compartilha somente a URL e não autentica usuários nem funciona como crachá de estudante. O endereço deve ser alcançável pelo celular, via rede local ou HTTPS temporário. A central não gera QR para localhost ou endereços de loopback.
+O QR da central de apresentação compartilha somente a URL e não autentica usuários nem funciona como crachá de estudante. O endereço deve ser alcançável pelo celular, via rede local ou HTTPS temporário. Quando o painel está em localhost, a API prioriza a interface Wi-Fi e oferece automaticamente um endereço IPv4 para a rota dos responsáveis; a central não codifica localhost, loopback, credenciais ou parâmetros de sessão.
 
 Justificativas textuais são enviadas pelos responsáveis e analisadas pela Coordenação/Direção. Atendidos os vínculos e perfis, o backend mantém histórico e auditoria. Não integram o piloto atestados e outros anexos, ficha de saúde, carteirinha digital, RFID ou controle de acesso de terceiros. A contingência física continua sujeita ao procedimento institucional previsto no plano de riscos.
 

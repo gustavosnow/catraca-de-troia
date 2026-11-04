@@ -10,15 +10,15 @@ O objetivo do produto continua sendo um aplicativo Android (APK) para responsáv
 
 ## Celulares na mesma rede Wi-Fi
 
-Abra no computador seu endereço IPv4 da rede, por exemplo `http://192.168.0.25:3000/#/escola`. O endereço é apenas exemplo: use o IP real do computador.
+Entre com uma conta escolar demonstrativa e abra **Ferramentas → Apresentar portal por QR Code**. A API identifica as interfaces IPv4 do computador, prioriza a rede Wi-Fi e a central gera diretamente um QR para `http://IP-LOCAL:3000/#/responsaveis`. No celular, aponte a câmera, abra o link e escolha uma conta demonstrativa. Não é preciso instalar nada nem copiar o IP manualmente.
 
-Entre com uma conta escolar demonstrativa e abra **Ferramentas → Apresentar portal por QR Code**. O campo aceita o endereço da rede e gera um QR para `/#/responsaveis`. No celular, aponte a câmera, abra o link e escolha uma conta demonstrativa. Não é preciso instalar nada.
+Confira o endereço exibido antes da apresentação. Se o computador possuir várias interfaces ou a rede escolhida não alcançar o celular, use **Usar outro endereço** e informe um endereço HTTPS ou o IPv4 correto da rede.
 
 Celular e computador precisam estar na mesma rede, e a rede deve permitir comunicação entre aparelhos. Redes de convidados ou com isolamento podem impedir o acesso. A instalação PWA não funciona em todo endereço HTTP; isso não impede a demonstração comum no navegador.
 
 ## Aparelhos em redes diferentes
 
-Se a rede Wi-Fi da apresentação não permitir o acesso local e houver internet, o apresentador pode iniciar `npm run presentation:tunnel` em outro terminal, desde que `cloudflared` já esteja instalado. O comando cria um endereço HTTPS temporário. Abra esse endereço ou cole-o no campo da central de apresentação para gerar o QR correto.
+Se a rede Wi-Fi da apresentação não permitir o acesso local e houver internet, o apresentador pode iniciar `npm run presentation:tunnel` em outro terminal, desde que `cloudflared` já esteja instalado. O comando cria um endereço HTTPS temporário. Use **Usar outro endereço** na central e informe esse endereço para gerar o QR correto.
 
 O túnel não inicia automaticamente nem é obrigatório. Enquanto ativo, torna a demonstração alcançável por quem tiver o endereço. Use somente contas e dados fictícios e encerre o terminal do túnel ao terminar. O computador, a API e o servidor web precisam permanecer ativos.
 
@@ -33,6 +33,6 @@ O túnel não inicia automaticamente nem é obrigatório. Enquanto ativo, torna 
 
 ## O que o QR Code faz
 
-Ele codifica somente a URL do portal. Não leva senha, token de sessão ou biometria, não autentica o responsável e não autoriza passagem de estudante. É diferente de um crachá de contingência com QR Code.
+Ele codifica somente a URL direta da entrada do portal (`/#/responsaveis`). Não leva senha, token de sessão ou biometria, não autentica o responsável e não autoriza passagem de estudante. É diferente de um crachá de contingência com QR Code.
 
 A sessão e os dados dependem da API ativa. O cache da PWA contém a interface estática e não substitui o backend. A experiência Android continua no repositório, mas não é necessário gerar ou distribuir outro APK para este ciclo.

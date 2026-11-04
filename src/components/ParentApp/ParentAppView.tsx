@@ -1,6 +1,6 @@
 import { DemoNotice } from '../DemoNotice';
 import { CatracaTroiaLogo } from '../CatracaTroiaLogo';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { 
   Smartphone, 
   Monitor, 
@@ -194,21 +194,87 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
 
   // View state: 'home' | 'history' | 'notices'
   const [activeTab, setActiveTab] = useState<'home' | 'history' | 'notices'>('home');
+  const contentScrollRef = useRef<HTMLDivElement>(null);
+  const contentInnerRef = useRef<HTMLDivElement>(null);
+  const outerScrollTrackRef = useRef<HTMLElement>(null);
+  const [outerScrollDistance, setOuterScrollDistance] = useState(0);
 
   // Device frame mode: 'mobile_frame' | 'full_canvas'
   const [deviceMode, setDeviceMode] = useState<'mobile_frame' | 'full_canvas'>(
     isNativeApp ? 'full_canvas' : 'mobile_frame',
   );
   const [isCompactViewport, setIsCompactViewport] = useState(() => window.matchMedia('(max-width: 639px)').matches);
+  const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
   const isStandaloneWebApp = window.matchMedia('(display-mode: standalone)').matches
     || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
   const isAppLikeExperience = isNativeApp || isStandaloneWebApp || isCompactViewport;
+  const useOuterPageScroll = !isAppLikeExperience && deviceMode === 'mobile_frame';
+
+  useLayoutEffect(() => {
+    if (!useOuterPageScroll) {
+      setOuterScrollDistance(0);
+      return;
+    }
+
+    const scrollRegion = contentScrollRef.current;
+    const innerContent = contentInnerRef.current;
+    if (!scrollRegion || !innerContent) return;
+
+    const updateDistance = () => {
+      setOuterScrollDistance(Math.max(0, innerContent.scrollHeight - scrollRegion.clientHeight));
+    };
+    const resizeObserver = new ResizeObserver(updateDistance);
+    resizeObserver.observe(scrollRegion);
+    resizeObserver.observe(innerContent);
+    updateDistance();
+
+    return () => resizeObserver.disconnect();
+  }, [activeTab, useOuterPageScroll]);
+
+  useEffect(() => {
+    if (!useOuterPageScroll) return;
+
+    const syncOuterScroll = () => {
+      const track = outerScrollTrackRef.current;
+      const scrollRegion = contentScrollRef.current;
+      if (!track || !scrollRegion) return;
+
+      const trackStyle = window.getComputedStyle(track);
+      const trackTop = track.getBoundingClientRect().top + window.scrollY;
+      const deviceNaturalTop = trackTop + Number.parseFloat(trackStyle.paddingTop || '0');
+      const stickyTop = 24;
+      scrollRegion.scrollTop = Math.min(
+        outerScrollDistance,
+        Math.max(0, window.scrollY - (deviceNaturalTop - stickyTop)),
+      );
+    };
+
+    syncOuterScroll();
+    window.addEventListener('scroll', syncOuterScroll, { passive: true });
+    window.addEventListener('resize', syncOuterScroll);
+    return () => {
+      window.removeEventListener('scroll', syncOuterScroll);
+      window.removeEventListener('resize', syncOuterScroll);
+    };
+  }, [outerScrollDistance, useOuterPageScroll]);
+
+  useEffect(() => {
+    if (useOuterPageScroll) window.scrollTo({ top: 0, behavior: 'auto' });
+    else contentScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+  }, [activeTab, useOuterPageScroll]);
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 639px)');
-    const update = () => setIsCompactViewport(media.matches);
+    const update = () => {
+      setIsCompactViewport(media.matches);
+      setViewportHeight(window.innerHeight);
+    };
     media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
+    window.addEventListener('resize', update);
+    return () => {
+      media.removeEventListener('change', update);
+      window.removeEventListener('resize', update);
+    };
   }, []);
 
   const unreadCount = parentNotifications.filter(n => !n.isRead).length;
@@ -264,14 +330,16 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   }
 
   return (
-    <div className={`${isAppLikeExperience ? 'h-dvh overflow-hidden' : 'min-h-screen'} bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-orange-500 selection:text-white`}>
+    <div className={`flex flex-col bg-slate-950 font-sans text-slate-100 selection:bg-orange-500 selection:text-white ${
+      useOuterPageScroll ? 'min-h-screen overflow-x-clip' : 'h-dvh overflow-hidden'
+    }`}>
       <a href="#parent-app-content" className="fixed left-3 top-3 z-[100] -translate-y-24 rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition-transform focus:translate-y-0">
         Ir para o conteúdo principal
       </a>
       <DemoNotice />
       
       {/* Top Navigation / Perspective Bar */}
-      {!isAppLikeExperience && <header className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 sticky top-0 z-40">
+      {!isAppLikeExperience && <header className={`${useOuterPageScroll ? 'relative' : 'sticky top-0'} z-40 shrink-0 border-b border-slate-800 bg-slate-900/95 px-4 py-3 backdrop-blur-md`}>
         <div className="max-w-7xl mx-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:gap-3">
           
           {/* Logo & Mode indicator */}
@@ -327,18 +395,26 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
       </header>}
 
       {/* Main Container */}
-      <main id="parent-app-content" tabIndex={-1} className={`flex-1 min-h-0 flex items-center justify-center relative ${isAppLikeExperience ? 'p-0' : 'p-2 sm:p-6 lg:p-8'}`}>
+      <main
+        ref={outerScrollTrackRef}
+        id="parent-app-content"
+        tabIndex={-1}
+        style={useOuterPageScroll ? { minHeight: `${viewportHeight + outerScrollDistance + 128}px` } : undefined}
+        className={`relative flex min-h-0 flex-1 justify-center ${
+          useOuterPageScroll ? 'items-start px-2 pb-6 pt-2 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8' : isAppLikeExperience ? 'items-center p-0' : 'items-center p-2 sm:p-6 lg:p-8'
+        }`}
+      >
         {/* Device Container */}
-        <div className={`w-full transition-all duration-300 ${isAppLikeExperience
+        <div data-testid="parent-device-shell" className={`w-full min-h-0 transition-all duration-300 ${isAppLikeExperience
           ? 'h-full bg-slate-900 overflow-hidden relative flex flex-col native-app-shell'
           : deviceMode === 'mobile_frame'
-            ? 'max-w-[440px] rounded-[44px] ring-12 ring-slate-900 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border-4 border-slate-800 bg-slate-900 overflow-hidden relative my-2'
-            : 'max-w-3xl rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden'
+            ? 'sticky top-6 h-[min(760px,calc(100dvh-3rem))] max-w-[400px] rounded-[44px] ring-12 ring-slate-900 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border-4 border-slate-800 bg-slate-900 overflow-hidden flex flex-col'
+            : 'h-full max-h-[820px] max-w-3xl rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden flex flex-col relative'
         }`}>
           
           {/* Smartphone Status Bar (Simulated) */}
           {!isAppLikeExperience && deviceMode === 'mobile_frame' && (
-            <div className="bg-slate-900 text-white px-7 pt-3 pb-1 flex items-center justify-between text-[11px] font-semibold select-none border-b border-slate-800/40">
+            <div className="shrink-0 bg-slate-900 text-white px-7 pt-3 pb-1 flex items-center justify-between text-[11px] font-semibold select-none border-b border-slate-800/40">
               <div className="font-mono">07:20</div>
               {/* Dynamic Island */}
               <div className="w-24 h-4 bg-black rounded-full flex items-center justify-center space-x-1.5 px-2">
@@ -353,47 +429,58 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             </div>
           )}
 
-          {/* Parent App Header (With Child Cards & Guardian Switcher) */}
-          <ParentHeader
-            currentGuardian={currentGuardian}
-            allGuardians={guardiansList}
-            onSelectGuardian={handleSelectGuardian}
-            myChildren={myChildren}
-            selectedStudent={selectedStudent}
-            onSelectStudent={setSelectedStudent}
-            unreadNotificationsCount={unreadCount}
-            onOpenNotifications={() => setIsNotificationsOpen(true)}
-            activeTab={activeTab}
-            compact={isAppLikeExperience || deviceMode === 'mobile_frame'}
-            onLogout={onLogout}
-          />
+          {/* A única área rolável mantém a navegação inferior sempre disponível. */}
+          <div
+            ref={contentScrollRef}
+            data-testid="parent-content-scroll-region"
+            className={`custom-scrollbar touch-pan-y bg-slate-950/30 ${
+              useOuterPageScroll
+                ? 'min-h-0 flex-1 overflow-hidden overscroll-none'
+                : 'min-h-0 flex-1 overflow-y-auto overscroll-contain'
+            }`}
+          >
+            <div ref={contentInnerRef}>
+            {/* Parent App Header (With Child Cards & Guardian Switcher) */}
+            <ParentHeader
+              currentGuardian={currentGuardian}
+              allGuardians={guardiansList}
+              onSelectGuardian={handleSelectGuardian}
+              myChildren={myChildren}
+              selectedStudent={selectedStudent}
+              onSelectStudent={setSelectedStudent}
+              unreadNotificationsCount={unreadCount}
+              onOpenNotifications={() => setIsNotificationsOpen(true)}
+              activeTab={activeTab}
+              compact={isAppLikeExperience || deviceMode === 'mobile_frame'}
+              onLogout={onLogout}
+            />
 
-          <ParentDataStatus
-            isOnline={isOnline}
-            states={[accessEventsState, justificationsState, communicationsState]}
-            updatedAt={dataUpdatedAt}
-            errors={[accessEventsError, justificationsError, communicationsError]}
-            onRefresh={onRefreshData}
-          />
+            <ParentDataStatus
+              isOnline={isOnline}
+              states={[accessEventsState, justificationsState, communicationsState]}
+              updatedAt={dataUpdatedAt}
+              errors={[accessEventsError, justificationsError, communicationsError]}
+              onRefresh={onRefreshData}
+            />
 
-          {/* Quick Absence Shortcut Bar on Home */}
-          {activeTab === 'home' && (
-            <div className="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center justify-between gap-2">
-              <button
-                id="btn-parent-open-absence-modal"
-                onClick={() => setIsAbsenceModalOpen(true)}
-                disabled={!isOnline}
-                title={isOnline ? 'Enviar justificativa' : 'Reconecte-se para enviar uma justificativa'}
-                className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-98 cursor-pointer disabled:cursor-not-allowed disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-400"
-              >
-                <FileText className="w-4 h-4" />
-                <span>Comunicar ausência</span>
-              </button>
-            </div>
-          )}
+            {/* Quick Absence Shortcut Bar on Home */}
+            {activeTab === 'home' && (
+              <div className="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center justify-between gap-2">
+                <button
+                  id="btn-parent-open-absence-modal"
+                  onClick={() => setIsAbsenceModalOpen(true)}
+                  disabled={!isOnline}
+                  title={isOnline ? 'Enviar justificativa' : 'Reconecte-se para enviar uma justificativa'}
+                  className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-98 cursor-pointer disabled:cursor-not-allowed disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-400"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Comunicar ausência</span>
+                </button>
+              </div>
+            )}
 
-          {/* Dynamic Screen Content */}
-          <div className={`p-4 sm:p-5 space-y-5 overflow-y-auto bg-slate-950/30 custom-scrollbar ${isAppLikeExperience ? 'flex-1 min-h-0' : 'max-h-[640px]'}`}>
+            {/* Dynamic Screen Content */}
+            <div className="space-y-5 p-4 sm:p-5">
             {activeTab === 'home' && (
               <>
                 {/* 1. Status de Presença Atual & Linha do Tempo do Filho Selecionado */}
@@ -444,10 +531,12 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
                 />
               </>
             )}
+            </div>
+            </div>
           </div>
 
           {/* Bottom Navigation Bar */}
-          <nav aria-label="Navegação do portal dos responsáveis" className={`bg-slate-900 border-t border-slate-800 px-3 py-2 flex items-center justify-around text-xs select-none ${isAppLikeExperience ? 'native-bottom-nav' : ''}`}>
+          <nav aria-label="Navegação do portal dos responsáveis" className={`shrink-0 bg-slate-900 border-t border-slate-800 px-3 py-2 flex items-center justify-around text-xs select-none ${isAppLikeExperience ? 'native-bottom-nav' : ''}`}>
             <button
               id="tab-parent-home"
               onClick={() => setActiveTab('home')}
@@ -521,6 +610,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
               student={selectedStudent}
               existingJustifications={sharedJustifications.filter(j => myChildren.some(c => c.id === j.studentId))}
               onSubmitJustification={handleAddJustification}
+              compact={isAppLikeExperience}
             />
           )}
 

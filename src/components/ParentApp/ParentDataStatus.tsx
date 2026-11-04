@@ -45,7 +45,7 @@ export const ParentDataStatus: React.FC<ParentDataStatusProps> = ({
         : 'Dados consultados na API local demonstrativa.';
 
   return (
-    <div className={`border-b px-4 py-2 text-[11px] ${style}`} role="status" aria-live="polite">
+    <div className={`shrink-0 border-b px-4 py-2 text-[11px] ${style}`} role="status" aria-live="polite">
       <div className="flex items-start gap-2">
         <Icon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${isLoading && isOnline ? 'animate-spin' : ''}`} />
         <div className="min-w-0 flex-1">

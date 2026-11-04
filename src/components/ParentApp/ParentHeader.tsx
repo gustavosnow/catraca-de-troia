@@ -46,7 +46,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
   const [childDropdownOpen, setChildDropdownOpen] = useState(false);
 
   return (
-    <header data-testid="parent-header" className="bg-[#0B192C] text-white pt-4 pb-3 px-4 sm:px-5 relative shadow-xl border-b border-slate-800/90">
+    <header data-testid="parent-header" className="relative shrink-0 border-b border-slate-800/90 bg-[#0B192C] px-4 pb-3 pt-4 text-white shadow-xl sm:px-5">
       {/* Background glow ambient effects */}
       <div className="absolute top-0 right-0 w-64 h-28 bg-orange-600/10 pointer-events-none rounded-full blur-3xl" />
       <div className="absolute top-0 left-0 w-36 h-28 bg-blue-600/10 pointer-events-none rounded-full blur-2xl" />

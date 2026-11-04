@@ -203,6 +203,154 @@ try {
     }
   };
 
+  const assertGuardianLinkRequestLayout = async (width, view) => {
+    const raw = await evaluate(`JSON.stringify((() => {
+      const section = document.querySelector('[data-testid="guardian-link-requests"]');
+      const form = document.querySelector('[data-testid="guardian-link-request-form"]');
+      if (!(section instanceof HTMLElement) || !(form instanceof HTMLElement)) return { missing: true };
+      const sectionRect = section.getBoundingClientRect();
+      const overflowingChildren = [...form.children].filter((child) => {
+        const rect = child.getBoundingClientRect();
+        return rect.left < sectionRect.left - 1 || rect.right > sectionRect.right + 1;
+      }).length;
+      return {
+        missing: false,
+        formOverflow: form.scrollWidth > form.clientWidth + 1,
+        overflowingChildren,
+      };
+    })())`);
+    const result = JSON.parse(raw);
+    if (result.missing || result.formOverflow || result.overflowingChildren > 0) {
+      throw new Error(`${width}px/${view}: formulário de vínculo fora do contêiner: ${JSON.stringify(result)}.`);
+    }
+  };
+
+  const assertModalScrollLayout = async (width, compact) => {
+    const raw = await evaluate(`JSON.stringify((() => {
+      const device = document.querySelector('[data-testid="parent-device-shell"]');
+      const dialog = document.querySelector('[aria-labelledby="absence-modal-title"]');
+      const scrollRegion = document.querySelector('[data-testid="absence-modal-scroll-region"]');
+      const nav = document.querySelector('[aria-label="Navegação do portal dos responsáveis"]');
+      const content = document.querySelector('[data-testid="parent-content-scroll-region"]');
+      if (!(device instanceof HTMLElement) || !(dialog instanceof HTMLElement) || !(scrollRegion instanceof HTMLElement)
+        || !(nav instanceof HTMLElement) || !(content instanceof HTMLElement)) return { missing: true };
+      const deviceRect = device.getBoundingClientRect();
+      const dialogRect = dialog.getBoundingClientRect();
+      const navRect = nav.getBoundingClientRect();
+      const contentRect = content.getBoundingClientRect();
+      const canOverflow = ['auto', 'scroll'].includes(getComputedStyle(scrollRegion).overflowY);
+      const hasScrollableContent = scrollRegion.scrollHeight > scrollRegion.clientHeight + 1;
+      const formFields = [...dialog.querySelectorAll('input, select, textarea')];
+      const fieldsUseReadableText = formFields.length >= 3
+        && formFields.every((field) => field.classList.contains('text-slate-900'));
+      if (hasScrollableContent) scrollRegion.scrollTop = Math.min(120, scrollRegion.scrollHeight - scrollRegion.clientHeight);
+      return {
+        missing: false,
+        dialogInsideDevice: dialogRect.top >= deviceRect.top - 1 && dialogRect.bottom <= deviceRect.bottom + 1,
+        dialogInsideViewport: dialogRect.top >= -1 && dialogRect.bottom <= window.innerHeight + 1,
+        compactFillsDevice: Math.abs(dialogRect.top - deviceRect.top) <= 5 && Math.abs(dialogRect.bottom - deviceRect.bottom) <= 5,
+        canOverflow,
+        hasScrollableContent,
+        fieldsUseReadableText,
+        scrolled: !hasScrollableContent || scrollRegion.scrollTop > 0,
+        contentBehindNavigation: contentRect.bottom > navRect.top + 1,
+      };
+    })())`);
+    const result = JSON.parse(raw);
+    const failed = result.missing || !result.canOverflow || !result.scrolled || !result.fieldsUseReadableText
+      || (compact
+        ? (!result.dialogInsideDevice || !result.compactFillsDevice || result.contentBehindNavigation)
+        : !result.dialogInsideViewport);
+    if (failed) throw new Error(`${width}px/modal: rolagem ou encaixe inválido: ${JSON.stringify(result)}.`);
+  };
+
+  const assertOuterFrameNavigation = async (width, view) => {
+    let layoutReady = false;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const readinessRaw = await evaluate(`JSON.stringify((() => {
+        const track = document.querySelector('#parent-app-content');
+        const region = document.querySelector('[data-testid="parent-content-scroll-region"]');
+        if (!(track instanceof HTMLElement) || !(region instanceof HTMLElement)) return { ready: false };
+        const requiredHeight = window.innerHeight + Math.max(0, region.scrollHeight - region.clientHeight);
+        return { ready: track.getBoundingClientRect().height >= requiredHeight };
+      })())`);
+      layoutReady = JSON.parse(readinessRaw).ready;
+      if (layoutReady) break;
+      await wait(100);
+    }
+    if (!layoutReady) throw new Error(`${width}px/${view}: trilha de rolagem externa não estabilizou.`);
+
+    const raw = await evaluate(`JSON.stringify((() => {
+      const device = document.querySelector('[data-testid="parent-device-shell"]');
+      const region = document.querySelector('[data-testid="parent-content-scroll-region"]');
+      const track = document.querySelector('#parent-app-content');
+      const nav = document.querySelector('[aria-label="Navegação do portal dos responsáveis"]');
+      if (!(device instanceof HTMLElement) || !(region instanceof HTMLElement) || !(track instanceof HTMLElement)
+        || !(nav instanceof HTMLElement)) return { missing: true };
+      const deviceRect = device.getBoundingClientRect();
+      return {
+        missing: false,
+        pageScrollable: document.documentElement.scrollHeight > window.innerHeight + 1,
+        regionHidesInternalScrollbar: getComputedStyle(region).overflowY === 'hidden',
+        deviceHasPhoneHeight: deviceRect.height <= Math.min(762, window.innerHeight - 46),
+        contentNeedsScrolling: region.scrollHeight > region.clientHeight + 1,
+        navInFlow: getComputedStyle(nav).position === 'static',
+      };
+    })())`);
+    const result = JSON.parse(raw);
+    if (result.missing || !result.pageScrollable || !result.regionHidesInternalScrollbar
+      || !result.deviceHasPhoneHeight || !result.contentNeedsScrolling || !result.navInFlow) {
+      throw new Error(`${width}px/${view}: rolagem externa ou navegação inválida: ${JSON.stringify(result)}.`);
+    }
+    await evaluate(`(() => {
+      document.documentElement.style.setProperty('scroll-behavior', 'auto', 'important');
+      document.body.style.setProperty('scroll-behavior', 'auto', 'important');
+      void document.documentElement.offsetHeight;
+      return true;
+    })()`);
+    await wait(30);
+    await evaluate(`(() => {
+      const scrollingElement = document.scrollingElement;
+      if (scrollingElement) scrollingElement.scrollTop = scrollingElement.scrollHeight;
+      return true;
+    })()`);
+    await wait(500);
+    const finalRaw = await evaluate(`JSON.stringify((() => {
+      const device = document.querySelector('[data-testid="parent-device-shell"]');
+      const region = document.querySelector('[data-testid="parent-content-scroll-region"]');
+      const track = document.querySelector('#parent-app-content');
+      const nav = document.querySelector('[aria-label="Navegação do portal dos responsáveis"]');
+      if (!(device instanceof HTMLElement) || !(region instanceof HTMLElement) || !(track instanceof HTMLElement)
+        || !(nav instanceof HTMLElement)) return { missing: true };
+      const deviceRect = device.getBoundingClientRect();
+      const navRect = nav.getBoundingClientRect();
+      return {
+        missing: false,
+        pageScrolled: window.scrollY > 0,
+        contentScrolled: region.scrollTop > 0,
+        contentAtEnd: region.scrollTop >= region.scrollHeight - region.clientHeight - 2,
+        contentScrollTop: region.scrollTop,
+        contentScrollHeight: region.scrollHeight,
+        contentClientHeight: region.clientHeight,
+        pageScrollY: window.scrollY,
+        pageScrollHeight: document.documentElement.scrollHeight,
+        trackInlineMinHeight: track.style.minHeight,
+        trackHeight: track.getBoundingClientRect().height,
+        deviceTop: deviceRect.top,
+        deviceBottom: deviceRect.bottom,
+        deviceVisible: deviceRect.top >= 23 && deviceRect.bottom <= window.innerHeight - 23,
+        navVisible: navRect.height > 0 && navRect.top >= -1 && navRect.bottom <= window.innerHeight + 1,
+        navAttached: navRect.left >= deviceRect.left - 1 && navRect.right <= deviceRect.right + 1
+          && navRect.bottom <= deviceRect.bottom + 1 && deviceRect.bottom - navRect.bottom <= 24,
+      };
+    })())`);
+    const finalResult = JSON.parse(finalRaw);
+    if (finalResult.missing || !finalResult.pageScrolled || !finalResult.contentScrolled
+      || !finalResult.contentAtEnd || !finalResult.deviceVisible || !finalResult.navVisible || !finalResult.navAttached) {
+      throw new Error(`${width}px/${view}: navegação não ficou encaixada na moldura: ${JSON.stringify(finalResult)}.`);
+    }
+  };
+
   const cases = [360, 440, 768, 1440];
   const executed = [];
   for (const width of cases) {
@@ -238,25 +386,52 @@ try {
     await click('#tab-parent-notices');
     await assertActivePage('#tab-parent-notices');
     await assertResponsiveLayout(width, 'notices');
+    await assertGuardianLinkRequestLayout(width, 'notices');
     await capture(`parent-${width}-notices.png`);
     executed.push(`${width}px:notices`);
 
     await click('#tab-parent-home');
-    await click('#btn-parent-digital-badge');
-    await capture(`parent-${width}-badge.png`);
-    executed.push(`${width}px:badge`);
-    await closeDialogWithEscape('[aria-labelledby="student-badge-title"]', '#btn-parent-digital-badge');
-
     await click('#btn-parent-notifications');
     await capture(`parent-${width}-notifications.png`);
     executed.push(`${width}px:notifications`);
     await closeDialogWithEscape('[aria-labelledby="notification-drawer-title"]', '#btn-parent-notifications');
 
     await click('#tab-parent-absence');
+    await assertModalScrollLayout(width, width <= 440);
     await capture(`parent-${width}-absence.png`);
     executed.push(`${width}px:absence`);
     await closeDialogWithEscape('[aria-labelledby="absence-modal-title"]', '#tab-parent-absence');
   }
+
+  await command('browsingContext.setViewport', {
+    context,
+    viewport: { width: 1440, height: 480 },
+    devicePixelRatio: 1,
+  });
+  await command('browsingContext.navigate', {
+    context,
+    url: `${baseUrl}/visual-tests/parent-portal.html`,
+    wait: 'complete',
+  });
+  await wait(350);
+  await assertOuterFrameNavigation(1440, 'mobile-frame-short');
+  await capture('parent-1440-mobile-frame-short.png');
+  executed.push('1440px:mobile-frame-short');
+  await click('#tab-parent-notices');
+  await assertGuardianLinkRequestLayout(1440, 'mobile-frame-notices');
+  await evaluate(`(() => {
+    const scrollingElement = document.scrollingElement;
+    if (scrollingElement) scrollingElement.scrollTop = scrollingElement.scrollHeight;
+    return true;
+  })()`);
+  await wait(500);
+  await capture('parent-1440-mobile-frame-notices.png');
+  executed.push('1440px:mobile-frame-notices');
+  await click('#tab-parent-absence');
+  await assertModalScrollLayout(1440, false);
+  await capture('parent-1440-mobile-frame-absence.png');
+  executed.push('1440px:mobile-frame-absence');
+  await closeDialogWithEscape('[aria-labelledby="absence-modal-title"]', '#tab-parent-absence');
 
   for (const width of [360, 1440]) {
     await command('browsingContext.setViewport', {

@@ -47,7 +47,7 @@ export const GuardianLinkRequests: React.FC<GuardianLinkRequestsProps> = ({
   };
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 text-slate-900 shadow-sm space-y-4">
+    <section data-testid="guardian-link-requests" className="guardian-link-requests rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm space-y-4 sm:p-5">
       <div className="flex items-start gap-3">
         <div className="rounded-xl bg-blue-100 p-2 text-blue-700"><Link2 className="h-5 w-5" /></div>
         <div>
@@ -58,7 +58,7 @@ export const GuardianLinkRequests: React.FC<GuardianLinkRequestsProps> = ({
         </div>
       </div>
 
-      <form onSubmit={submit} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+      <form data-testid="guardian-link-request-form" onSubmit={submit} className="guardian-link-request-form grid gap-3">
         <input
           value={enrollment}
           onChange={(event) => setEnrollment(event.target.value)}
@@ -78,7 +78,7 @@ export const GuardianLinkRequests: React.FC<GuardianLinkRequestsProps> = ({
         <button
           type="submit"
           disabled={!isOnline || submitting}
-          className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+          className="guardian-link-request-submit flex min-w-0 items-center justify-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
         >
           <Send className="h-3.5 w-3.5" /> {submitting ? 'Enviando…' : 'Solicitar'}
         </button>

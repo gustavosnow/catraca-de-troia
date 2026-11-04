@@ -3,13 +3,9 @@ import {
   X, 
   Send, 
   FileText, 
-  Upload, 
   Calendar, 
   AlertCircle, 
   CheckCircle2, 
-  Clock, 
-  Paperclip,
-  Trash2,
   FileCheck,
   ShieldAlert
 } from 'lucide-react';
@@ -24,6 +20,7 @@ interface AbsenceJustificationModalProps {
   onSubmitJustification: (
     justification: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
   ) => Promise<void>;
+  compact?: boolean;
 }
 
 export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps> = ({
@@ -32,6 +29,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
   student,
   existingJustifications,
   onSubmitJustification,
+  compact = false,
 }) => {
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [reasonCategory, setReasonCategory] = useState<AbsenceJustification['reasonCategory']>('Motivo de Força Maior');
@@ -72,27 +70,33 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
   };
 
   return (
-    <div className="absolute inset-0 z-40 flex items-end sm:items-center justify-center bg-slate-950/80 backdrop-blur-xs animate-in fade-in">
+    <div className={`${compact ? 'absolute' : 'fixed'} inset-0 z-50 flex justify-center overflow-hidden bg-slate-950/80 backdrop-blur-xs animate-in fade-in ${
+      compact ? 'items-stretch' : 'items-center p-4'
+    }`}>
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="absence-modal-title"
         tabIndex={-1}
-        className="bg-white w-full h-full sm:h-auto sm:max-w-lg sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-full sm:max-h-[90vh] animate-in slide-in-from-bottom duration-300"
+        className={`flex min-h-0 w-full flex-col overflow-hidden bg-white shadow-2xl animate-in slide-in-from-bottom duration-300 ${
+          compact
+            ? 'h-full max-h-full border-0'
+            : 'h-auto max-h-[min(90vh,48rem)] max-w-lg rounded-3xl border border-slate-200'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between border-b border-slate-800">
-          <div className="flex items-center gap-3">
+        <div className={`flex shrink-0 items-center justify-between border-b border-slate-800 bg-slate-900 text-white ${compact ? 'p-4' : 'p-5'}`}>
+          <div className="flex min-w-0 items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-600/30 border border-blue-500/40 text-blue-400 flex items-center justify-center">
               <FileText className="w-5 h-5" />
             </div>
-            <div>
-              <h2 id="absence-modal-title" className="text-base sm:text-lg font-bold text-white leading-tight">
+            <div className="min-w-0">
+              <h2 id="absence-modal-title" className={`font-bold leading-tight text-white ${compact ? 'text-base' : 'text-lg'}`}>
                 Notificação de Ausência
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs leading-snug text-slate-400">
                 Justificativa para a Coordenação Pedagógica
               </p>
             </div>
@@ -103,7 +107,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
             id="btn-close-absence-modal"
             onClick={onClose}
             disabled={isSubmitting}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="shrink-0 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
             aria-label="Fechar"
           >
             <X className="w-5 h-5" />
@@ -111,13 +115,13 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
         </div>
 
         {/* Tab switch */}
-        <div role="tablist" aria-label="Seções da justificativa" className="flex border-b border-slate-200 bg-slate-50 px-4 pt-2 gap-2 text-xs font-semibold">
+        <div role="tablist" aria-label="Seções da justificativa" className="flex shrink-0 gap-1 overflow-x-auto border-b border-slate-200 bg-slate-50 px-3 pt-2 text-xs font-semibold sm:gap-2 sm:px-4">
           <button
             type="button"
             role="tab"
             aria-selected={activeTab === 'nova'}
             onClick={() => setActiveTab('nova')}
-            className={`pb-2.5 px-3 border-b-2 transition-colors ${
+            className={`shrink-0 whitespace-nowrap border-b-2 px-2 pb-2.5 transition-colors sm:px-3 ${
               activeTab === 'nova'
                 ? 'border-blue-600 text-blue-700 font-bold'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -130,7 +134,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
             role="tab"
             aria-selected={activeTab === 'historico'}
             onClick={() => setActiveTab('historico')}
-            className={`pb-2.5 px-3 border-b-2 transition-colors flex items-center gap-1.5 ${
+            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 pb-2.5 transition-colors sm:px-3 ${
               activeTab === 'historico'
                 ? 'border-blue-600 text-blue-700 font-bold'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -144,7 +148,10 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 overflow-y-auto flex-1 space-y-4">
+        <div
+          data-testid="absence-modal-scroll-region"
+          className={`custom-scrollbar min-h-0 flex-1 touch-pan-y space-y-4 overflow-y-auto overscroll-contain ${compact ? 'p-4' : 'p-5'}`}
+        >
           {successMessage ? (
             <div className="p-6 text-center space-y-3 bg-emerald-50 rounded-2xl border border-emerald-200 animate-in zoom-in-95">
               <div className="w-14 h-14 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
@@ -193,7 +200,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     required
-                    className="w-full text-xs font-medium px-3 py-2 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 caret-blue-600 [color-scheme:light] focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
                   />
                 </div>
 
@@ -204,7 +211,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
                   <select
                     value={reasonCategory}
                     onChange={(e) => setReasonCategory(e.target.value as any)}
-                    className="w-full text-xs font-medium px-3 py-2 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 [color-scheme:light] focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
                   >
                     <option value="Médico / Saúde">Médico / Saúde (Doença/Sintomas)</option>
                     <option value="Consulta Odontológica">Consulta Odontológica</option>
@@ -226,7 +233,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
                   onChange={(e) => setDescription(e.target.value)}
                   required
                   placeholder="Ex: houve um problema no transporte e o estudante não pôde comparecer."
-                  className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white placeholder:text-slate-400"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs text-slate-900 caret-blue-600 placeholder:text-slate-400 focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
 

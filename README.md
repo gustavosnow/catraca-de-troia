@@ -134,7 +134,7 @@ Linha de base: uma escola, duas catracas, processamento facial local, 24 semanas
 
 `src/components/ParentApp/` contém a experiência dos responsáveis. Os demais componentes compõem o painel escolar e as interfaces compartilhadas. `src/services/accessEventsApi.ts` integra o fluxo persistente, e `demoAccessService.ts` deriva linha do tempo e histórico desses registros. `src/data/mockData.ts` ainda reúne dados visuais fictícios; `projectBaseline.ts` centraliza metas e links das fontes.
 
-O corte atual oferece PWA e estrutura Capacitor, além dos serviços locais descritos acima. Na apresentação, use **Ferramentas → Apresentar portal por QR Code** no painel escolar. Se a página estiver em `localhost`, informe um endereço alcançável pelo celular: IP do computador na mesma rede ou HTTPS da apresentação. A central bloqueia QR de loopback, remove parâmetros de consulta e usa somente a rota dos responsáveis. Veja [o roteiro sem APK](docs/APRESENTACAO_SEM_APK.md).
+O corte atual oferece PWA e estrutura Capacitor, além dos serviços locais descritos acima. Na apresentação, use **Ferramentas → Apresentar portal por QR Code** no painel escolar. Mesmo quando o painel está em `localhost`, a central consulta a API local, prioriza a interface Wi-Fi e gera diretamente o QR para `/#/responsaveis`. É possível informar outro endereço HTTPS ou da rede como alternativa. A central nunca codifica loopback, credenciais ou parâmetros de sessão. Veja [o roteiro sem APK](docs/APRESENTACAO_SEM_APK.md).
 
 Origem: [protótipo no Google AI Studio](https://ai.studio/apps/b85c5f96-392f-43b3-8272-31d8c99a8592). O primeiro commit de importação preserva essa versão; o seguinte registra o alinhamento documental.
 
