@@ -1,6 +1,8 @@
-// Metas planejadas do TAP e Dicionário da EAP, consultados em 13/10/2026.
+// TAP, Atividade 01, EAP v1.3 e Plano de Riscos conferidos em 04/11/2026.
 // Nenhum indicador desta configuração representa uma medição do protótipo.
 export const projectBaseline = {
+  sourcesCheckedOn: '04/11/2026',
+  eapVersion: '1.3',
   schoolCount: 1,
   turnstileCount: 2,
   weeks: 24,
@@ -14,12 +16,27 @@ export const projectBaseline = {
     'Pelo menos 95% das notificações processadas para envio em até 5 segundos, nas condições de conectividade previstas.',
     'Disponibilidade de pelo menos 99% durante o horário escolar.',
     'Ausência de vulnerabilidades críticas ou altas após correções e novos testes.',
-    'Capacidade sob a carga aprovada no plano de testes; sem meta de 45 passagens/min aprovada.',
+    'Resposta média das rotas principais inferior a 200 ms sob a carga padrão aprovada.',
+    'Liberação física da catraca em menos de 1 segundo após identificação positiva e autorização.',
+    '100% dos testes de segregação de dados aprovados.',
+    'Taxa de erro inferior a 1% sob a carga de pico aprovada.',
+    'Cobertura automatizada superior a 80% nos serviços e rotinas críticas.',
+    'Sucesso superior a 90% nas tarefas principais dos testes de usabilidade.',
+  ],
+  risks: [
+    { id: 'R01', event: 'Exposição de biometria ou cadastro de menores', score: 10, level: 'Médio' },
+    { id: 'R02', event: 'Consulta indevida ao histórico ou comprometimento de sessão', score: 10, level: 'Médio' },
+    { id: 'R03', event: 'Falha de internet', score: 16, level: 'Alto' },
+    { id: 'R04', event: 'Falha elétrica ou mecânica de catraca', score: 6, level: 'Baixo' },
+    { id: 'R05', event: 'Acurácia facial inferior a 95%', score: 12, level: 'Médio' },
+    { id: 'R06', event: 'Gargalo e inferência superior a 500 ms', score: 16, level: 'Alto' },
+    { id: 'R07', event: 'Resistência ou baixa adesão ao cadastro', score: 16, level: 'Alto' },
+    { id: 'R08', event: 'Indisponibilidade de integrante essencial', score: 12, level: 'Médio' },
   ],
   sources: [
     { title: 'Atividade 01 — Ciclo de Vida', url: 'https://docs.google.com/document/d/1eYtvWycQ0RY8AZVUsdvft_6PcsAiU6WM-Qp0A1GZnhA/edit' },
     { title: 'Termo de Abertura do Projeto', url: 'https://docs.google.com/document/d/123CtOo0_VU80zlFWrm8pKOE5eh1VWj38N-YrP_6kH2U/edit' },
-    { title: 'Dicionário da EAP', url: 'https://docs.google.com/document/d/1oiOUK3fTjjsJNeXXXpx0q8YL7LK9P8CJ/edit' },
+    { title: 'Dicionário da EAP — v1.3', url: 'https://docs.google.com/document/d/1oiOUK3fTjjsJNeXXXpx0q8YL7LK9P8CJ/edit' },
     { title: 'Mapeamento e Plano de Resposta a Riscos em TI', url: 'https://docs.google.com/document/d/1btSlX5aFU_2gdUn7JFvTXXJ90HBENuXh_d514wiCOHE/edit' },
   ],
 };

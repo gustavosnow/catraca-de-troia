@@ -109,7 +109,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
             }`}
           >
             <Layers className="w-3.5 h-3.5 text-purple-600" />
-            <span>Ciclo de Vida (6 Meses)</span>
+            <span>Ciclo de Vida (24 semanas)</span>
           </button>
 
           <button
@@ -129,14 +129,12 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
         <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-800 text-sm">
           
           <aside className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs space-y-2">
-            <p><strong>Linha de base consultada em 13/10/2026.</strong> Protótipo demonstrativo, sem integração real com hardware ou notificações externas.</p>
-            <p>Painel escolar, PWA e projetos-base Capacitor compartilham o escopo demonstrativo. Não há APK/IPA publicado; distribuição em lojas e expansão para outras escolas exigem controle de mudanças.</p>
+            <p><strong>Documentação conferida em {projectBaseline.sourcesCheckedOn}.</strong> TAP, Atividade 01, EAP v{projectBaseline.eapVersion} e Plano de Riscos. Metas e entregas previstas para homologação; hardware, reconhecimento facial e notificações externas ainda são simulados.</p>
+            <p>Painel escolar e portal dos responsáveis compartilham os serviços locais demonstrativos. Android (APK) é objetivo do produto; na apresentação, o portal abre no navegador por link ou QR Code, sem instalação. A PWA é opcional.</p>
             <p>Linha de base de custos: R$ 279.000,00. Reserva gerencial de R$ 12.000,00 fora da linha de base. Orçamento global: R$ 291.000,00.</p>
-            <p>Justificativas são textuais; não há atestados, anexos, ficha de saúde ou carteirinha digital no piloto. Autorização por vínculo deve ocorrer no backend. Preferência de notificação não equivale a autorização biométrica ou condição de frequência escolar.</p>
+            <p>Justificativas são textuais e analisadas pela Coordenação/Direção, sem atestados ou anexos. Não há ficha de saúde ou carteirinha digital no piloto. O backend local verifica perfil e vínculo aprovado. Preferência de notificação não equivale a autorização biométrica ou condição de frequência escolar.</p>
             <div className="flex flex-wrap gap-3">{projectBaseline.sources.map(source => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="text-blue-700 underline">{source.title}</a>)}</div>
           </aside>
-          {activeDocTab === 'smart' && <ul className="list-disc pl-5 space-y-2 text-xs">{projectBaseline.targets.map(target => <li key={target}>{target}</li>)}</ul>}
-          {activeDocTab === 'risks' && <p className="text-xs">Riscos R01–R08: exposição biométrica, consulta indevida ao histórico, falha de internet, falha das catracas, baixa acurácia, lentidão em picos, resistência ao cadastro e indisponibilidade de integrante essencial. Consulte os gatilhos e responsáveis no plano oficial.</p>}
           {/* TAB 1: Termo de Abertura / Justificativa */}
           {activeDocTab === 'charter' && (
             <div className="space-y-5 animate-in fade-in duration-150">
@@ -185,7 +183,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
               <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-3">
                 <h5 className="font-bold text-slate-900 text-xs flex items-center gap-2">
                   <Cpu className="w-4 h-4 text-slate-700" />
-                  Arquitetura Tecnológica e Recursos
+                  Arquitetura Tecnológica e Recursos Previstos
                 </h5>
                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600">
                   <li className="flex items-center gap-2">
@@ -205,6 +203,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                     <span>Notificações em tempo real para os responsáveis</span>
                   </li>
                 </ul>
+                <p className="text-xs text-slate-500">A demonstração usa React/TypeScript e API local Express/SQLite. Python/OpenCV, integração física e canais externos são entregas previstas.</p>
               </div>
             </div>
           )}
@@ -235,6 +234,8 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                     <p className="text-xs text-slate-700 mt-1">
                       As metas abaixo serão aferidas em homologação; não são resultados comprovados pelo protótipo.
                     </p>
+                    <ul className="mt-2 list-disc pl-4 space-y-1 text-xs text-slate-700">{projectBaseline.targets.map(target => <li key={target}>{target}</li>)}</ul>
+                    <p className="mt-2 text-xs text-slate-500">O cenário de até 30 passagens/min do plano de riscos orienta testes de carga; não é capacidade aferida.</p>
                   </div>
                 </div>
 
@@ -269,7 +270,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                   <div>
                     <h5 className="font-bold text-rose-950 text-xs">Temporal (Time-bound)</h5>
                     <p className="text-xs text-slate-700 mt-1">
-                      O projeto tem um prazo definido de 6 meses para ser concluído, desde o início do planejamento até a implantação e entrega da plataforma funcional.
+                      Prazo planejado de 24 semanas (aproximadamente seis meses), do planejamento ao encerramento do piloto. A apresentação acadêmica demonstra os fluxos implementados e não representa a homologação do sistema físico.
                     </p>
                   </div>
                 </div>
@@ -292,7 +293,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-semibold text-emerald-400">Estimativa acadêmica</span>
-                  <p className="text-[11px] text-slate-300">2.400h Base + Ativos CAPEX</p>
+                  <p className="text-[11px] text-slate-300">Mão de obra, hardware e reservas</p>
                 </div>
               </div>
 
@@ -314,11 +315,11 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                       <span className="font-semibold">R$ 240.000,00</span>
                     </div>
                     <div className="flex justify-between text-slate-700">
-                      <span>Reserva de Contingência (10%)</span>
+                      <span>Contingência (10% da mão de obra)</span>
                       <span className="font-semibold">R$ 24.000,00</span>
                     </div>
                     <div className="flex justify-between text-slate-700">
-                      <span>Reserva Gerencial (5%)</span>
+                      <span>Reserva gerencial (5% da mão de obra)</span>
                       <span className="font-semibold">R$ 12.000,00</span>
                     </div>
                   </div>
@@ -419,7 +420,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                 <div className="relative">
                   <div className="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-purple-600 border-4 border-white shadow-xs"></div>
                   <h5 className="font-bold text-xs text-slate-900 flex items-center gap-2">
-                    <span>2. Planejamento (300h)</span>
+                    <span>2. Planejamento (300h com a iniciação)</span>
                     <span className="text-[10px] px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-bold">Requisitos & Prazos</span>
                   </h5>
                   <p className="text-xs text-slate-600 mt-1">
@@ -467,6 +468,24 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
           {/* TAB 5: Riscos & Mitigações */}
           {activeDocTab === 'risks' && (
             <div className="space-y-4 animate-in fade-in duration-150">
+              <section className="rounded-xl border border-slate-200 p-4">
+                <h4 className="text-xs font-bold text-slate-900">Marcos planejados</h4>
+                <ol className="mt-2 list-decimal space-y-1 pl-4 text-xs text-slate-600">
+                  <li>Formalizar TAP, requisitos, EAP, cronograma, custos e riscos.</li>
+                  <li>Desenvolver backend, interfaces, biometria e integração física.</li>
+                  <li>Homologar integração, segurança, carga, recuperação e contingência.</li>
+                  <li>Implantar o piloto com duas catracas e validar a continuidade local.</li>
+                  <li>Treinar usuários, entregar documentação e obter aceite formal.</li>
+                </ol>
+              </section>
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-left text-xs">
+                  <caption className="p-3 text-left font-bold text-slate-900">Riscos oficiais — P × I (escala de 1 a 5)</caption>
+                  <thead className="bg-slate-100 text-slate-700"><tr><th scope="col" className="p-3">ID</th><th scope="col" className="p-3">Evento</th><th scope="col" className="p-3">P × I</th><th scope="col" className="p-3">Classe</th></tr></thead>
+                  <tbody className="divide-y divide-slate-200">{projectBaseline.risks.map(risk => <tr key={risk.id}><th scope="row" className="p-3">{risk.id}</th><td className="p-3">{risk.event}</td><td className="p-3">{risk.score}</td><td className={`p-3 font-semibold ${risk.level === 'Alto' ? 'text-red-700' : risk.level === 'Médio' ? 'text-amber-700' : 'text-green-700'}`}>{risk.level}</td></tr>)}</tbody>
+                </table>
+              </div>
+              <p className="text-xs text-slate-600">A pontuação orienta a priorização e não reduz a urgência de incidentes envolvendo menores ou segurança física. Gatilhos, responsáveis e respostas completos constam do plano oficial.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 
                 <div className="p-4 rounded-xl border border-red-200 bg-red-50/40 space-y-2">
@@ -478,7 +497,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                     Problemas em câmeras ou catracas mecânicas.
                   </p>
                   <div className="text-[11px] text-slate-700 bg-white/80 p-2 rounded-lg border border-red-100">
-                    <strong>Mitigação:</strong> Manutenção preventiva e procedimento alternativo controlado. QR Code depende de aprovação institucional; RFID e biometria digital não integram o piloto.
+                    <strong>Mitigação:</strong> Manutenção preventiva, nobreak e destravamento emergencial da catraca afetada, com desvio para a segunda unidade conforme procedimento escolar. Acionamento físico não está integrado à demonstração.
                   </div>
                 </div>
 
@@ -504,7 +523,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                     Vulnerabilidades ou vazamento de dados pessoais de estudantes.
                   </p>
                   <div className="text-[11px] text-slate-700 bg-white/80 p-2 rounded-lg border border-purple-100">
-                    <strong>Mitigação:</strong> Processamento local, proteção dos vetores biométricos, autorização no backend por perfil e vínculo familiar, auditoria e governança institucional; medidas ainda não implementadas neste protótipo.
+                    <strong>Mitigação:</strong> O backend demonstrativo já valida perfil e vínculo e registra auditoria. Proteção dos vetores biométricos, infraestrutura segura e homologação institucional permanecem previstas.
                   </div>
                 </div>
 
@@ -517,7 +536,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
                     Dificuldade de adaptação dos responsáveis ou operadores de portaria.
                   </p>
                   <div className="text-[11px] text-slate-700 bg-white/80 p-2 rounded-lg border border-blue-100">
-                    <strong>Mitigação:</strong> Informação e capacitação, procedimento alternativo para estudantes sem biometria e canal de notificação sujeito à aprovação institucional.
+                    <strong>Mitigação:</strong> Informação, capacitação e procedimento alternativo para estudantes sem biometria. Crachá com QR dinâmico depende de aprovação institucional e é diferente do QR que abre o portal na apresentação.
                   </div>
                 </div>
 
@@ -529,7 +548,7 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
 
         {/* Footer */}
         <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-          <span>Arquivo de referência: <code className="font-mono text-slate-700">/docs/PROJETO_CATRACA_DE_TROIA.md</code></span>
+          <span>Metas planejadas; homologação institucional pendente.</span>
           <button
             onClick={onClose}
             className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors cursor-pointer"

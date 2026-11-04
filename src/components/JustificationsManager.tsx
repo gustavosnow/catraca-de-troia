@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CheckCircle2, Clock3, FileText, Paperclip, Search, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock3, FileText, Search, XCircle } from 'lucide-react';
 import { AbsenceJustification } from '../types';
 
 interface JustificationsManagerProps {
@@ -183,7 +183,7 @@ export const JustificationsManager: React.FC<JustificationsManagerProps> = ({
         <p>
           {persistenceState === 'persistent'
             ? canReview
-              ? 'Dados persistidos na API local demonstrativa. Anexos novos armazenam conteúdo com validação básica de tipo, sem antivírus homologado.'
+              ? 'Justificativas exclusivamente textuais, persistidas na API local demonstrativa. Este piloto não recebe atestados ou outros anexos.'
               : 'Dados persistidos na API local. A análise é restrita às contas demonstrativas de Coordenação e Direção.'
             : persistenceState === 'loading'
               ? 'Carregando justificativas da API local…'

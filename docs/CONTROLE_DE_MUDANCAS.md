@@ -244,7 +244,7 @@ Ajustes: o modo compacto deixou de depender dos breakpoints da janela externa e 
 
 Limites: os dados da escola, responsáveis e estudantes continuam demonstrativos. O ajuste não representa homologação em aparelhos, integração institucional ou geração de novo APK.
 
-## MC-032 — Regressão visual, desempenho e evidências operacionais
+## MC-032-QA — Regressão visual, desempenho e evidências operacionais
 
 Solicitação: executar os próximos passos de qualidade, exceto a preparação do relatório final.
 
@@ -270,3 +270,14 @@ Solicitação: corrigir o formulário cortado e a rolagem do portal dos respons�
 Ajustes: o formulário de vínculo passou a responder à largura real do card, inclusive dentro da moldura de smartphone em uma janela desktop. Nessa prévia, a moldura mantém proporções de celular, com largura e altura limitadas, enquanto a rolagem externa do navegador movimenta o conteúdo exibido; a navegação inferior integra o rodapé da moldura sem flutuar sobre os cartões. No celular real, PWA e modo expandido, a área interna continua rolável para preservar o comportamento de aplicativo. A justificativa possui rolagem própria e o diálogo da prévia abre sobre a janela para não depender da posição vertical da moldura. A API passou a listar endereços IPv4 utilizáveis, priorizando a interface Wi-Fi; a central escolhe automaticamente esse endereço quando a página está em localhost e gera o QR diretamente para `/#/responsaveis`. O aceite visual cobre o final da aba de avisos, a justificativa rolável e a moldura estreita em desktop.
 
 Limites: o endereço local só funciona quando celular e computador estão na mesma rede e a rede permite comunicação entre aparelhos. O QR não leva sessão, senha ou token e não evita a autenticação demonstrativa. A descoberta não abre túnel, não publica o sistema e não altera o escopo do piloto.
+
+
+## MC-034 — Conferência da documentação para apresentação em 05/11/2026
+
+Fontes relidas em 04/11/2026: TAP, Atividade 01, Dicionário da EAP v1.3 (atualizado em 29/10/2026) e Plano de Riscos. Os documentos acadêmicos permanecem coerentes com as decisões vigentes e não foram reescritos.
+
+Ajustes: substituída a data obsoleta de 13/10/2026 por uma data fixa de conferência em `projectBaseline`, usada na tela. Corrigida a referência residual à EAP v1.2. Metas agrupadas no item Mensurável, com os critérios complementares da EAP; prazo de 24 semanas, marcos e classificação oficial dos oito riscos apresentados sem tratar o planejamento como resultado comprovado. Distintos os controles locais implementados das integrações físicas/externas e da homologação pendentes. O QR do portal foi diferenciado do crachá eventual de contingência. O registro antigo de regressão visual, antes duplicado como MC-032, recebeu o identificador MC-032-QA; MC-032 continua identificando a decisão de escopo de 29/10.
+
+A gestão de justificativas ainda exibia uma mensagem antiga afirmando armazenamento de novos anexos, apesar do bloqueio já aplicado na API. O texto foi corrigido para justificativas exclusivamente textuais. O cadastro deixou de sugerir WhatsApp como canal implementado na validação do telefone; o resumo do orçamento explicita a inclusão de ambas as reservas e a base dos percentuais.
+
+Validação e limites: ver `VERIFICACAO_APRESENTACAO_2026-11-04.md`. Ensaio com celular e rede do local continua necessário; não foram gerados APK, túnel ou publicação pública. Datas históricas de testes, documentos e decisões foram preservadas.

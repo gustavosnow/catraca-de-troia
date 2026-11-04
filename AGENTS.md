@@ -2,7 +2,7 @@
 
 Leia `docs/PROJETO_CATRACA_DE_TROIA.md` e `docs/ALINHAMENTO_E_RASTREABILIDADE.md` antes de alterar regras de negócio.
 
-- As fontes acadêmicas atuais são o TAP, a Atividade 01, o Dicionário da EAP e o Plano de Riscos, vinculados na documentação. A consolidação foi atualizada em 29/10/2026.
+- As fontes acadêmicas atuais são o TAP, a Atividade 01, o Dicionário da EAP e o Plano de Riscos, vinculados na documentação. As fontes foram conferidas novamente em 04/11/2026; EAP v1.3, atualizada em 29/10/2026.
 - Piloto em uma escola pública de ensino fundamental, com duas catracas, câmeras, servidor local e reconhecimento facial em Python/OpenCV. Expansão para outras escolas não faz parte do piloto.
 - Painel escolar e portal responsivo dos responsáveis compartilham serviços e regras. Há uma PWA e projetos-base Android/iOS via Capacitor; não declarar APK, aplicativo assinado, publicação em lojas ou integração nativa como entrega concluída.
 - Meta de acurácia ≥ 95%; inferência ≤ 500 ms em ≥ 95% das tentativas; ≥ 95% das notificações processadas para envio em até 5s sob conectividade prevista; disponibilidade ≥ 99% no horário escolar; ausência de vulnerabilidades críticas/altas após correção e reteste. Não inventar metas de 99,4%, 99,9%, 1,5s ou 45 passagens/min.

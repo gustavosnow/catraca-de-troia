@@ -1,4 +1,4 @@
-# Alinhamento e rastreabilidade em 29 de outubro de 2026
+# Alinhamento e rastreabilidade — conferência de 4 de novembro de 2026
 
 Referência: TAP, Atividade 01, Dicionário da EAP v1.3 e Plano de Riscos atualizados no Drive. A decisão MC-032 substitui a ampliação anterior para anexos e funcionalidades adicionais.
 
@@ -27,7 +27,11 @@ Não integram o piloto atestados ou outros anexos, ficha de saúde, carteirinha 
 | 1.5.2 | Instalação física | Quantidade de catracas refletida no cenário | Comissionamento pendente |
 | 1.5.3 | Capacitação | README, roteiro e instruções para QR | Treinamento institucional pendente |
 
-## Correções desta revisão
+## Conferência para a apresentação de 05/11/2026
+
+Os quatro documentos do Drive foram relidos em 04/11/2026, preservando suas datas originais. A tela de documentação usa uma única data de conferência e identifica EAP v1.3. Metas SMART, marcos, riscos R01–R08, prazo e orçamento foram comparados; a apresentação distingue recursos locais implementados das entregas físicas e externas ainda previstas. Ver `VERIFICACAO_APRESENTACAO_2026-11-04.md`.
+
+## Correções do escopo vigente
 
 - Atestados e anexos removidos das telas; upload/download desativados e referências novas a anexos rejeitadas pela API. Bancos legados não são apagados.
 - Carteirinha digital retirada; ficha sem dados de saúde e etiquetas RFID. A passagem assistida só aceita estudante cadastrado e registra o operador autenticado.
@@ -36,3 +40,4 @@ Não integram o piloto atestados ou outros anexos, ficha de saúde, carteirinha 
 - O modo de apresentação não requer instalação de APK/PWA. Não abre túnel ou publica a aplicação automaticamente.
 
 Os registros MC-001 a MC-031 e as evidências datadas de ciclos anteriores são históricos. Não comprovam que recursos retirados continuam no escopo. Metas quantitativas permanecem planejadas, sem resultados de homologação.
+

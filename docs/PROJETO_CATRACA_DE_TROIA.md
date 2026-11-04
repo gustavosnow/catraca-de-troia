@@ -1,12 +1,12 @@
 # Catraca de Troia — Controle de Acesso Inteligente
 
-Consolidação técnica atualizada em **29/10/2026**. Referências acadêmicas revisadas em outubro de 2026; entregas e metas planejadas, sem homologação comprovada neste protótipo.
+Consolidação técnica conferida em **04/11/2026** contra TAP, Atividade 01, Dicionário da EAP v1.3 (atualizado em 29/10/2026) e Plano de Riscos atuais do Drive. A data registra esta conferência; não altera datas de revisão ou aprovação dos documentos originais. Entregas e metas do piloto completo permanecem planejadas, sem homologação institucional comprovada pelo protótipo.
 
 ## Fontes de referência
 
 - [Atividade 01 — Ciclo de Vida](https://docs.google.com/document/d/1eYtvWycQ0RY8AZVUsdvft_6PcsAiU6WM-Qp0A1GZnhA/edit).
 - [Termo de Abertura do Projeto](https://docs.google.com/document/d/123CtOo0_VU80zlFWrm8pKOE5eh1VWj38N-YrP_6kH2U/edit).
-- [Dicionário da EAP — versão 1.2](https://docs.google.com/document/d/1oiOUK3fTjjsJNeXXXpx0q8YL7LK9P8CJ/edit).
+- [Dicionário da EAP — versão 1.3](https://docs.google.com/document/d/1oiOUK3fTjjsJNeXXXpx0q8YL7LK9P8CJ/edit).
 - [Mapeamento e Plano de Resposta a Riscos em TI](https://docs.google.com/document/d/1btSlX5aFU_2gdUn7JFvTXXJ90HBENuXh_d514wiCOHE/edit).
 
 Esses documentos prevalecem sobre textos herdados do AI Studio. A consolidação não substitui os documentos originais nem comprova aprovação de novas funcionalidades.
@@ -46,6 +46,9 @@ A queda da internet não deve interromper identificação e registro locais. Not
 |---|---|---|
 | Acurácia facial | Pelo menos 95% | Condições de homologação previstas |
 | Inferência facial | Até 500 ms em pelo menos 95% das tentativas | Ambiente e carga homologados |
+| API | Resposta média inferior a 200 ms nas rotas principais | Carga padrão aprovada no plano de testes |
+| Acionamento físico | Giro liberado em menos de 1s após identificação positiva e autorização | Integração física homologada |
+| Usabilidade | Sucesso superior a 90% nas tarefas principais | Cadastro, histórico e publicação de aviso com usuários |
 | Notificações | Pelo menos 95% processadas para envio em até 5s | Conectividade prevista; não garantia de entrega ao celular em 5s |
 | Disponibilidade | Pelo menos 99% | Horário escolar no período definido |
 | Segurança | Ausência de vulnerabilidades críticas/altas | Após correções e novos testes |
@@ -93,7 +96,7 @@ Procedimentos alternativos de entrada precisam ser aprovados e testados, incluin
 | R07 | Resistência ou baixa adesão ao cadastro | 16 | Alto |
 | R08 | Indisponibilidade de integrante essencial | 12 | Médio |
 
-Consulte gatilhos, responsáveis e respostas no plano oficial. A classificação numérica não reduz a prioridade de incidentes graves envolvendo menores ou segurança física. Criptografia, auditoria, backups, fila local e testes são requisitos previstos, ainda não demonstrados pelo frontend.
+Consulte gatilhos, responsáveis e respostas no plano oficial. A classificação numérica não reduz a prioridade de incidentes graves envolvendo menores ou segurança física. Auditoria, backup/restauração, fila local e testes possuem implementação demonstrativa na API. Criptografia institucional, proteção biométrica e continuidade operacional com hardware ainda dependem de implementação e homologação.
 
 ## Ciclo de vida e aceite
 
@@ -106,3 +109,4 @@ Encerramento exige evidências dos fluxos completos, continuidade local, sincron
 Veja `ALINHAMENTO_E_RASTREABILIDADE.md` para o mapeamento entre EAP e código e `CONTROLE_DE_MUDANCAS.md` para as decisões desta revisão. O frontend demonstra parte das jornadas; autenticação/sessão, justificativas, eventos e fila de saída possuem backend local. Por decisão do corte acadêmico atual, hardware e biometria real não serão integrados e permanecem como lacunas documentadas; identidade institucional, demais serviços, infraestrutura remota e homologação também não foram demonstrados.
 
 Identidade visual preservada: azul-marinho `#0B192C`/`#1E293B` e laranja `#EA580C`/`#F97316`/`#FF6500`, com os ativos existentes.
+

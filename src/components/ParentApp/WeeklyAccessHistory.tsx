@@ -176,7 +176,7 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({
       <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start gap-2">
         <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
         <p className="text-[11px] leading-relaxed">
-          Esta tela consulta a mesma API local do painel escolar. A origem dos eventos ainda é simulada; não há integração com catracas físicas, sincronização offline ou criptografia homologada.
+          Esta tela consulta a mesma API local do painel escolar, com eventos simulados. O portal não registra alterações offline; a fila do servidor não substitui a integração com catracas físicas nem a homologação de segurança.
         </p>
       </div>
     </section>

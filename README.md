@@ -4,7 +4,7 @@ Protótipo acadêmico de controle de entrada e saída em uma escola pública de 
 
 **Estado: protótipo acadêmico funcional local.** Painel escolar e portal dos responsáveis compartilham API Express/SQLite, autenticação com contas fictícias, vínculos autorizados, eventos simulados de entrada/saída, avisos, justificativas textuais, notificações internas, auditoria e fila local. Hardware, reconhecimento facial e canais externos não estão integrados. O aplicativo Android (APK) permanece como objetivo; para a apresentação, o portal abre pelo navegador por link ou QR Code, sem instalação obrigatória.
 
-**Escopo vigente em 29/10/2026:** uma escola e duas catracas; justificativas exclusivamente textuais, sem atestados ou outros anexos. Não há ficha de saúde, carteirinha digital, RFID nem gestão de acesso de visitantes e funcionários nas telas do piloto. Rotas de arquivos foram desativadas e novas referências a anexos são rejeitadas. Dados legados em bancos existentes não são apagados por esta revisão.
+**Escopo conferido em 04/11/2026 (EAP v1.3):** uma escola e duas catracas; justificativas exclusivamente textuais, sem atestados ou outros anexos. Não há ficha de saúde, carteirinha digital, RFID nem gestão de acesso de visitantes e funcionários nas telas do piloto. Rotas de arquivos foram desativadas e novas referências a anexos são rejeitadas. Dados legados em bancos existentes não são apagados por esta revisão.
 
 A raiz `/` apresenta publicamente a ideia do sistema e encaminha para o cadastro demonstrativo ou login, mesmo quando o navegador possui uma sessão anterior. O mesmo conteúdo pode ser aberto explicitamente em `/#/apresentacao`. Os acessos diretos continuam disponíveis em `/#/responsaveis`, `/#/responsaveis/cadastro` e `/#/escola`.
 
@@ -141,3 +141,4 @@ Origem: [protótipo no Google AI Studio](https://ai.studio/apps/b85c5f96-392f-43
 ## Limites
 
 Não utilizar a demonstração com dados reais de estudantes. A sessão local não substitui integração institucional, governança biométrica, HTTPS, armazenamento seguro em aparelho ou testes de segurança. Consulte a matriz de rastreabilidade para distinguir funcionalidades demonstrativas de entregas pendentes.
+

@@ -194,7 +194,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
     if (!parentPhone || parentPhone.replace(/\D/g, '').length < 10) {
-      setLoginError('Informe um número de celular/WhatsApp válido para notificações.');
+      setLoginError('Informe um número de celular válido.');
       return;
     }
     if (requestedEnrollment.trim().length < 4) {
