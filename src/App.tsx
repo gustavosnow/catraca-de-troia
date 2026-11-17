@@ -1,9 +1,8 @@
-import { DemoNotice } from './components/DemoNotice';
 import React, { useState, useEffect, useRef } from 'react';
-import { Header } from './components/Header';
-import { MetricCards } from './components/MetricCards';
-import { LiveStreamFeed } from './components/LiveStreamFeed';
-import { SideActionsPanel } from './components/SideActionsPanel';
+import { SchoolShell, SCHOOL_SECTIONS, ADMIN_SECTIONS, type SchoolSection } from './components/school/SchoolShell';
+import { OverviewPage } from './components/school/OverviewPage';
+import { AccessRecordsPage } from './components/school/AccessRecordsPage';
+import { ToolsPage } from './components/school/ToolsPage';
 import { ManualReleaseModal } from './components/ManualReleaseModal';
 import { StudentDetailModal } from './components/StudentDetailModal';
 import { AlertsModal } from './components/AlertsModal';
@@ -27,7 +26,7 @@ import {
   STAFF_ACCOUNTS,
   StaffAccount
 } from './data/mockData';
-import { AccessDirection, AccessLog, Shift, Student, Turnstile, SecurityAlert, SchoolNotice, ParentNotification, AuthUser, AbsenceJustification } from './types';
+import { AccessDirection, AccessLog, Student, Turnstile, SecurityAlert, SchoolNotice, ParentNotification, AuthUser, AbsenceJustification } from './types';
 import { soundManager } from './utils/sound';
 import { isParentOnlyBuild } from './config/runtime';
 import { justificationsApi } from './services/justificationsApi';
@@ -51,20 +50,7 @@ import type {
   LinkReviewStatus,
 } from '../shared/contracts/linkRequests';
 
-import { 
-  Bell, 
-  ShieldCheck, 
-  MessageSquare, 
-  CheckCircle2, 
-  Info,
-  ExternalLink,
-  Sparkles,
-  Smartphone,
-  LayoutDashboard,
-  Megaphone,
-  Users,
-  Activity
-} from 'lucide-react';
+import { CheckCircle2, Megaphone } from 'lucide-react';
 
 type ViewMode = 'landing' | 'parent_app' | 'management_dashboard';
 type AccessMode = 'login' | 'register';
@@ -81,6 +67,11 @@ const getViewModeFromHash = (): ViewMode => {
   return 'landing';
 };
 
+const getSectionFromHash = (): SchoolSection => {
+  const segment = window.location.hash.split('/')[2] as SchoolSection | undefined;
+  return segment && SCHOOL_SECTIONS.includes(segment) ? segment : 'visao-geral';
+};
+
 const getAccessModeFromHash = (): AccessMode =>
   window.location.hash.includes('/cadastro') ? 'register' : 'login';
 
@@ -92,13 +83,14 @@ export default function App() {
   const [authenticatedUser, setAuthenticatedUser] = useState<AuthUser | null>(null);
   const [isRestoringSession, setIsRestoringSession] = useState(authApi.hasStoredSession());
 
-  // School management sub-tab: 'catracas' | 'avisos' | 'alunos'
-  const [managementTab, setManagementTab] = useState<'catracas' | 'avisos' | 'alunos' | 'justificativas' | 'auditoria'>('catracas');
+  // Seção do painel escolar, refletida na URL (#/escola/<seção>).
+  const [section, setSection] = useState<SchoolSection>(getSectionFromHash);
 
   useEffect(() => {
     const handleHashChange = () => {
       const nextView = getViewModeFromHash();
       setViewMode(nextView);
+      if (nextView === 'management_dashboard') setSection(getSectionFromHash());
       if (nextView === 'landing') {
         setIsAuthModalOpen(false);
         return;
@@ -140,6 +132,14 @@ export default function App() {
   const navigateToView = (mode: Exclude<ViewMode, 'landing'>, accessMode?: AccessMode) => {
     if (isParentOnlyBuild && mode === 'management_dashboard') return;
     const basePath = mode === 'management_dashboard' ? '/escola' : '/responsaveis';
+    // Preserva a seção atual (ex.: #/escola/estudantes) ao restaurar a sessão.
+    const alreadyInside = !accessMode
+      && window.location.hash.startsWith(`#${basePath}`)
+      && !/\/(login|cadastro)$/.test(window.location.hash);
+    if (alreadyInside) {
+      setViewMode(mode);
+      return;
+    }
     window.location.hash = accessMode
       ? `${basePath}/${accessMode === 'register' ? 'cadastro' : 'login'}`
       : basePath;
@@ -323,11 +323,17 @@ export default function App() {
     };
   }, [authenticatedUser, canReviewLinks, isOnline, portalRefreshKey]);
 
+  const needsAdministrationData = ['contas', 'auditoria', 'ferramentas'].includes(section);
+
   useEffect(() => {
-    if (!authenticatedUser || !canReviewLinks || managementTab !== 'auditoria') return;
+    if (!authenticatedUser || !canReviewLinks || !needsAdministrationData) return;
     if (!isOnline) {
       setAuditState('unavailable');
       setAuditError('Dispositivo sem conexão.');
+      setAccountsState('unavailable');
+      setAccountsError('Dispositivo sem conexão.');
+      setDeliveryState('unavailable');
+      setDeliveryError('Dispositivo sem conexão.');
       return;
     }
     let active = true;
@@ -362,7 +368,7 @@ export default function App() {
       }
     });
     return () => { active = false; };
-  }, [authenticatedUser, auditRefreshKey, canReviewLinks, isOnline, managementTab]);
+  }, [authenticatedUser, auditRefreshKey, canReviewLinks, isOnline, needsAdministrationData]);
 
   const handleUpdateAccountStatus = async (account: ManagedAccount, reason: string) => {
     const updated = await accountsApi.updateStatus(account.id, {
@@ -566,8 +572,6 @@ export default function App() {
 
   // Real-time live simulation state
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
-  const [selectedTurno, setSelectedTurno] = useState<Shift>('Todos');
-  const [selectedTurma, setSelectedTurma] = useState<string>('Todas');
 
   // Modals state
   const [isManualReleaseOpen, setIsManualReleaseOpen] = useState<boolean>(false);
@@ -807,19 +811,25 @@ export default function App() {
     communicationsUpdatedAt,
   ].filter((value): value is string => Boolean(value)).sort().at(-1);
 
-  // Dynamic calculations for KPI cards
-  const totalRegistered = students.length;
-  const entriesCount = logs.filter((log) => log.direction === 'entry').length;
-  const latestDirectionByStudent = new Map<string, AccessDirection>();
-  [...logs]
-    .sort((left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime())
-    .forEach((log) => latestDirectionByStudent.set(log.studentId, log.direction));
-  const studentsOnCampus = [...latestDirectionByStudent.values()].filter((direction) => direction === 'entry').length;
-  const presenceRate = totalRegistered === 0 ? 0 : Math.min(100, (studentsOnCampus / totalRegistered) * 100);
-  const activeAlertsCount = alerts.filter(a => !a.resolved).length;
+  const activeAlertsCount = alerts.filter((alert) => !alert.resolved).length;
+  const pendingJustificationsCount = justifications.filter((item) => item.status === 'Em Análise').length;
+  const pendingLinksCount = linkRequests.filter((request) => request.status === 'PENDING').length;
+  const canManageSchool = ['Coordenação Pedagógica', 'Direção Escolar'].includes(currentStaffUser.staffRole || '');
+  const activeSection: SchoolSection = ADMIN_SECTIONS.includes(section) && !canReviewLinks ? 'visao-geral' : section;
+  const navigateSection = (target: SchoolSection) => {
+    setSection(target);
+    window.location.hash = `/escola/${target}`;
+    document.getElementById('school-main-content')?.focus({ preventScroll: true });
+    window.scrollTo({ top: 0 });
+  };
+  const connection = accessEventsState === 'persistent'
+    ? { tone: 'positive' as const, label: 'API local conectada' }
+    : accessEventsState === 'loading'
+      ? { tone: 'neutral' as const, label: 'Sincronizando…' }
+      : { tone: 'warning' as const, label: 'Sem sincronização' };
 
   if (isRestoringSession) {
-    return <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center text-sm">
+    return <div role="status" className="flex min-h-screen items-center justify-center bg-surface text-sm text-muted">
       Restaurando sessão segura…
     </div>;
   }
@@ -833,7 +843,7 @@ export default function App() {
   }
 
   if (!authenticatedUser) {
-    return <div className="min-h-screen bg-slate-950">
+    return <div className="min-h-screen bg-white">
       <AuthModal
         isOpen
         onClose={navigateToLanding}
@@ -850,7 +860,7 @@ export default function App() {
 
   const requiredRole = viewMode === 'parent_app' ? 'parent' : 'staff';
   if (authenticatedUser.role !== requiredRole) {
-    return <div className="min-h-screen bg-slate-950">
+    return <div className="min-h-screen bg-white">
       <AuthModal
         isOpen
         onClose={() => navigateToView(authenticatedUser.role === 'parent' ? 'parent_app' : 'management_dashboard')}
@@ -913,197 +923,160 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-orange-500 selection:text-white">
-      <a href="#school-main-content" className="fixed left-3 top-3 z-[100] -translate-y-24 rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition-transform focus:translate-y-0">
-        Ir para o conteúdo principal
-      </a>
-      <DemoNotice />
-      
-      {/* Streamlined Unified Header (Navigation, Brand, Status & Actions in one place) */}
-      <Header
-        isSimulating={isSimulating}
-        onToggleSimulation={() => setIsSimulating(!isSimulating)}
-        onTriggerManualTap={() => triggerStudentAccess()}
-        onOpenManualRelease={() => setIsManualReleaseOpen(true)}
+    <>
+      <SchoolShell
+        section={activeSection}
+        onNavigate={navigateSection}
+        canAdminister={canReviewLinks}
+        user={currentStaffUser}
+        counts={{
+          notices: notices.length,
+          pendingJustifications: pendingJustificationsCount,
+          pendingLinks: pendingLinksCount,
+          activeAlerts: activeAlertsCount,
+        }}
+        onOpenAlerts={() => setIsAlertsOpen(true)}
         onOpenProjectDocs={() => setIsProjectDocsOpen(true)}
-        onOpenPresentationAccess={() => setIsPresentationAccessOpen(true)}
-        activeTab={managementTab}
-        onSelectTab={setManagementTab}
-        noticesCount={notices.length}
-        pendingJustificationsCount={justifications.filter((item) => item.status === 'Em Análise').length}
         onSwitchToParentApp={() => void handleSwitchAccess('parent_app')}
-        currentStaffUser={currentStaffUser}
-        onLogout={handleLogout}
-        canViewAudit={canReviewLinks}
-      />
-
-      {/* Main Dashboard Container */}
-      <main id="school-main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5">
-        <div role="status" aria-live="polite" className={`mb-4 rounded-xl border px-4 py-2 text-xs ${
-          accessEventsState === 'persistent'
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-            : accessEventsState === 'loading'
-              ? 'border-blue-200 bg-blue-50 text-blue-800'
-              : 'border-amber-200 bg-amber-50 text-amber-900'
-        }`}>
-          {accessEventsState === 'persistent'
-            ? 'Eventos de entrada/saída sincronizados com a API local demonstrativa.'
-            : accessEventsState === 'loading'
-              ? 'Sincronizando eventos de acesso…'
-              : `Eventos sem sincronização: ${accessEventsError || 'API local indisponível.'}`}
-        </div>
-        
-        {/* VIEW TAB 1: Monitoramento de Catracas */}
-        {managementTab === 'catracas' && (
-          <div className="space-y-6 animate-in fade-in duration-150">
-            {/* Top Metric Cards */}
-            <MetricCards
-              totalStudents={totalRegistered}
-              entriesToday={entriesCount}
-              studentsOnCampus={studentsOnCampus}
-              presencePercentage={presenceRate}
-              alertsCount={activeAlertsCount}
-              onOpenAlerts={() => setIsAlertsOpen(true)}
-            />
-
-            {/* Main Two-Column Layout: Live Stream Feed (Left) & Side Actions Panel (Right) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-              
-              {/* Left / Center: Live Access Stream Feed (Takes 2 Columns on Desktop) */}
-              <div className="lg:col-span-2 space-y-4">
-                <LiveStreamFeed
-                  logs={logs}
-                  onSelectStudent={handleSelectStudent}
-                  selectedTurno={selectedTurno}
-                  selectedTurma={selectedTurma}
-                />
-              </div>
-
-              {/* Right: Quick Action Controls, Manual Unlock, Filters, Hardware Status (Takes 1 Column) */}
-              <div className="lg:col-span-1">
-                <SideActionsPanel
-                  onOpenManualRelease={() => setIsManualReleaseOpen(true)}
-                  onSelectStudent={handleSelectStudent}
-                  students={students}
-                  turnstiles={turnstiles}
-                  selectedTurno={selectedTurno}
-                  onSelectTurno={setSelectedTurno}
-                  selectedTurma={selectedTurma}
-                  onSelectTurma={setSelectedTurma}
-                  onTriggerManualTap={() => triggerStudentAccess()}
-                  syncStatus={syncStatus}
-                  syncStatusState={syncStatusState}
-                  syncStatusError={syncStatusError}
-                  canRetrySyncConflicts={currentStaffUser.staffRole === 'Coordenação Pedagógica'
-                    || currentStaffUser.staffRole === 'Direção Escolar'}
-                  isRetryingSyncConflicts={isRetryingSyncConflicts}
-                  onRetrySyncConflicts={handleRetrySyncConflicts}
-                />
-              </div>
-
-            </div>
-          </div>
+        onLogout={() => void handleLogout()}
+        connection={connection}
+      >
+        {activeSection === 'visao-geral' && (
+          <OverviewPage
+            userName={currentStaffUser.name}
+            totalStudents={students.length}
+            logs={logs}
+            logsState={accessEventsState}
+            logsError={accessEventsError}
+            turnstiles={turnstiles}
+            alerts={alerts}
+            pendingJustifications={pendingJustificationsCount}
+            pendingLinks={pendingLinksCount}
+            noticesCount={notices.length}
+            canAdminister={canReviewLinks}
+            syncStatus={syncStatus}
+            syncStatusState={syncStatusState}
+            syncStatusError={syncStatusError}
+            canRetrySyncConflicts={canManageSchool}
+            isRetryingSyncConflicts={isRetryingSyncConflicts}
+            onRetrySyncConflicts={handleRetrySyncConflicts}
+            onOpenManualRelease={() => setIsManualReleaseOpen(true)}
+            onOpenProjectDocs={() => setIsProjectDocsOpen(true)}
+            onOpenAlerts={() => setIsAlertsOpen(true)}
+            onNavigate={navigateSection}
+            onSelectStudent={handleSelectStudent}
+          />
         )}
 
-        {/* VIEW TAB 2: Avisos & Comunicados da Gestão Escolar */}
-        {managementTab === 'avisos' && (
-          <div className="animate-in fade-in duration-150">
-            <SchoolNoticesManager
-              notices={notices}
-              onAddNotice={handleAddNotice}
-              onUpdateNotice={handleUpdateNotice}
-              onDeleteNotice={handleDeleteNotice}
-              onBroadcastPush={handleBroadcastPushNotice}
-              canManage={['Coordenação Pedagógica', 'Direção Escolar'].includes(currentStaffUser.staffRole || '')}
-              persistenceState={communicationsState}
-              persistenceError={communicationsError}
-            />
-          </div>
+        {activeSection === 'registros' && (
+          <AccessRecordsPage
+            logs={logs}
+            state={accessEventsState}
+            error={accessEventsError}
+            updatedAt={accessEventsUpdatedAt}
+            onSelectStudent={handleSelectStudent}
+            onOpenManualRelease={() => setIsManualReleaseOpen(true)}
+          />
         )}
 
-        {/* VIEW TAB 3: Diretório de estudantes */}
-        {managementTab === 'alunos' && (
-          <div className="animate-in fade-in duration-150">
-            {canReviewLinks && (
-              <LinkRequestsManager
-                requests={linkRequests}
-                links={guardianLinks}
-                state={linkRequestsState}
-                error={linkRequestsError}
-                canReview={canReviewLinks}
-                onReview={handleReviewLinkRequest}
-                onRevoke={handleRevokeLink}
+        {activeSection === 'estudantes' && (
+          <StudentsManagementList students={students} onSelectStudent={handleSelectStudent} />
+        )}
+
+        {activeSection === 'comunicados' && (
+          <SchoolNoticesManager
+            notices={notices}
+            onAddNotice={handleAddNotice}
+            onUpdateNotice={handleUpdateNotice}
+            onDeleteNotice={handleDeleteNotice}
+            onBroadcastPush={handleBroadcastPushNotice}
+            canManage={canManageSchool}
+            persistenceState={communicationsState}
+            persistenceError={communicationsError}
+          />
+        )}
+
+        {activeSection === 'justificativas' && (
+          <JustificationsManager
+            justifications={justifications}
+            onUpdateStatus={handleUpdateJustificationStatus}
+            persistenceState={justificationsState}
+            persistenceError={justificationsError}
+            canReview={canManageSchool}
+          />
+        )}
+
+        {activeSection === 'vinculos' && (
+          <LinkRequestsManager
+            requests={linkRequests}
+            links={guardianLinks}
+            state={linkRequestsState}
+            error={linkRequestsError}
+            canReview={canReviewLinks}
+            onReview={handleReviewLinkRequest}
+            onRevoke={handleRevokeLink}
+          />
+        )}
+
+        {activeSection === 'contas' && (
+          <AccountsAdministrationPanel
+            accounts={managedAccounts}
+            currentUserId={authenticatedUser.id}
+            state={accountsState}
+            error={accountsError}
+            onRefresh={() => setAuditRefreshKey((current) => current + 1)}
+            onUpdateStatus={handleUpdateAccountStatus}
+            onRevokeSessions={handleRevokeAccountSessions}
+          />
+        )}
+
+        {activeSection === 'auditoria' && (
+          <AuditLogPanel
+            records={auditRecords}
+            state={auditState}
+            error={auditError}
+            onRefresh={() => setAuditRefreshKey((current) => current + 1)}
+          />
+        )}
+
+        {activeSection === 'ferramentas' && (
+          <ToolsPage
+            isSimulating={isSimulating}
+            onToggleSimulation={() => setIsSimulating((current) => !current)}
+            onSimulateEntry={() => void triggerStudentAccess(undefined, 'entry')}
+            onSimulateExit={() => void triggerStudentAccess(undefined, 'exit')}
+            onOpenManualRelease={() => setIsManualReleaseOpen(true)}
+            onOpenPresentationAccess={() => setIsPresentationAccessOpen(true)}
+            onOpenProjectDocs={() => setIsProjectDocsOpen(true)}
+            onSwitchToParentApp={() => void handleSwitchAccess('parent_app')}
+            delivery={canReviewLinks ? (
+              <NotificationDeliveryPanel
+                snapshot={deliverySnapshot}
+                state={deliveryState}
+                error={deliveryError}
+                busy={deliveryBusy}
+                onRefresh={() => setAuditRefreshKey((current) => current + 1)}
+                onProcess={(outcome) => void handleProcessDeliveries(outcome)}
+                onRetry={() => void handleRetryDeliveries()}
               />
-            )}
-            <StudentsManagementList
-              students={students}
-              onSelectStudent={handleSelectStudent}
-            />
-          </div>
+            ) : null}
+          />
         )}
+      </SchoolShell>
 
-        {managementTab === 'justificativas' && (
-          <div className="animate-in fade-in duration-150">
-            <JustificationsManager
-              justifications={justifications}
-              onUpdateStatus={handleUpdateJustificationStatus}
-              persistenceState={justificationsState}
-              persistenceError={justificationsError}
-              canReview={['Coordenação Pedagógica', 'Direção Escolar'].includes(currentStaffUser.staffRole || '')}
-            />
-          </div>
-        )}
-
-        {managementTab === 'auditoria' && canReviewLinks && (
-          <div className="space-y-5 animate-in fade-in duration-150">
-            <AccountsAdministrationPanel
-              accounts={managedAccounts}
-              currentUserId={authenticatedUser.id}
-              state={accountsState}
-              error={accountsError}
-              onRefresh={() => setAuditRefreshKey((current) => current + 1)}
-              onUpdateStatus={handleUpdateAccountStatus}
-              onRevokeSessions={handleRevokeAccountSessions}
-            />
-            <NotificationDeliveryPanel
-              snapshot={deliverySnapshot}
-              state={deliveryState}
-              error={deliveryError}
-              busy={deliveryBusy}
-              onRefresh={() => setAuditRefreshKey((current) => current + 1)}
-              onProcess={(outcome) => void handleProcessDeliveries(outcome)}
-              onRetry={() => void handleRetryDeliveries()}
-            />
-            <AuditLogPanel
-              records={auditRecords}
-              state={auditState}
-              error={auditError}
-              onRefresh={() => setAuditRefreshKey((current) => current + 1)}
-            />
-          </div>
-        )}
-
-      </main>
-
-      {/* Floating Real-Time Entrance Toast */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-40 max-w-sm w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-4 animate-in slide-in-from-bottom-5 duration-300">
+        <div role="status" aria-live="polite" className="toast fixed bottom-5 right-5 z-50 w-[calc(100%-2.5rem)] max-w-sm rounded-xl border border-line bg-white p-4 shadow-[var(--shadow-pop)]">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-900">{toastMessage.title}</h4>
-                <span className="text-[11px] font-mono text-slate-400 font-bold">{toastMessage.time}</span>
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-positive-soft text-positive">
+              {toastMessage.phone === 'Todos os Responsáveis' ? <Megaphone aria-hidden="true" className="h-4 w-4" /> : <CheckCircle2 aria-hidden="true" className="h-4 w-4" />}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-[13px] font-semibold text-ink">{toastMessage.title}</p>
+                <span className="tabular text-xs text-muted">{toastMessage.time}</span>
               </div>
-              <p className="text-xs font-semibold text-slate-800 truncate mt-0.5">
-                {toastMessage.studentName}
-              </p>
-              <div className="flex items-center gap-1.5 text-[11px] text-sky-700 font-medium mt-1">
-                <Smartphone className="w-3.5 h-3.5 text-sky-600" />
-                <span>Notificação interna registrada nesta demonstração</span>
-              </div>
+              <p className="mt-0.5 truncate text-[13px] text-ink-2">{toastMessage.studentName}</p>
+              <p className="mt-1 text-xs text-muted">Notificação interna registrada nesta demonstração.</p>
             </div>
           </div>
         </div>
@@ -1156,7 +1129,6 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess}
         studentsDatabase={students}
       />
-
-    </div>
+    </>
   );
 }
