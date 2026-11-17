@@ -91,8 +91,8 @@ export default defineConfig(() => {
           display: 'standalone',
           display_override: ['window-controls-overlay', 'standalone'],
           orientation: 'portrait-primary',
-          background_color: '#020617',
-          theme_color: '#0f172a',
+          background_color: '#f7f8fa',
+          theme_color: '#ffffff',
           categories: ['education', 'utilities'],
           shortcuts: [
             {
