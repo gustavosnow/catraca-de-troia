@@ -6,6 +6,7 @@ import {defineConfig, type Plugin, type ViteDevServer} from 'vite';
 import {VitePWA} from 'vite-plugin-pwa';
 
 const deviceApkName = 'catraca-de-troia-responsaveis-device-debug.apk';
+const apiProxyTarget = `http://127.0.0.1:${process.env.API_PORT || '3001'}`;
 
 const developmentServiceWorkerCleanupPlugin = (): Plugin => ({
   name: 'catraca-development-service-worker-cleanup',
@@ -140,7 +141,7 @@ export default defineConfig(() => {
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
       allowedHosts: ['.trycloudflare.com'],
       proxy: {
-        '/api': 'http://127.0.0.1:3001',
+        '/api': apiProxyTarget,
       },
     },
     preview: {
@@ -148,7 +149,7 @@ export default defineConfig(() => {
       port: 3000,
       allowedHosts: ['.trycloudflare.com'],
       proxy: {
-        '/api': 'http://127.0.0.1:3001',
+        '/api': apiProxyTarget,
       },
     },
   };

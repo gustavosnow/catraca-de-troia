@@ -19,6 +19,8 @@ npm run dev
 
 Abra `http://localhost:3000`. O comando inicia a API na porta `3001` e o Vite na porta `3000`; o proxy do Vite mantém as chamadas da interface no mesmo endereço. A raiz abre a apresentação pública, que encaminha para o portal dos responsáveis ou para o painel escolar.
 
+Se a porta `3001` já estiver ocupada por outro serviço, inicie ambos os processos com `API_PORT=3101 npm run dev`. O proxy do Vite seguirá a mesma porta; reinicie o comando após alterar `API_PORT`.
+
 As interfaces também possuem entradas demonstrativas identificáveis: `http://localhost:3000/#/responsaveis` e `http://localhost:3000/#/escola`. Eventos de entrada/saída, histórico derivado, justificativas, avisos e notificações internas são persistidos pela API local. A leitura dos avisos é individual por responsável; notificações de passagem e do fluxo de justificativas também aparecem na caixa interna do portal.
 
 ```bash
