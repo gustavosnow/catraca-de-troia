@@ -1,30 +1,7 @@
-import { DemoNotice } from '../DemoNotice';
-import { CatracaTroiaLogo } from '../CatracaTroiaLogo';
-import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { 
-  Smartphone, 
-  Monitor, 
-  Home, 
-  CalendarDays, 
-  Megaphone, 
-  FileText, 
-  QrCode, 
-  Bell, 
-  CheckCircle2, 
-  Clock, 
-  ShieldCheck, 
-  Send,
-  AlertCircle,
-  Maximize2,
-  Minimize2,
-  RefreshCw,
-  Wifi,
-  Battery,
-  Signal,
-  Users
-} from 'lucide-react';
-import { ParentHeader } from './ParentHeader';
-import { PresenceStatusCard } from './PresenceStatusCard';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowRight, FileText, ListChecks, LogOut, ShieldCheck } from 'lucide-react';
+import { ParentHeader, type ParentTab } from './ParentHeader';
+import { PresenceStatusCard, TodayMovements } from './PresenceStatusCard';
 import { WeeklyAccessHistory } from './WeeklyAccessHistory';
 import { SchoolNoticesSection } from './SchoolNoticesSection';
 import { AbsenceJustificationModal } from './AbsenceJustificationModal';
@@ -32,21 +9,19 @@ import { InAppNotificationDrawer } from './InAppNotificationDrawer';
 import { InstallAppBanner } from './InstallAppBanner';
 import { ParentDataStatus } from './ParentDataStatus';
 import { GuardianLinkRequests } from './GuardianLinkRequests';
-import { 
-  Student, 
-  DayTimelineEvent, 
-  WeeklyAccessDay, 
-  SchoolNotice, 
-  ParentNotification, 
+import {
+  Student,
+  SchoolNotice,
+  ParentNotification,
   AbsenceJustification,
   AccessLog,
 } from '../../types';
-import { 
-  STUDENTS_DATABASE, 
+import {
+  STUDENTS_DATABASE,
   PARENT_ACCOUNTS,
   ParentAccount,
-  INITIAL_SCHOOL_NOTICES, 
-  INITIAL_PARENT_NOTIFICATIONS, 
+  INITIAL_SCHOOL_NOTICES,
+  INITIAL_PARENT_NOTIFICATIONS,
 } from '../../data/mockData';
 import {
   buildStudentAccessTimeline,
@@ -58,6 +33,9 @@ import type {
   GuardianRelationship,
 } from '../../../shared/contracts/linkRequests';
 import { isNativeApp } from '../../config/runtime';
+import { Avatar, cx, firstNameOf, focusMainContent, greetingForNow } from '../ui';
+
+const SCHOOL_NAME = 'EMEF Profª. Cecília Meireles';
 
 interface ParentAppViewProps {
   onSwitchToManagement?: () => void;
@@ -92,7 +70,7 @@ interface ParentAppViewProps {
   onLogout?: () => void;
 }
 
-export const ParentAppView: React.FC<ParentAppViewProps> = ({ 
+export const ParentAppView: React.FC<ParentAppViewProps> = ({
   onSwitchToManagement,
   sharedNotices,
   onUpdateSharedNotices,
@@ -188,94 +166,33 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
     return allNotifications.filter(n => n.studentName === 'Geral' || (n.studentName && childrenNames.includes(n.studentName)));
   }, [allNotifications, myChildren]);
 
-  // Modals & Drawers state
-  const [isAbsenceModalOpen, setIsAbsenceModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<ParentTab>('home');
+  const [absenceModal, setAbsenceModal] = useState<'nova' | 'historico' | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-
-  // View state: 'home' | 'history' | 'notices'
-  const [activeTab, setActiveTab] = useState<'home' | 'history' | 'notices'>('home');
-  const contentScrollRef = useRef<HTMLDivElement>(null);
-  const contentInnerRef = useRef<HTMLDivElement>(null);
-  const outerScrollTrackRef = useRef<HTMLElement>(null);
-  const [outerScrollDistance, setOuterScrollDistance] = useState(0);
-
-  // Device frame mode: 'mobile_frame' | 'full_canvas'
-  const [deviceMode, setDeviceMode] = useState<'mobile_frame' | 'full_canvas'>(
-    isNativeApp ? 'full_canvas' : 'mobile_frame',
-  );
+  const [scrollTarget, setScrollTarget] = useState<string | null>(null);
   const [isCompactViewport, setIsCompactViewport] = useState(() => window.matchMedia('(max-width: 639px)').matches);
-  const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
-  const isStandaloneWebApp = window.matchMedia('(display-mode: standalone)').matches
-    || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-  const isAppLikeExperience = isNativeApp || isStandaloneWebApp || isCompactViewport;
-  const useOuterPageScroll = !isAppLikeExperience && deviceMode === 'mobile_frame';
-
-  useLayoutEffect(() => {
-    if (!useOuterPageScroll) {
-      setOuterScrollDistance(0);
-      return;
-    }
-
-    const scrollRegion = contentScrollRef.current;
-    const innerContent = contentInnerRef.current;
-    if (!scrollRegion || !innerContent) return;
-
-    const updateDistance = () => {
-      setOuterScrollDistance(Math.max(0, innerContent.scrollHeight - scrollRegion.clientHeight));
-    };
-    const resizeObserver = new ResizeObserver(updateDistance);
-    resizeObserver.observe(scrollRegion);
-    resizeObserver.observe(innerContent);
-    updateDistance();
-
-    return () => resizeObserver.disconnect();
-  }, [activeTab, useOuterPageScroll]);
-
-  useEffect(() => {
-    if (!useOuterPageScroll) return;
-
-    const syncOuterScroll = () => {
-      const track = outerScrollTrackRef.current;
-      const scrollRegion = contentScrollRef.current;
-      if (!track || !scrollRegion) return;
-
-      const trackStyle = window.getComputedStyle(track);
-      const trackTop = track.getBoundingClientRect().top + window.scrollY;
-      const deviceNaturalTop = trackTop + Number.parseFloat(trackStyle.paddingTop || '0');
-      const stickyTop = 24;
-      scrollRegion.scrollTop = Math.min(
-        outerScrollDistance,
-        Math.max(0, window.scrollY - (deviceNaturalTop - stickyTop)),
-      );
-    };
-
-    syncOuterScroll();
-    window.addEventListener('scroll', syncOuterScroll, { passive: true });
-    window.addEventListener('resize', syncOuterScroll);
-    return () => {
-      window.removeEventListener('scroll', syncOuterScroll);
-      window.removeEventListener('resize', syncOuterScroll);
-    };
-  }, [outerScrollDistance, useOuterPageScroll]);
-
-  useEffect(() => {
-    if (useOuterPageScroll) window.scrollTo({ top: 0, behavior: 'auto' });
-    else contentScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
-  }, [activeTab, useOuterPageScroll]);
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 639px)');
-    const update = () => {
-      setIsCompactViewport(media.matches);
-      setViewportHeight(window.innerHeight);
-    };
+    const update = () => setIsCompactViewport(media.matches);
     media.addEventListener('change', update);
-    window.addEventListener('resize', update);
-    return () => {
-      media.removeEventListener('change', update);
-      window.removeEventListener('resize', update);
-    };
+    return () => media.removeEventListener('change', update);
   }, []);
+
+  useEffect(() => {
+    if (scrollTarget) {
+      document.getElementById(scrollTarget)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setScrollTarget(null);
+    } else {
+      window.scrollTo({ top: 0 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  const goToLinks = () => {
+    setScrollTarget('vinculos');
+    setActiveTab('notices');
+  };
 
   const unreadCount = parentNotifications.filter(n => !n.isRead).length;
 
@@ -306,18 +223,71 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
     }));
   };
 
-  if (myChildren.length === 0 || !myChildren.some(child => child.id === selectedStudent.id)) {
-    return <div className={`${isAppLikeExperience ? 'min-h-dvh native-app-shell' : 'min-h-screen'} bg-slate-950 text-white`}>
-      <DemoNotice />
-      <InstallAppBanner />
-      <main className="mx-auto max-w-2xl space-y-5 p-5 sm:p-8">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold">Nenhum estudante vinculado</h1>
-            <p className="mt-2 text-sm text-slate-300">Solicite o vínculo abaixo. Nenhum registro estudantil é liberado antes da aprovação escolar.</p>
-          </div>
-          <button className="shrink-0 text-xs underline" onClick={onLogout}>Sair</button>
-        </div>
+  const hasUnreadNotices = notices.some((notice) => notice.isUnread);
+  const guardianFirstName = firstNameOf(currentGuardian.name);
+  const hasLinkedStudent = myChildren.length > 0 && myChildren.some((child) => child.id === selectedStudent.id);
+
+  const shell = (content: React.ReactNode, showNavigation = true) => (
+    <div className={cx('min-h-dvh bg-surface', isNativeApp && 'native-app-shell')}>
+      <a href="#parent-app-content" onClick={focusMainContent('parent-app-content')} className="fixed left-3 top-3 z-[100] -translate-y-24 rounded-lg bg-action px-4 py-2 text-sm font-semibold text-white shadow-lg transition-transform focus:translate-y-0">
+        Pular para o conteúdo
+      </a>
+      <ParentHeader
+        currentGuardian={currentGuardian}
+        allGuardians={guardiansList}
+        onSelectGuardian={handleSelectGuardian}
+        unreadNotificationsCount={unreadCount}
+        onOpenNotifications={() => setIsNotificationsOpen(true)}
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        hasUnreadNotices={hasUnreadNotices}
+        onOpenAbsence={() => setAbsenceModal('nova')}
+        canSubmitAbsence={isOnline && hasLinkedStudent}
+        onSwitchToManagement={onSwitchToManagement}
+        onLogout={onLogout}
+        showNavigation={showNavigation}
+      />
+      <main id="parent-app-content" tabIndex={-1} className={cx('mx-auto w-full max-w-5xl px-4 pt-8 outline-none sm:px-6', showNavigation ? 'pb-28 md:pb-16' : 'pb-16')}>
+        {content}
+        <footer className="mt-12 flex flex-col gap-1 border-t border-line pt-5 text-xs text-muted sm:flex-row sm:justify-between">
+          <span>{SCHOOL_NAME} · Escola fictícia</span>
+          <span>Catraca de Troia · Portal dos responsáveis</span>
+        </footer>
+      </main>
+      {isNotificationsOpen && (
+        <InAppNotificationDrawer
+          isOpen={isNotificationsOpen}
+          onClose={() => setIsNotificationsOpen(false)}
+          notifications={parentNotifications}
+          onMarkAllAsRead={handleMarkAllNotificationsAsRead}
+          canMarkAsRead={isOnline}
+        />
+      )}
+    </div>
+  );
+
+  const pageHeading = (
+    <div className="mb-6">
+      <h1 className="display-title text-[28px] sm:text-[32px]">{greetingForNow()}, {guardianFirstName}.</h1>
+      <p className="mt-2 text-sm text-muted">Mais perto da rotina de quem você ama.</p>
+      <p data-testid="parent-school" className="mt-1 text-xs text-muted">{SCHOOL_NAME} · Rede pública</p>
+    </div>
+  );
+
+  if (!hasLinkedStudent) {
+    return shell(
+      <>
+        {pageHeading}
+        <section className="card mb-6 p-6" aria-labelledby="no-student-title">
+          <h2 id="no-student-title" className="card-title">Nenhum estudante vinculado</h2>
+          <p className="card-subtitle max-w-xl">Solicite o vínculo abaixo. Nenhum registro estudantil é liberado antes da aprovação da escola.</p>
+          {onLogout && (
+            <button type="button" className="btn btn-secondary btn-sm mt-4" onClick={onLogout}>
+              <LogOut aria-hidden="true" />
+              Sair
+            </button>
+          )}
+        </section>
         <GuardianLinkRequests
           requests={linkRequests}
           state={linkRequestsState}
@@ -325,308 +295,129 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
           isOnline={isOnline}
           onCreate={onCreateLinkRequest}
         />
-      </main>
-    </div>;
+        <div className="mt-6"><InstallAppBanner /></div>
+      </>,
+      false,
+    );
   }
 
-  return (
-    <div className={`flex flex-col bg-slate-950 font-sans text-slate-100 selection:bg-orange-500 selection:text-white ${
-      useOuterPageScroll ? 'min-h-screen overflow-x-clip' : 'h-dvh overflow-hidden'
-    }`}>
-      <a href="#parent-app-content" className="fixed left-3 top-3 z-[100] -translate-y-24 rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition-transform focus:translate-y-0">
-        Ir para o conteúdo principal
-      </a>
-      <DemoNotice />
-      
-      {/* Top Navigation / Perspective Bar */}
-      {!isAppLikeExperience && <header className={`${useOuterPageScroll ? 'relative' : 'sticky top-0'} z-40 shrink-0 border-b border-slate-800 bg-slate-900/95 px-4 py-3 backdrop-blur-md`}>
-        <div className="max-w-7xl mx-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:gap-3">
-          
-          {/* Logo & Mode indicator */}
-          <div className="flex min-w-0 items-center">
-            <CatracaTroiaLogo size={44} variant="dark" subtitle="Portal dos responsáveis • EMEF Profª. Cecília Meireles" />
-          </div>
+  return shell(
+    <>
+      {pageHeading}
 
-          {/* Quick controls */}
-          <div className="col-span-2 row-start-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:flex">
-            {/* Frame mode switch */}
-            <div className="bg-slate-800 p-0.5 rounded-xl border border-slate-700 flex items-center text-xs">
-              <button
-                id="btn-mode-mobile-frame"
-                onClick={() => setDeviceMode('mobile_frame')}
-                className={`px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                  deviceMode === 'mobile_frame' ? 'bg-orange-600 text-white shadow-xs font-bold' : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title="Moldura de Smartphone"
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Smartphone</span>
-              </button>
+      <div className="mb-6 space-y-4">
+        <ParentDataStatus
+          isOnline={isOnline}
+          states={[accessEventsState, justificationsState, communicationsState]}
+          updatedAt={dataUpdatedAt}
+          errors={[accessEventsError, justificationsError, communicationsError]}
+          onRefresh={onRefreshData}
+        />
 
-              <button
-                id="btn-mode-full-canvas"
-                onClick={() => setDeviceMode('full_canvas')}
-                className={`px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                  deviceMode === 'full_canvas' ? 'bg-orange-600 text-white shadow-xs font-bold' : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title="Tela Cheia / Responsiva"
-              >
-                <Monitor className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Expandido</span>
-              </button>
-            </div>
-
-          </div>
-
-          {/* Keep perspective switching visible independently from demo controls. */}
-          {onSwitchToManagement && (
-            <button
-              id="btn-switch-to-school-portal"
-              onClick={onSwitchToManagement}
-              className="col-start-2 row-start-1 px-2 sm:px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 lg:col-start-3"
-              title="Abrir o painel da escola"
-            >
-              <Monitor className="w-3.5 h-3.5 text-orange-400" />
-              <span className="sm:hidden">Painel</span>
-              <span className="hidden sm:inline">Painel da Escola</span>
-            </button>
-          )}
-        </div>
-      </header>}
-
-      {/* Main Container */}
-      <main
-        ref={outerScrollTrackRef}
-        id="parent-app-content"
-        tabIndex={-1}
-        style={useOuterPageScroll ? { minHeight: `${viewportHeight + outerScrollDistance + 128}px` } : undefined}
-        className={`relative flex min-h-0 flex-1 justify-center ${
-          useOuterPageScroll ? 'items-start px-2 pb-6 pt-2 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8' : isAppLikeExperience ? 'items-center p-0' : 'items-center p-2 sm:p-6 lg:p-8'
-        }`}
-      >
-        {/* Device Container */}
-        <div data-testid="parent-device-shell" className={`w-full min-h-0 transition-all duration-300 ${isAppLikeExperience
-          ? 'h-full bg-slate-900 overflow-hidden relative flex flex-col native-app-shell'
-          : deviceMode === 'mobile_frame'
-            ? 'sticky top-6 h-[min(760px,calc(100dvh-3rem))] max-w-[400px] rounded-[44px] ring-12 ring-slate-900 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border-4 border-slate-800 bg-slate-900 overflow-hidden flex flex-col'
-            : 'h-full max-h-[820px] max-w-3xl rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden flex flex-col relative'
-        }`}>
-          
-          {/* Smartphone Status Bar (Simulated) */}
-          {!isAppLikeExperience && deviceMode === 'mobile_frame' && (
-            <div className="shrink-0 bg-slate-900 text-white px-7 pt-3 pb-1 flex items-center justify-between text-[11px] font-semibold select-none border-b border-slate-800/40">
-              <div className="font-mono">07:20</div>
-              {/* Dynamic Island */}
-              <div className="w-24 h-4 bg-black rounded-full flex items-center justify-center space-x-1.5 px-2">
-                <span className="w-2 h-2 rounded-full bg-slate-800"></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-900"></span>
-              </div>
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <Signal className="w-3 h-3" />
-                <Wifi className="w-3 h-3" />
-                <Battery className="w-3.5 h-3.5" />
-              </div>
-            </div>
-          )}
-
-          {/* A única área rolável mantém a navegação inferior sempre disponível. */}
-          <div
-            ref={contentScrollRef}
-            data-testid="parent-content-scroll-region"
-            className={`custom-scrollbar touch-pan-y bg-slate-950/30 ${
-              useOuterPageScroll
-                ? 'min-h-0 flex-1 overflow-hidden overscroll-none'
-                : 'min-h-0 flex-1 overflow-y-auto overscroll-contain'
-            }`}
-          >
-            <div ref={contentInnerRef}>
-            {/* Parent App Header (With Child Cards & Guardian Switcher) */}
-            <ParentHeader
-              currentGuardian={currentGuardian}
-              allGuardians={guardiansList}
-              onSelectGuardian={handleSelectGuardian}
-              myChildren={myChildren}
-              selectedStudent={selectedStudent}
-              onSelectStudent={setSelectedStudent}
-              unreadNotificationsCount={unreadCount}
-              onOpenNotifications={() => setIsNotificationsOpen(true)}
-              activeTab={activeTab}
-              compact={isAppLikeExperience || deviceMode === 'mobile_frame'}
-              onLogout={onLogout}
-            />
-
-            <ParentDataStatus
-              isOnline={isOnline}
-              states={[accessEventsState, justificationsState, communicationsState]}
-              updatedAt={dataUpdatedAt}
-              errors={[accessEventsError, justificationsError, communicationsError]}
-              onRefresh={onRefreshData}
-            />
-
-            {/* Quick Absence Shortcut Bar on Home */}
-            {activeTab === 'home' && (
-              <div className="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center justify-between gap-2">
+        <section className="card px-5 py-4" aria-labelledby="selected-student-label">
+          <p id="selected-student-label" className="eyebrow-muted mb-3">{myChildren.length > 1 ? 'Estudantes vinculados' : 'Estudante selecionado'}</p>
+          <div data-testid="parent-students" className="grid gap-2 sm:grid-cols-2">
+            {myChildren.map((child) => {
+              const selected = child.id === selectedStudent.id;
+              return (
                 <button
-                  id="btn-parent-open-absence-modal"
-                  onClick={() => setIsAbsenceModalOpen(true)}
-                  disabled={!isOnline}
-                  title={isOnline ? 'Enviar justificativa' : 'Reconecte-se para enviar uma justificativa'}
-                  className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-98 cursor-pointer disabled:cursor-not-allowed disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-400"
+                  key={child.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setSelectedStudent(child)}
+                  className={cx(
+                    'flex min-w-0 items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition-colors',
+                    selected ? 'border-brand bg-[#fffaf5] shadow-[0_0_0_1px_var(--color-brand)]' : 'border-line hover:border-line-strong hover:bg-surface',
+                  )}
                 >
-                  <FileText className="w-4 h-4" />
-                  <span>Comunicar ausência</span>
+                  <Avatar name={child.name} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold leading-snug text-ink">{child.name}</span>
+                    <span className="block text-xs text-muted">{child.turma.split(' - ')[0]} · {child.shift} · Vínculo aprovado</span>
+                  </span>
                 </button>
-              </div>
-            )}
+              );
+            })}
+          </div>
+        </section>
+      </div>
 
-            {/* Dynamic Screen Content */}
-            <div className="space-y-5 p-4 sm:p-5">
-            {activeTab === 'home' && (
-              <>
-                {/* 1. Status de Presença Atual & Linha do Tempo do Filho Selecionado */}
-                <PresenceStatusCard
-                  studentName={selectedStudent.name}
-                  isAtSchool={isAtSchool}
-                  entryTime={latestEntry?.exactTime.slice(0, 5) || '—'}
-                  turnstileName={latestAccess?.turnstileName || 'Sem passagem na sessão'}
-                  timeline={timeline}
-                  onViewTimelineDetails={(event) => {
-                    alert(`Evento: ${event.title}\nHorário: ${event.time}\nLocal: ${event.location}\nDetalhes: ${event.detail}`);
-                  }}
-                />
-
-                {/* 2. Resumo de Comunicados Oficiais */}
-                <SchoolNoticesSection
-                  notices={notices}
-                  onMarkAsRead={handleMarkNoticeAsRead}
-                  canMarkAsRead={isOnline}
-                />
-              </>
-            )}
-
-            {activeTab === 'history' && (
-              /* 3. Histórico semanal de acessos do filho */
-              <WeeklyAccessHistory
-                days={weeklyAccess}
-                onSelectDay={(day) => {
-                  alert(`Dia: ${day.fullDate}\nEntrada: ${day.entryTime || 'Não registrada'}\nSaída: ${day.exitTime || 'Em andamento'}\nCatraca: ${day.turnstileUsed}\nMétodo: ${day.method}\nStatus: ${day.status}`);
-                }}
-              />
-            )}
-
-            {activeTab === 'notices' && (
-              <>
-                {/* 4. Canal de Avisos da Direção Completo */}
-                <SchoolNoticesSection
-                  notices={notices}
-                  onMarkAsRead={handleMarkNoticeAsRead}
-                  canMarkAsRead={isOnline}
-                />
-                <GuardianLinkRequests
-                  requests={linkRequests}
-                  state={linkRequestsState}
-                  error={linkRequestsError}
-                  isOnline={isOnline}
-                  onCreate={onCreateLinkRequest}
-                />
-              </>
-            )}
-            </div>
+      {activeTab === 'home' && (
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="min-w-0 space-y-6">
+            <PresenceStatusCard studentName={selectedStudent.name} latestAccess={latestAccess} />
+            <TodayMovements timeline={timeline} isAtSchool={isAtSchool} onOpenHistory={() => setActiveTab('history')} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                id="btn-parent-open-absence-modal"
+                type="button"
+                className="btn btn-secondary btn-lg"
+                onClick={() => setAbsenceModal('nova')}
+                disabled={!isOnline}
+                title={isOnline ? 'Enviar justificativa' : 'Reconecte-se para enviar uma justificativa'}
+              >
+                <FileText aria-hidden="true" />
+                Justificar ausência
+              </button>
+              <button type="button" className="btn btn-secondary btn-lg" onClick={() => setAbsenceModal('historico')}>
+                <ListChecks aria-hidden="true" />
+                Minhas justificativas
+              </button>
             </div>
           </div>
-
-          {/* Bottom Navigation Bar */}
-          <nav aria-label="Navegação do portal dos responsáveis" className={`shrink-0 bg-slate-900 border-t border-slate-800 px-3 py-2 flex items-center justify-around text-xs select-none ${isAppLikeExperience ? 'native-bottom-nav' : ''}`}>
-            <button
-              id="tab-parent-home"
-              onClick={() => setActiveTab('home')}
-              aria-current={activeTab === 'home' ? 'page' : undefined}
-              className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
-                activeTab === 'home'
-                  ? 'text-orange-400 font-bold bg-orange-950/50'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Home className="w-5 h-5" />
-              <span className="text-[10px]">Presença</span>
-            </button>
-
-            <button
-              id="tab-parent-history"
-              onClick={() => setActiveTab('history')}
-              aria-current={activeTab === 'history' ? 'page' : undefined}
-              className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
-                activeTab === 'history'
-                  ? 'text-orange-400 font-bold bg-orange-950/50'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <CalendarDays className="w-5 h-5" />
-              <span className="text-[10px]">Semana</span>
-            </button>
-
-            <button
-              id="tab-parent-notices"
-              onClick={() => setActiveTab('notices')}
-              aria-current={activeTab === 'notices' ? 'page' : undefined}
-              aria-label={notices.some((notice) => notice.isUnread) ? 'Avisos, há itens não lidos' : 'Avisos'}
-              className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all cursor-pointer relative ${
-                activeTab === 'notices'
-                  ? 'text-orange-400 font-bold bg-orange-950/50'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Megaphone className="w-5 h-5" />
-              <span className="text-[10px]">Avisos</span>
-              {notices.some(n => n.isUnread) && (
-                <span aria-hidden="true" className="absolute top-1 right-3 w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-              )}
-            </button>
-
-            <button
-              id="tab-parent-absence"
-              onClick={() => setIsAbsenceModalOpen(true)}
-              disabled={!isOnline}
-              title={isOnline ? 'Enviar justificativa' : 'Reconecte-se para enviar uma justificativa'}
-              className="flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl text-slate-400 hover:text-slate-200 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <FileText className="w-5 h-5 text-amber-400" />
-              <span className="text-[10px]">Justificar</span>
-            </button>
-          </nav>
-
-          {/* Smartphone Home Bar Indicator */}
-          {!isAppLikeExperience && deviceMode === 'mobile_frame' && (
-            <div className="bg-slate-900 py-1.5 flex justify-center">
-              <div className="w-32 h-1 bg-slate-700 rounded-full"></div>
-            </div>
-          )}
-
-          {/* In-App Modals & Notification Drawer */}
-          {isAbsenceModalOpen && (
-            <AbsenceJustificationModal
-              isOpen={isAbsenceModalOpen}
-              onClose={() => setIsAbsenceModalOpen(false)}
-              student={selectedStudent}
-              existingJustifications={sharedJustifications.filter(j => myChildren.some(c => c.id === j.studentId))}
-              onSubmitJustification={handleAddJustification}
-              compact={isAppLikeExperience}
-            />
-          )}
-
-
-
-          {isNotificationsOpen && (
-            <InAppNotificationDrawer
-              isOpen={isNotificationsOpen}
-              onClose={() => setIsNotificationsOpen(false)}
-              notifications={parentNotifications}
-              onMarkAllAsRead={handleMarkAllNotificationsAsRead}
+          <aside className="space-y-6" aria-label="Avisos e vínculos">
+            <SchoolNoticesSection
+              variant="summary"
+              notices={notices}
+              onMarkAsRead={handleMarkNoticeAsRead}
               canMarkAsRead={isOnline}
+              onViewAll={() => setActiveTab('notices')}
             />
-          )}
+            <section className="card p-6" aria-labelledby="trust-title">
+              <h2 id="trust-title" className="flex items-center gap-2.5 card-title">
+                <ShieldCheck aria-hidden="true" className="h-5 w-5 text-ink-2" />
+                Um vínculo de confiança
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-ink-2">Você consulta apenas estudantes com vínculo aprovado pela escola.</p>
+              <button type="button" className="btn-link mt-4" onClick={goToLinks}>
+                <ArrowRight aria-hidden="true" />
+                Gerenciar meus vínculos
+              </button>
+            </section>
+          </aside>
         </div>
-      </main>
-    </div>
+      )}
+
+      {activeTab === 'history' && (
+        <WeeklyAccessHistory days={weeklyAccess} studentName={selectedStudent.name} />
+      )}
+
+      {activeTab === 'notices' && (
+        <div className="space-y-8">
+          <SchoolNoticesSection notices={notices} onMarkAsRead={handleMarkNoticeAsRead} canMarkAsRead={isOnline} />
+          <GuardianLinkRequests
+            requests={linkRequests}
+            state={linkRequestsState}
+            error={linkRequestsError}
+            isOnline={isOnline}
+            onCreate={onCreateLinkRequest}
+          />
+        </div>
+      )}
+
+      <div className="mt-8"><InstallAppBanner /></div>
+
+      {absenceModal && (
+        <AbsenceJustificationModal
+          isOpen
+          onClose={() => setAbsenceModal(null)}
+          student={selectedStudent}
+          existingJustifications={sharedJustifications.filter((item) => myChildren.some((child) => child.id === item.studentId))}
+          onSubmitJustification={handleAddJustification}
+          compact={isNativeApp || isCompactViewport}
+          initialTab={absenceModal}
+        />
+      )}
+    </>,
   );
 };

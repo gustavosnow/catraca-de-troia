@@ -1,230 +1,123 @@
 import React from 'react';
-import { 
-  CheckCircle2, 
-  Clock, 
-  MapPin, 
-  Sparkles, 
-  BellRing, 
-  ChevronRight,
-  ShieldCheck,
-  Building2,
-  Calendar,
-  AlertCircle
-} from 'lucide-react';
-import { DayTimelineEvent } from '../../types';
+import { ArrowRight, CheckCircle2, Clock3, LogIn, LogOut, School } from 'lucide-react';
+import type { AccessLog, DayTimelineEvent } from '../../types';
+import { firstNameOf } from '../ui';
+
+const turnstileLabel = (name?: string) => name?.split(' (')[0] ?? '';
+
+const dayLabel = (timestamp?: string) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
+};
 
 interface PresenceStatusCardProps {
   studentName: string;
-  isAtSchool: boolean;
-  entryTime: string;
-  turnstileName: string;
-  timeline: DayTimelineEvent[];
-  onSimulateNewPass?: () => void;
-  onViewTimelineDetails?: (event: DayTimelineEvent) => void;
+  latestAccess?: AccessLog;
 }
 
-export const PresenceStatusCard: React.FC<PresenceStatusCardProps> = ({
-  studentName,
-  isAtSchool,
-  entryTime,
-  turnstileName,
-  timeline,
-  onSimulateNewPass,
-  onViewTimelineDetails,
-}) => {
-  const firstName = studentName.split(' ')[0];
+/** Estado atual do estudante conforme o último registro — nunca rastreamento em tempo real. */
+export const PresenceStatusCard: React.FC<PresenceStatusCardProps> = ({ studentName, latestAccess }) => {
+  const firstName = firstNameOf(studentName);
+  const isAtSchool = latestAccess?.direction === 'entry';
+  const meta = latestAccess
+    ? [
+        `${latestAccess.direction === 'entry' ? 'Entrada' : 'Saída'} às ${latestAccess.exactTime.slice(0, 5)}`,
+        turnstileLabel(latestAccess.turnstileName),
+        dayLabel(latestAccess.timestamp),
+      ].filter(Boolean).join(' · ')
+    : 'Nenhuma passagem registrada nesta base demonstrativa.';
 
   return (
-    <section className="space-y-4">
-      {/* Primary Hero Status Card */}
-      <div 
-        id="card-current-presence" 
-        className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden transition-all hover:shadow-md"
-      >
-        {/* Glow accent */}
-        <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-20 pointer-events-none ${
-          isAtSchool ? 'bg-emerald-500' : 'bg-amber-500'
-        }`} />
+    <section
+      id="card-current-presence"
+      aria-live="polite"
+      className={`rounded-[14px] border p-6 sm:p-7 ${isAtSchool ? 'border-positive-line bg-positive-soft' : 'border-line bg-white'}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span className={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${isAtSchool ? 'bg-white/70 text-positive' : 'bg-surface text-ink-2'}`}>
+          <School aria-hidden="true" className="h-6 w-6" />
+        </span>
+        {latestAccess ? (
+          <span className={`chip ${isAtSchool ? 'chip-positive bg-white/70' : 'chip-neutral'}`}>
+            {isAtSchool ? <CheckCircle2 aria-hidden="true" /> : <LogOut aria-hidden="true" />}
+            {isAtSchool ? 'Entrada registrada' : 'Saída registrada'}
+          </span>
+        ) : (
+          <span className="chip chip-neutral"><Clock3 aria-hidden="true" />Sem registro</span>
+        )}
+      </div>
+      <h2 className={`mt-6 text-[26px] font-bold leading-tight tracking-tight sm:text-[28px] ${isAtSchool ? 'text-[#124d34]' : 'text-ink'}`}>
+        {isAtSchool ? `${firstName} está na escola.` : latestAccess ? `${firstName} saiu da escola.` : `Sem passagens de ${firstName}.`}
+      </h2>
+      <p className={`tabular mt-2 text-sm ${isAtSchool ? 'text-[#2c6b4c]' : 'text-muted'}`}>{meta}</p>
+      <p className={`mt-5 border-t pt-4 text-[13px] ${isAtSchool ? 'border-positive-line text-[#2c6b4c]' : 'border-line text-muted'}`}>
+        Conforme o último registro demonstrativo. Não representa rastreamento em tempo real.
+      </p>
+    </section>
+  );
+};
 
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-3 w-3">
-                {isAtSchool ? (
-                  <>
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                  </>
-                ) : (
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-slate-400"></span>
-                )}
-              </span>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Status de Acesso Hoje
-              </span>
-            </div>
+interface TodayMovementsProps {
+  timeline: DayTimelineEvent[];
+  isAtSchool: boolean;
+  onOpenHistory: () => void;
+}
 
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-              {isAtSchool ? (
-                <>
-                  <span className="text-emerald-700">Na Escola</span>
-                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Presença Confirmada
-                  </span>
-                </>
-              ) : (
-                <span className="text-slate-700">Fora do Campus</span>
-              )}
-            </h2>
-          </div>
+export const TodayMovements: React.FC<TodayMovementsProps> = ({ timeline, isAtSchool, onOpenHistory }) => {
+  const hasExit = timeline.some((event) => event.badgeType === 'exit');
+  const items = [...timeline];
 
-          <div className="text-right">
-            <div className="text-[11px] text-slate-500 font-medium">Turno Regular</div>
-            <div className="text-xs font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 inline-block mt-0.5">
-              Manhã (07:15 - 12:45)
-            </div>
-          </div>
-        </div>
-
-        {/* Highlight Banner with exact entry info */}
-        <div className={`rounded-xl p-3.5 border mb-4 ${
-          isAtSchool
-            ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50/60 border-emerald-200/80'
-            : 'bg-slate-50 border-slate-200'
-        }`}>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-sm shrink-0">
-                <Clock className="w-5 h-5" />
-              </div>
-              <div>
-                <div className={`text-xs font-medium ${isAtSchool ? 'text-emerald-800' : 'text-slate-600'}`}>
-                  {isAtSchool ? 'Entrada ativa na sessão demonstrativa' : 'Sem entrada ativa na sessão demonstrativa'}
-                </div>
-                <div className={`text-sm font-bold flex items-center gap-1.5 ${isAtSchool ? 'text-emerald-950' : 'text-slate-700'}`}>
-                  <span>{entryTime === '—' ? 'Nenhuma passagem registrada' : `Última entrada às ${entryTime}`}</span>
-                  <span className={isAtSchool ? 'text-emerald-400' : 'text-slate-300'}>•</span>
-                  <span className="font-medium text-emerald-800 text-xs">{turnstileName}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="hidden sm:flex flex-col items-end">
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-white/80 px-2 py-0.5 rounded-md border border-emerald-200">
-                <BellRing className="w-3 h-3 text-emerald-600" /> Notificado no App
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Security & Access verification tags */}
-        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-xs text-slate-600">
-          <div className="flex items-center gap-1.5 py-1">
-            <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
-            <span className="truncate">Método demonstrado: <strong>Reconhecimento Facial</strong></span>
-          </div>
-          <div className="flex items-center gap-1.5 py-1">
-            <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
-            <span className="truncate">Local: <strong>Portaria Central</strong></span>
-          </div>
-        </div>
+  return (
+    <section className="card p-6" aria-labelledby="today-movements-title">
+      <div className="flex items-center justify-between gap-3">
+        <h2 id="today-movements-title" className="card-title">Movimentações registradas</h2>
+        <button type="button" className="btn-link" onClick={onOpenHistory}>
+          <ArrowRight aria-hidden="true" />
+          Histórico
+        </button>
       </div>
 
-      {/* Daily Timeline Section */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
-        <div className="flex items-center justify-between gap-2 mb-4 pb-2 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-blue-600" />
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
-              Linha do Tempo do Dia de {firstName}
-            </h3>
-          </div>
-          <span className="text-[11px] font-medium text-slate-500">
-            Atualizado nesta sessão
-          </span>
-        </div>
-
-        {/* Timeline Items */}
-        <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
-          {timeline.length === 0 && (
-            <div className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3 -ml-4">
-              Nenhum evento de entrada ou saída registrado nesta sessão demonstrativa.
-            </div>
-          )}
-          {timeline.map((event) => {
-            const isCompleted = event.status === 'completed';
-            const isCurrent = event.status === 'current';
-            const isUpcoming = event.status === 'upcoming';
-
+      {items.length === 0 ? (
+        <p className="mt-5 rounded-[10px] bg-surface px-4 py-5 text-center text-[13px] text-muted">
+          Nenhuma entrada ou saída registrada nesta base demonstrativa.
+        </p>
+      ) : (
+        <ol className="relative mt-5 space-y-5 before:absolute before:bottom-3 before:left-[15px] before:top-3 before:w-px before:bg-line">
+          {items.map((event) => {
+            const isEntry = event.badgeType !== 'exit';
+            const Icon = isEntry ? LogIn : LogOut;
             return (
-              <div 
-                key={event.id}
-                onClick={() => onViewTimelineDetails?.(event)}
-                className={`relative group cursor-pointer transition-all ${
-                  isCurrent ? 'bg-blue-50/70 p-3 rounded-xl border border-blue-200/80 -ml-2' : ''
-                }`}
-              >
-                {/* Node icon */}
-                <div 
-                  className={`absolute -left-6 top-1 w-5 h-5 rounded-full flex items-center justify-center ring-4 ring-white transition-all ${
-                    isCompleted
-                      ? 'bg-emerald-600 text-white shadow-sm'
-                      : isCurrent
-                      ? 'bg-blue-600 text-white animate-pulse'
-                      : 'bg-slate-200 text-slate-400'
-                  }`}
-                >
-                  {isCompleted ? (
-                    <CheckCircle2 className="w-3 h-3" />
-                  ) : isCurrent ? (
-                    <span className="w-2 h-2 rounded-full bg-white"></span>
-                  ) : (
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                  )}
-                </div>
-
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-mono font-bold ${
-                        isCompleted ? 'text-slate-800' : isCurrent ? 'text-blue-700' : 'text-slate-500'
-                      }`}>
-                        {event.time}
-                      </span>
-                      {isCurrent && (
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-blue-600 text-white">
-                          Agora
-                        </span>
-                      )}
-                    </div>
-
-                    <h4 className={`text-xs sm:text-sm font-semibold mt-0.5 ${
-                      isCompleted ? 'text-slate-900' : isCurrent ? 'text-blue-950 font-bold' : 'text-slate-500'
-                    }`}>
-                      {event.title}
-                    </h4>
-
-                    <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
-                      <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                      <span>{event.location}</span>
-                    </div>
-
-                    {event.detail && (
-                      <p className={`text-[11px] mt-1 line-clamp-2 ${
-                        isCurrent ? 'text-blue-800' : 'text-slate-600'
-                      }`}>
-                        {event.detail}
-                      </p>
-                    )}
+              <li key={event.id} className="relative flex gap-3.5">
+                <span className={`relative z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-4 ring-white ${isEntry ? 'bg-positive-soft text-positive' : 'bg-surface-2 text-ink-2'}`}>
+                  <Icon aria-hidden="true" className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-sm font-semibold text-ink">{event.title}</p>
+                    <span className="tabular text-sm font-medium text-ink">{event.time.slice(0, 5)}</span>
                   </div>
-
-                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+                  <p className="mt-0.5 text-[13px] text-muted">{turnstileLabel(event.location)} · Evento demonstrativo</p>
                 </div>
-              </div>
+              </li>
             );
           })}
-        </div>
-      </div>
+          {isAtSchool && !hasExit && (
+            <li className="relative flex gap-3.5">
+              <span className="relative z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-subtle ring-4 ring-white">
+                <LogOut aria-hidden="true" className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1 pt-0.5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="text-sm font-semibold text-muted">Nenhuma saída registrada</p>
+                  <span aria-hidden="true" className="text-sm text-subtle">—</span>
+                </div>
+                <p className="mt-0.5 text-[13px] text-muted">Aguardando um novo registro.</p>
+              </div>
+            </li>
+          )}
+        </ol>
+      )}
     </section>
   );
 };
