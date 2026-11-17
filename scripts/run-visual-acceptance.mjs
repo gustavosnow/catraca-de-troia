@@ -227,128 +227,66 @@ try {
 
   const assertModalScrollLayout = async (width, compact) => {
     const raw = await evaluate(`JSON.stringify((() => {
-      const device = document.querySelector('[data-testid="parent-device-shell"]');
       const dialog = document.querySelector('[aria-labelledby="absence-modal-title"]');
       const scrollRegion = document.querySelector('[data-testid="absence-modal-scroll-region"]');
-      const nav = document.querySelector('[aria-label="Navegação do portal dos responsáveis"]');
-      const content = document.querySelector('[data-testid="parent-content-scroll-region"]');
-      if (!(device instanceof HTMLElement) || !(dialog instanceof HTMLElement) || !(scrollRegion instanceof HTMLElement)
-        || !(nav instanceof HTMLElement) || !(content instanceof HTMLElement)) return { missing: true };
-      const deviceRect = device.getBoundingClientRect();
+      if (!(dialog instanceof HTMLElement) || !(scrollRegion instanceof HTMLElement)) return { missing: true };
       const dialogRect = dialog.getBoundingClientRect();
-      const navRect = nav.getBoundingClientRect();
-      const contentRect = content.getBoundingClientRect();
       const canOverflow = ['auto', 'scroll'].includes(getComputedStyle(scrollRegion).overflowY);
       const hasScrollableContent = scrollRegion.scrollHeight > scrollRegion.clientHeight + 1;
+      const luminance = (color) => {
+        const [r, g, b] = (color.match(/[\\d.]+/g) || []).slice(0, 3).map(Number).map((v) => {
+          const c = v / 255;
+          return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
       const formFields = [...dialog.querySelectorAll('input, select, textarea')];
       const fieldsUseReadableText = formFields.length >= 3
-        && formFields.every((field) => field.classList.contains('text-slate-900'));
+        && formFields.every((field) => luminance(getComputedStyle(field).color) < 0.05);
       if (hasScrollableContent) scrollRegion.scrollTop = Math.min(120, scrollRegion.scrollHeight - scrollRegion.clientHeight);
       return {
         missing: false,
-        dialogInsideDevice: dialogRect.top >= deviceRect.top - 1 && dialogRect.bottom <= deviceRect.bottom + 1,
-        dialogInsideViewport: dialogRect.top >= -1 && dialogRect.bottom <= window.innerHeight + 1,
-        compactFillsDevice: Math.abs(dialogRect.top - deviceRect.top) <= 5 && Math.abs(dialogRect.bottom - deviceRect.bottom) <= 5,
+        dialogInsideViewport: dialogRect.top >= -1 && dialogRect.bottom <= window.innerHeight + 1
+          && dialogRect.left >= -1 && dialogRect.right <= window.innerWidth + 1,
+        compactFillsViewport: Math.abs(dialogRect.top) <= 2 && Math.abs(dialogRect.bottom - window.innerHeight) <= 2,
         canOverflow,
         hasScrollableContent,
         fieldsUseReadableText,
         scrolled: !hasScrollableContent || scrollRegion.scrollTop > 0,
-        contentBehindNavigation: contentRect.bottom > navRect.top + 1,
       };
     })())`);
     const result = JSON.parse(raw);
     const failed = result.missing || !result.canOverflow || !result.scrolled || !result.fieldsUseReadableText
-      || (compact
-        ? (!result.dialogInsideDevice || !result.compactFillsDevice || result.contentBehindNavigation)
-        : !result.dialogInsideViewport);
+      || !result.dialogInsideViewport || (compact && !result.compactFillsViewport);
     if (failed) throw new Error(`${width}px/modal: rolagem ou encaixe inválido: ${JSON.stringify(result)}.`);
   };
 
-  const assertOuterFrameNavigation = async (width, view) => {
-    let layoutReady = false;
-    for (let attempt = 0; attempt < 20; attempt += 1) {
-      const readinessRaw = await evaluate(`JSON.stringify((() => {
-        const track = document.querySelector('#parent-app-content');
-        const region = document.querySelector('[data-testid="parent-content-scroll-region"]');
-        if (!(track instanceof HTMLElement) || !(region instanceof HTMLElement)) return { ready: false };
-        const requiredHeight = window.innerHeight + Math.max(0, region.scrollHeight - region.clientHeight);
-        return { ready: track.getBoundingClientRect().height >= requiredHeight };
-      })())`);
-      layoutReady = JSON.parse(readinessRaw).ready;
-      if (layoutReady) break;
-      await wait(100);
-    }
-    if (!layoutReady) throw new Error(`${width}px/${view}: trilha de rolagem externa não estabilizou.`);
-
+  const assertNavigationPlacement = async (width, view) => {
     const raw = await evaluate(`JSON.stringify((() => {
-      const device = document.querySelector('[data-testid="parent-device-shell"]');
-      const region = document.querySelector('[data-testid="parent-content-scroll-region"]');
-      const track = document.querySelector('#parent-app-content');
+      const header = document.querySelector('[data-testid="parent-header"]');
       const nav = document.querySelector('[aria-label="Navegação do portal dos responsáveis"]');
-      if (!(device instanceof HTMLElement) || !(region instanceof HTMLElement) || !(track instanceof HTMLElement)
-        || !(nav instanceof HTMLElement)) return { missing: true };
-      const deviceRect = device.getBoundingClientRect();
+      const main = document.querySelector('#parent-app-content');
+      if (!(header instanceof HTMLElement) || !(nav instanceof HTMLElement) || !(main instanceof HTMLElement)) return { missing: true };
+      const navRect = nav.getBoundingClientRect();
+      const position = getComputedStyle(nav).position;
+      const mainPaddingBottom = Number.parseFloat(getComputedStyle(main).paddingBottom || '0');
       return {
         missing: false,
-        pageScrollable: document.documentElement.scrollHeight > window.innerHeight + 1,
-        regionHidesInternalScrollbar: getComputedStyle(region).overflowY === 'hidden',
-        deviceHasPhoneHeight: deviceRect.height <= Math.min(762, window.innerHeight - 46),
-        contentNeedsScrolling: region.scrollHeight > region.clientHeight + 1,
-        navInFlow: getComputedStyle(nav).position === 'static',
+        position,
+        viewport: [document.documentElement.clientWidth, document.documentElement.clientHeight, window.innerWidth, window.innerHeight],
+        navBox: [Math.round(navRect.width), Math.round(navRect.bottom)],
+        bottomBar: position === 'fixed'
+          && Math.abs(navRect.bottom - document.documentElement.clientHeight) <= 1
+          && navRect.width >= document.documentElement.clientWidth - 1,
+        contentClearsBar: mainPaddingBottom >= navRect.height,
+        inHeader: position === 'static' && navRect.top >= header.getBoundingClientRect().top - 1
+          && navRect.bottom <= header.getBoundingClientRect().bottom + 1,
       };
     })())`);
     const result = JSON.parse(raw);
-    if (result.missing || !result.pageScrollable || !result.regionHidesInternalScrollbar
-      || !result.deviceHasPhoneHeight || !result.contentNeedsScrolling || !result.navInFlow) {
-      throw new Error(`${width}px/${view}: rolagem externa ou navegação inválida: ${JSON.stringify(result)}.`);
-    }
-    await evaluate(`(() => {
-      document.documentElement.style.setProperty('scroll-behavior', 'auto', 'important');
-      document.body.style.setProperty('scroll-behavior', 'auto', 'important');
-      void document.documentElement.offsetHeight;
-      return true;
-    })()`);
-    await wait(30);
-    await evaluate(`(() => {
-      const scrollingElement = document.scrollingElement;
-      if (scrollingElement) scrollingElement.scrollTop = scrollingElement.scrollHeight;
-      return true;
-    })()`);
-    await wait(500);
-    const finalRaw = await evaluate(`JSON.stringify((() => {
-      const device = document.querySelector('[data-testid="parent-device-shell"]');
-      const region = document.querySelector('[data-testid="parent-content-scroll-region"]');
-      const track = document.querySelector('#parent-app-content');
-      const nav = document.querySelector('[aria-label="Navegação do portal dos responsáveis"]');
-      if (!(device instanceof HTMLElement) || !(region instanceof HTMLElement) || !(track instanceof HTMLElement)
-        || !(nav instanceof HTMLElement)) return { missing: true };
-      const deviceRect = device.getBoundingClientRect();
-      const navRect = nav.getBoundingClientRect();
-      return {
-        missing: false,
-        pageScrolled: window.scrollY > 0,
-        contentScrolled: region.scrollTop > 0,
-        contentAtEnd: region.scrollTop >= region.scrollHeight - region.clientHeight - 2,
-        contentScrollTop: region.scrollTop,
-        contentScrollHeight: region.scrollHeight,
-        contentClientHeight: region.clientHeight,
-        pageScrollY: window.scrollY,
-        pageScrollHeight: document.documentElement.scrollHeight,
-        trackInlineMinHeight: track.style.minHeight,
-        trackHeight: track.getBoundingClientRect().height,
-        deviceTop: deviceRect.top,
-        deviceBottom: deviceRect.bottom,
-        deviceVisible: deviceRect.top >= 23 && deviceRect.bottom <= window.innerHeight - 23,
-        navVisible: navRect.height > 0 && navRect.top >= -1 && navRect.bottom <= window.innerHeight + 1,
-        navAttached: navRect.left >= deviceRect.left - 1 && navRect.right <= deviceRect.right + 1
-          && navRect.bottom <= deviceRect.bottom + 1 && deviceRect.bottom - navRect.bottom <= 24,
-      };
-    })())`);
-    const finalResult = JSON.parse(finalRaw);
-    if (finalResult.missing || !finalResult.pageScrolled || !finalResult.contentScrolled
-      || !finalResult.contentAtEnd || !finalResult.deviceVisible || !finalResult.navVisible || !finalResult.navAttached) {
-      throw new Error(`${width}px/${view}: navegação não ficou encaixada na moldura: ${JSON.stringify(finalResult)}.`);
-    }
+    const mobile = width < 768;
+    const failed = result.missing || (mobile ? (!result.bottomBar || !result.contentClearsBar) : !result.inHeader);
+    if (failed) throw new Error(`${width}px/${view}: navegação fora do lugar: ${JSON.stringify(result)}.`);
   };
 
   const cases = [360, 440, 768, 1440];
@@ -370,9 +308,9 @@ try {
     if (!reducedMotion) throw new Error('Preferência de redução de movimento não aplicada no navegador de aceite.');
 
     await evaluate(`document.querySelector('[aria-label="Dispensar aviso de instalação"]')?.click()`);
-    if (width >= 768) await click('#btn-mode-full-canvas');
 
     await assertResponsiveLayout(width, 'home');
+    await assertNavigationPlacement(width, 'home');
     await assertActivePage('#tab-parent-home');
     await capture(`parent-${width}-home.png`);
     executed.push(`${width}px:home`);
@@ -414,23 +352,21 @@ try {
     wait: 'complete',
   });
   await wait(350);
-  await assertOuterFrameNavigation(1440, 'mobile-frame-short');
-  await capture('parent-1440-mobile-frame-short.png');
-  executed.push('1440px:mobile-frame-short');
+  await assertNavigationPlacement(1440, 'short-viewport');
   await click('#tab-parent-notices');
-  await assertGuardianLinkRequestLayout(1440, 'mobile-frame-notices');
+  await assertGuardianLinkRequestLayout(1440, 'short-viewport-notices');
   await evaluate(`(() => {
     const scrollingElement = document.scrollingElement;
     if (scrollingElement) scrollingElement.scrollTop = scrollingElement.scrollHeight;
     return true;
   })()`);
   await wait(500);
-  await capture('parent-1440-mobile-frame-notices.png');
-  executed.push('1440px:mobile-frame-notices');
+  await capture('parent-1440-short-viewport-notices.png');
+  executed.push('1440px:short-viewport-notices');
   await click('#tab-parent-absence');
   await assertModalScrollLayout(1440, false);
-  await capture('parent-1440-mobile-frame-absence.png');
-  executed.push('1440px:mobile-frame-absence');
+  await capture('parent-1440-short-viewport-absence.png');
+  executed.push('1440px:short-viewport-absence');
   await closeDialogWithEscape('[aria-labelledby="absence-modal-title"]', '#tab-parent-absence');
 
   for (const width of [360, 1440]) {
@@ -445,7 +381,6 @@ try {
       wait: 'complete',
     });
     await wait(250);
-    if (width === 1440) await click('#btn-mode-full-canvas');
     await click('#visual-toggle-connectivity');
     const offlineMessage = await evaluate(`document.body.textContent?.includes('Sem conexão. Exibindo apenas os dados já carregados nesta sessão.') ?? false`);
     const absenceDisabled = await evaluate(`document.querySelector('#tab-parent-absence')?.hasAttribute('disabled') ?? false`);
@@ -453,7 +388,7 @@ try {
     await capture(`parent-${width}-offline.png`);
     executed.push(`${width}px:offline`);
     await click('#visual-toggle-connectivity');
-    const onlineMessage = await evaluate(`document.body.textContent?.includes('Dados consultados na API local demonstrativa.') ?? false`);
+    const onlineMessage = await evaluate(`document.body.textContent?.includes('Dados da API local demonstrativa') ?? false`);
     if (!onlineMessage) throw new Error(`${width}px: retomada da conectividade não refletida.`);
   }
 
