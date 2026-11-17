@@ -1,28 +1,23 @@
 import React, { useState } from 'react';
-import { 
-  Megaphone, 
-  Plus, 
-  Search, 
-  Filter, 
-  Calendar, 
-  Clock, 
-  FileText, 
-  AlertCircle, 
-  CheckCircle2, 
-  Trash2, 
-  Edit3, 
-  Send, 
-  Eye, 
-  Users, 
-  Bell, 
-  Sparkles,
-  Paperclip,
-  CheckCheck,
-  Smartphone,
-  ExternalLink,
-  X
+import {
+  AlertCircle,
+  ArrowRight,
+  BellRing,
+  CalendarDays,
+  CheckCircle2,
+  GraduationCap,
+  Info,
+  Megaphone,
+  MessageCircleQuestion,
+  PencilLine,
+  Plus,
+  Search,
+  ShieldCheck,
+  Trash2,
 } from 'lucide-react';
-import { SchoolNotice } from '../types';
+import type { SchoolNotice } from '../types';
+import { EmptyInboxIllustration } from './brand/Illustrations';
+import { Callout, Chip, EmptyState, Field, Modal, PageHeader } from './ui';
 
 interface SchoolNoticesManagerProps {
   notices: SchoolNotice[];
@@ -35,6 +30,45 @@ interface SchoolNoticesManagerProps {
   persistenceError?: string;
 }
 
+type Category = SchoolNotice['category'];
+
+const CATEGORIES: Array<{ id: 'Todas' | Category; label: string }> = [
+  { id: 'Todas', label: 'Todos' },
+  { id: 'Pedagógico', label: 'Pedagógico' },
+  { id: 'Segurança', label: 'Segurança' },
+  { id: 'Eventos', label: 'Eventos' },
+  { id: 'Plantão', label: 'Plantão' },
+  { id: 'Geral', label: 'Geral' },
+];
+
+const CATEGORY_ICON: Record<Category, typeof Megaphone> = {
+  Pedagógico: GraduationCap,
+  Segurança: ShieldCheck,
+  Eventos: CalendarDays,
+  Plantão: MessageCircleQuestion,
+  Geral: Megaphone,
+};
+
+export const PriorityChip: React.FC<{ priority: SchoolNotice['priority'] }> = ({ priority }) => {
+  if (priority === 'urgent') return <Chip tone="negative" icon={AlertCircle}>Urgente</Chip>;
+  if (priority === 'important') return <Chip tone="warning" icon={Info}>Importante</Chip>;
+  return <Chip tone="neutral" icon={Info}>Informativo</Chip>;
+};
+
+export const CategoryChip: React.FC<{ category: Category }> = ({ category }) => (
+  <Chip tone="neutral" icon={CATEGORY_ICON[category] ?? Megaphone}>{category}</Chip>
+);
+
+const EMPTY_FORM = {
+  title: '',
+  category: 'Pedagógico' as Category,
+  priority: 'important' as SchoolNotice['priority'],
+  author: 'Diretoria Pedagógica',
+  role: 'Profa. Regina Vasconcelos',
+  summary: '',
+  fullContent: '',
+};
+
 export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
   notices,
   onAddNotice,
@@ -45,688 +79,328 @@ export const SchoolNoticesManager: React.FC<SchoolNoticesManagerProps> = ({
   persistenceState,
   persistenceError,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
-  const [selectedPriority, setSelectedPriority] = useState<string>('Todas');
-  
-  // Modal states
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState<'Todas' | Category>('Todas');
+  const [priority, setPriority] = useState<'Todas' | SchoolNotice['priority']>('Todas');
+
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [editingNotice, setEditingNotice] = useState<SchoolNotice | null>(null);
-  const [previewNotice, setPreviewNotice] = useState<SchoolNotice | null>(null);
-  const [broadcastSuccess, setBroadcastSuccess] = useState<string | null>(null);
-  const [deleteCandidate, setDeleteCandidate] = useState<SchoolNotice | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  // Form states
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<SchoolNotice['category']>('Pedagógico');
-  const [priority, setPriority] = useState<SchoolNotice['priority']>('important');
-  const [author, setAuthor] = useState('Diretoria Pedagógica');
-  const [role, setRole] = useState('Profa. Regina Vasconcelos');
-  const [summary, setSummary] = useState('');
-  const [fullContent, setFullContent] = useState('');
-  const [attachmentName, setAttachmentName] = useState('');
+  const [form, setForm] = useState(EMPTY_FORM);
   const [autoBroadcast, setAutoBroadcast] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [composerError, setComposerError] = useState<string>();
+
+  const [readingNotice, setReadingNotice] = useState<SchoolNotice | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<SchoolNotice | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [broadcastSuccess, setBroadcastSuccess] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string>();
 
-  // Open composer for new notice
-  const handleOpenNew = () => {
+  const update = <K extends keyof typeof EMPTY_FORM>(key: K, value: (typeof EMPTY_FORM)[K]) =>
+    setForm((current) => ({ ...current, [key]: value }));
+
+  const openNew = () => {
     setEditingNotice(null);
-    setTitle('');
-    setCategory('Pedagógico');
-    setPriority('important');
-    setAuthor('Diretoria Pedagógica');
-    setRole('Profa. Regina Vasconcelos');
-    setSummary('');
-    setFullContent('');
-    setAttachmentName('');
+    setForm(EMPTY_FORM);
     setAutoBroadcast(true);
+    setComposerError(undefined);
     setIsComposerOpen(true);
   };
 
-  // Open composer for editing
-  const handleOpenEdit = (n: SchoolNotice) => {
-    setEditingNotice(n);
-    setTitle(n.title);
-    setCategory(n.category);
-    setPriority(n.priority);
-    setAuthor(n.author);
-    setRole(n.role);
-    setSummary(n.summary);
-    setFullContent(n.fullContent);
-    setAttachmentName(n.attachmentName || '');
+  const openEdit = (notice: SchoolNotice) => {
+    setEditingNotice(notice);
+    setForm({
+      title: notice.title,
+      category: notice.category,
+      priority: notice.priority,
+      author: notice.author,
+      role: notice.role,
+      summary: notice.summary,
+      fullContent: notice.fullContent,
+    });
     setAutoBroadcast(false);
+    setComposerError(undefined);
+    setReadingNotice(null);
     setIsComposerOpen(true);
   };
 
-  // Save notice (create or update)
-  const handleSaveNotice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !summary.trim() || !fullContent.trim()) return;
-
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    const dateStr = 'Hoje, ' + timeStr;
-
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!form.title.trim() || !form.summary.trim() || !form.fullContent.trim()) return;
+    const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     setIsSaving(true);
-    setOperationError(undefined);
+    setComposerError(undefined);
     try {
-    if (editingNotice) {
-      const updated: SchoolNotice = {
-        ...editingNotice,
-        title,
-        category,
-        priority,
-        author,
-        role,
-        summary,
-        fullContent,
-        attachmentName: undefined,
-      };
-      await onUpdateNotice(updated);
-    } else {
-      const newNotice: Omit<SchoolNotice, 'id'> = {
-        title,
-        category,
-        priority,
-        author,
-        role,
-        date: dateStr,
-        time: timeStr,
-        summary,
-        fullContent,
-        isUnread: true,
-        attachmentName: undefined,
-      };
-      await onAddNotice(newNotice, autoBroadcast);
-    }
-
-    setIsComposerOpen(false);
+      if (editingNotice) {
+        await onUpdateNotice({ ...editingNotice, ...form, attachmentName: undefined });
+      } else {
+        await onAddNotice({ ...form, date: `Hoje, ${time}`, time, isUnread: true, attachmentName: undefined }, autoBroadcast);
+      }
+      setIsComposerOpen(false);
     } catch (error) {
-      setOperationError(error instanceof Error ? error.message : 'Não foi possível salvar o comunicado.');
+      setComposerError(error instanceof Error ? error.message : 'Não foi possível salvar o comunicado.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleTriggerBroadcast = async (notice: SchoolNotice) => {
+  const broadcast = async (notice: SchoolNotice) => {
     setOperationError(undefined);
     try {
       await onBroadcastPush(notice);
       setBroadcastSuccess(notice.id);
-      setTimeout(() => setBroadcastSuccess(null), 3000);
+      window.setTimeout(() => setBroadcastSuccess((current) => current === notice.id ? null : current), 3000);
     } catch (error) {
       setOperationError(error instanceof Error ? error.message : 'Não foi possível gerar as notificações internas.');
     }
   };
 
-  // Filter notices
-  const filteredNotices = notices.filter((n) => {
-    const matchesSearch =
-      n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      n.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      n.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      n.fullContent.toLowerCase().includes(searchTerm.toLowerCase());
+  const confirmDelete = async () => {
+    if (!deleteCandidate) return;
+    setIsDeleting(true);
+    setOperationError(undefined);
+    try {
+      await onDeleteNotice(deleteCandidate.id);
+      setDeleteCandidate(null);
+    } catch (error) {
+      setOperationError(error instanceof Error ? error.message : 'Não foi possível remover o comunicado.');
+      setDeleteCandidate(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
-    const matchesCat = selectedCategory === 'Todas' || n.category === selectedCategory;
-    const matchesPrio = selectedPriority === 'Todas' || n.priority === selectedPriority;
+  const term = search.trim().toLocaleLowerCase('pt-BR');
+  const filtered = notices.filter((notice) =>
+    (category === 'Todas' || notice.category === category)
+    && (priority === 'Todas' || notice.priority === priority)
+    && (!term || [notice.title, notice.summary, notice.author, notice.fullContent]
+      .some((value) => value.toLocaleLowerCase('pt-BR').includes(term))));
 
-    return matchesSearch && matchesCat && matchesPrio;
-  });
-
-  const urgentCount = notices.filter(n => n.priority === 'urgent').length;
-  const pedagogicalCount = notices.filter(n => n.category === 'Pedagógico').length;
+  const countFor = (id: 'Todas' | Category) => id === 'Todas' ? notices.length : notices.filter((notice) => notice.category === id).length;
 
   return (
-    <div className="space-y-5">
-      
-      {/* Top Concise Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Publicados</span>
-            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Megaphone className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-slate-900">{notices.length}</span>
-            <span className="text-xs text-slate-400">avisos</span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Persistência</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <CheckCheck className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-sm font-bold text-slate-900">SQLite</span>
-            <span className="text-xs text-emerald-600 font-semibold">API local</span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Urgentes</span>
-            <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
-              <AlertCircle className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-slate-900">{urgentCount}</span>
-            <span className="text-xs text-rose-600 font-semibold">destacados</span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Canal Implementado</span>
-            <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center">
-              <Smartphone className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-sm font-bold text-slate-900">Interno no app</span>
-            <span className="text-xs text-slate-500 font-semibold">demonstrativo</span>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Action Bar & Controls */}
-      <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Megaphone className="w-5 h-5 text-orange-600" />
-            <h3 className="text-sm font-bold text-slate-900">
-              Comunicados Oficiais da Escola
-            </h3>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            {canManage && <button
-              id="btn-create-school-notice"
-              onClick={handleOpenNew}
-              className="px-3.5 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Novo Comunicado</span>
-            </button>}
-          </div>
-        </div>
-
-        {/* Filter controls */}
-        <div className="pt-3 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-3">
-          
-          {/* Search box */}
-          <div className="relative w-full md:w-80">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar comunicados por título, texto ou autor..."
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-slate-800"
-            />
-          </div>
-
-          {/* Category & Priority chips */}
-          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-            <span className="text-xs font-semibold text-slate-400 hidden lg:inline">Categoria:</span>
-            {['Todas', 'Pedagógico', 'Segurança', 'Eventos', 'Plantão', 'Geral'].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                  selectedCategory === cat
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-
-            <span className="text-slate-300 mx-1">|</span>
-
-            <select
-              value={selectedPriority}
-              onChange={(e) => setSelectedPriority(e.target.value)}
-              className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 border border-slate-200 text-slate-700 focus:outline-none"
-            >
-              <option value="Todas">Todas as Prioridades</option>
-              <option value="urgent">Urgente</option>
-              <option value="important">Importante</option>
-              <option value="info">Informativo</option>
-            </select>
-          </div>
-
-        </div>
-      </div>
-
-      {(persistenceState !== 'persistent' || operationError) && (
-        <div className={`rounded-xl border px-4 py-3 text-xs ${
-          persistenceState === 'loading' && !operationError
-            ? 'border-blue-200 bg-blue-50 text-blue-800'
-            : 'border-amber-200 bg-amber-50 text-amber-900'
-        }`}>
-          {operationError || persistenceError || 'Carregando comunicados persistidos…'}
-        </div>
-      )}
-
-      {/* Notices Grid / List */}
-      <div className="space-y-3.5">
-        {filteredNotices.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
-            <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-3">
-              <Megaphone className="w-6 h-6" />
-            </div>
-            <h4 className="text-sm font-bold text-slate-800">Nenhum comunicado encontrado</h4>
-            <p className="text-xs text-slate-500 mt-1">
-              Tente alterar os termos de busca ou clique no botão acima para criar o primeiro comunicado.
-            </p>
-          </div>
-        ) : (
-          filteredNotices.map((item) => {
-            const isUrgent = item.priority === 'urgent';
-            const isImportant = item.priority === 'important';
-
-            return (
-              <div
-                key={item.id}
-                className={`bg-white rounded-2xl border transition-all p-5 shadow-xs hover:shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
-                  isUrgent 
-                    ? 'border-rose-200 bg-rose-50/20' 
-                    : isImportant
-                    ? 'border-amber-200/80 bg-amber-50/10'
-                    : 'border-slate-200 hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-start gap-4 flex-1 min-w-0">
-                  <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 shadow-xs ${
-                    isUrgent
-                      ? 'bg-rose-100 text-rose-700'
-                      : isImportant
-                      ? 'bg-amber-100 text-amber-800'
-                      : 'bg-purple-100 text-purple-700'
-                  }`}>
-                    {isUrgent ? <AlertCircle className="w-5 h-5" /> : <Megaphone className="w-5 h-5" />}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider ${
-                        isUrgent
-                          ? 'bg-rose-500 text-white'
-                          : isImportant
-                          ? 'bg-amber-500 text-white'
-                          : 'bg-slate-200 text-slate-800'
-                      }`}>
-                        {isUrgent ? 'Urgente' : isImportant ? 'Importante' : 'Informativo'}
-                      </span>
-
-                      <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                        {item.category}
-                      </span>
-
-                      <span className="text-xs text-slate-400 flex items-center gap-1 font-medium">
-                        <Clock className="w-3 h-3" />
-                        {item.date}
-                      </span>
-                    </div>
-
-                    <h4 className="text-base font-bold text-slate-900 tracking-tight hover:text-orange-600 transition-colors">
-                      {item.title}
-                    </h4>
-
-                    <p className="text-xs text-slate-600 line-clamp-2 mt-1 leading-relaxed">
-                      {item.summary}
-                    </p>
-
-                    <div className="flex items-center gap-4 mt-2.5 text-xs text-slate-500 flex-wrap">
-                      <span className="font-medium text-slate-700">
-                        Por: <strong>{item.author}</strong> ({item.role})
-                      </span>
-
-
-
-                      <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[11px] font-semibold">
-                        <CheckCheck className="w-3 h-3 text-emerald-600" />
-                        <span>Sincronizado no App dos Pais</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions on this Notice */}
-                <div className="flex items-center gap-2 self-end md:self-center shrink-0">
-                  {canManage && <button
-                    onClick={() => handleTriggerBroadcast(item)}
-                    title="Gerar notificações internas para os responsáveis"
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                      broadcastSuccess === item.id
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
-                    }`}
-                  >
-                    {broadcastSuccess === item.id ? (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Notificações geradas</span>
-                      </>
-                    ) : (
-                      <>
-                        <Smartphone className="w-3.5 h-3.5" />
-                        <span>Notificar no app</span>
-                      </>
-                    )}
-                  </button>}
-
-                  {canManage && <button
-                    onClick={() => setPreviewNotice(item)}
-                    title="Visualizar comunicado completo"
-                    className="p-2 rounded-xl text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>}
-
-                  <button
-                    onClick={() => handleOpenEdit(item)}
-                    title="Editar comunicado"
-                    className="p-2 rounded-xl text-slate-600 hover:text-orange-600 bg-slate-100 hover:bg-orange-50 border border-slate-200 transition-colors"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-
-                  {canManage && <button
-                    onClick={() => setDeleteCandidate(item)}
-                    title="Excluir comunicado"
-                    className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>}
-                </div>
-              </div>
-            );
-          })
+    <>
+      <PageHeader
+        eyebrow="Gestão escolar"
+        title="Comunicados"
+        description="Organize informações e mantenha as famílias por perto."
+        actions={canManage && (
+          <button type="button" className="btn btn-primary" onClick={openNew}>
+            <Plus aria-hidden="true" />
+            Novo comunicado
+          </button>
         )}
+      />
+
+      <div role="tablist" aria-label="Categorias" className="tabs mb-5">
+        {CATEGORIES.map((item) => (
+          <button key={item.id} type="button" role="tab" aria-selected={category === item.id} className="tab inline-flex items-center gap-2" onClick={() => setCategory(item.id)}>
+            {item.label}
+            {countFor(item.id) > 0 && <span className={`count-badge ${category === item.id ? 'count-badge-brand' : ''}`}>{countFor(item.id)}</span>}
+          </button>
+        ))}
       </div>
 
-      {deleteCandidate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-notice-title" onMouseDown={(event) => { if (event.target === event.currentTarget && !isDeleting) setDeleteCandidate(null); }}>
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-3">
-              <div><h3 id="delete-notice-title" className="font-bold text-slate-900">Remover comunicado</h3><p className="mt-1 text-xs text-slate-500">{deleteCandidate.title}</p></div>
-              <button type="button" onClick={() => setDeleteCandidate(null)} disabled={isDeleting} aria-label="Fechar" className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-50"><X className="h-4 w-4" /></button>
-            </div>
-            <p className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900">O comunicado deixará de aparecer nos portais. A ação será registrada na auditoria local.</p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setDeleteCandidate(null)} disabled={isDeleting} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 disabled:opacity-50">Cancelar</button>
-              <button type="button" disabled={isDeleting} onClick={async () => {
-                setIsDeleting(true);
-                setOperationError(undefined);
-                try {
-                  await onDeleteNotice(deleteCandidate.id);
-                  setDeleteCandidate(null);
-                } catch (error) {
-                  setOperationError(error instanceof Error ? error.message : 'Não foi possível remover o comunicado.');
-                } finally {
-                  setIsDeleting(false);
-                }
-              }} className="rounded-lg bg-rose-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{isDeleting ? 'Removendo…' : 'Remover'}</button>
-            </div>
-          </div>
+      <div className="mb-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+        <div className="relative">
+          <label htmlFor="notices-search" className="sr-only">Buscar comunicados</label>
+          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" />
+          <input id="notices-search" type="search" className="input pl-9 bg-white" placeholder="Buscar por título, conteúdo ou autor" value={search} onChange={(event) => setSearch(event.target.value)} />
         </div>
+        <div>
+          <label htmlFor="notices-priority" className="sr-only">Prioridade</label>
+          <select id="notices-priority" className="select" value={priority} onChange={(event) => setPriority(event.target.value as typeof priority)}>
+            <option value="Todas">Todas as prioridades</option>
+            <option value="urgent">Urgente</option>
+            <option value="important">Importante</option>
+            <option value="info">Informativo</option>
+          </select>
+        </div>
+      </div>
+
+      {(persistenceState === 'unavailable' || operationError) && (
+        <Callout tone={operationError ? 'negative' : 'warning'} role="alert" className="mb-5">
+          {operationError || persistenceError || 'API de comunicados indisponível.'}
+        </Callout>
       )}
 
-      {/* Modal 1: Notice Composer (Create & Edit) */}
-      {isComposerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div 
-            className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="p-5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400">
-                  <Megaphone className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    {editingNotice ? 'Editar Comunicado Oficial' : 'Novo Comunicado da Gestão Escolar'}
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    O aviso será exibido no aplicativo familiar e catalogado nos registros escolares.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setIsComposerOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {persistenceState === 'loading' && notices.length === 0 ? (
+        <div className="grid gap-4 lg:grid-cols-2" aria-hidden="true">
+          {[0, 1].map((index) => (
+            <div key={index} className="card space-y-3 p-6">
+              <div className="skeleton h-6 w-24" />
+              <div className="skeleton h-5 w-3/4" />
+              <div className="skeleton h-4 w-full" />
             </div>
-
-            {/* Form Body */}
-            <form onSubmit={handleSaveNotice} className="p-6 overflow-y-auto space-y-4 flex-1">
-              
-              {/* Title */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Título do Comunicado *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex: Reunião Pedagógica com Pais do Ensino Fundamental"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
-                />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="card">
+          <EmptyState
+            illustration={<EmptyInboxIllustration className="mb-4 h-20" />}
+            title={notices.length === 0 ? 'Nenhum comunicado publicado' : 'Nenhum resultado'}
+            description={notices.length === 0 ? 'Os comunicados publicados aparecem aqui e no portal dos responsáveis.' : 'Ajuste a busca, a categoria ou a prioridade.'}
+            action={canManage && notices.length === 0 && <button type="button" className="btn btn-primary btn-sm" onClick={openNew}><Plus aria-hidden="true" />Novo comunicado</button>}
+          />
+        </div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {filtered.map((notice) => (
+            <article key={notice.id} className="card flex flex-col p-6">
+              <div className="flex items-center justify-between gap-3">
+                <CategoryChip category={notice.category} />
+                <PriorityChip priority={notice.priority} />
               </div>
-
-              {/* Category and Priority row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Categoria
-                  </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as SchoolNotice['category'])}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                  >
-                    <option value="Pedagógico">Pedagógico</option>
-                    <option value="Segurança">Segurança & Catracas</option>
-                    <option value="Eventos">Eventos & Projetos</option>
-                    <option value="Plantão">Plantão de Dúvidas</option>
-                    <option value="Geral">Geral / Institucional</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Nível de Prioridade
-                  </label>
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value as SchoolNotice['priority'])}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                  >
-                    <option value="important">Importante (Destaque Âmbar)</option>
-                    <option value="urgent">Urgente (Destaque Vermelho com Alerta)</option>
-                    <option value="info">Informativo (Padrão)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Author and Role row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Setor / Departamento Autor
-                  </label>
-                  <input
-                    type="text"
-                    value={author}
-                    onChange={(e) => setAuthor(e.target.value)}
-                    placeholder="Ex: Diretoria Pedagógica"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Nome do Emissor / Responsável
-                  </label>
-                  <input
-                    type="text"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    placeholder="Ex: Profa. Regina Vasconcelos"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                  />
-                </div>
-              </div>
-
-              {/* Summary */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Resumo Breve (Exibido na notificação interna e na lista) *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={summary}
-                  onChange={(e) => setSummary(e.target.value)}
-                  placeholder="Ex: Convocação para entrega das notas e cronograma do 3º trimestre."
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                />
-              </div>
-
-              {/* Full Content */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Conteúdo Completo do Comunicado *
-                </label>
-                <textarea
-                  required
-                  rows={4}
-                  value={fullContent}
-                  onChange={(e) => setFullContent(e.target.value)}
-                  placeholder="Escreva detalhadamente o comunicado institucional, orientações, horários e observações aos pais..."
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 leading-relaxed resize-none"
-                ></textarea>
-              </div>
-
-              {/* Broadcast Option */}
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-700 pt-1">
-                <input
-                  type="checkbox"
-                  id="chk-auto-notification"
-                  checked={autoBroadcast}
-                  onChange={(e) => setAutoBroadcast(e.target.checked)}
-                  className="rounded text-orange-600 focus:ring-orange-500 w-4 h-4 cursor-pointer"
-                />
-                <label htmlFor="chk-auto-notification" className="cursor-pointer">
-                  Gerar <strong>notificação interna no app dos responsáveis</strong> ao publicar este comunicado
-                </label>
-              </div>
-
-              {/* Actions */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setIsComposerOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
-                >
-                  Cancelar
+              <h2 className="mt-4 text-[17px] font-semibold leading-snug tracking-tight text-ink">{notice.title}</h2>
+              <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-2">{notice.summary}</p>
+              <p className="mt-3 text-xs text-muted">{notice.author} · {notice.date}</p>
+              <div className="mt-auto pt-5">
+              <div className="flex items-center justify-between gap-2 border-t border-line pt-4">
+                <button type="button" className="btn-link" onClick={() => setReadingNotice(notice)}>
+                  Ler comunicado <ArrowRight aria-hidden="true" />
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{isSaving ? 'Salvando…' : editingNotice ? 'Atualizar Comunicado' : 'Publicar Comunicado'}</span>
-                </button>
+                {canManage && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${broadcastSuccess === notice.id ? 'btn-soft' : 'btn-ghost'}`}
+                      onClick={() => void broadcast(notice)}
+                      title="Gerar notificações internas para os responsáveis"
+                    >
+                      {broadcastSuccess === notice.id ? <CheckCircle2 aria-hidden="true" /> : <BellRing aria-hidden="true" />}
+                      <span className="hidden sm:inline">{broadcastSuccess === notice.id ? 'Notificações geradas' : 'Notificar'}</span>
+                    </button>
+                    <button type="button" className="icon-btn" onClick={() => openEdit(notice)} aria-label={`Editar ${notice.title}`} title="Editar">
+                      <PencilLine />
+                    </button>
+                    <button type="button" className="icon-btn hover:!bg-negative-soft hover:!text-negative" onClick={() => setDeleteCandidate(notice)} aria-label={`Excluir ${notice.title}`} title="Excluir">
+                      <Trash2 />
+                    </button>
+                  </div>
+                )}
               </div>
-
-            </form>
-          </div>
+              </div>
+            </article>
+          ))}
         </div>
       )}
 
-      {/* Modal 2: Notice Preview Detail */}
-      {previewNotice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div 
-            className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-5 bg-slate-900 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Megaphone className="w-5 h-5 text-orange-400" />
-                <span className="text-xs font-bold uppercase tracking-wider text-orange-400">
-                  Visualização do Comunicado
-                </span>
-              </div>
-              <button
-                onClick={() => setPreviewNotice(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
+      {/* Leitura */}
+      <Modal
+        isOpen={Boolean(readingNotice)}
+        onClose={() => setReadingNotice(null)}
+        labelledById="notice-reader-title"
+        title={readingNotice?.title}
+        description={readingNotice ? `${readingNotice.author} · ${readingNotice.role} · ${readingNotice.date}` : undefined}
+        size="lg"
+        footer={
+          <>
+            {canManage && readingNotice && (
+              <button type="button" className="btn btn-secondary" onClick={() => openEdit(readingNotice)}>
+                <PencilLine aria-hidden="true" />
+                Editar
               </button>
+            )}
+            <button type="button" className="btn btn-primary" onClick={() => setReadingNotice(null)}>Fechar</button>
+          </>
+        }
+      >
+        {readingNotice && (
+          <div className="space-y-5">
+            <div className="flex flex-wrap gap-2">
+              <CategoryChip category={readingNotice.category} />
+              <PriorityChip priority={readingNotice.priority} />
             </div>
-
-            <div className="p-6 overflow-y-auto space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-50 text-orange-700 border border-orange-200">
-                  {previewNotice.category}
-                </span>
-                <span className="text-xs text-slate-400">•</span>
-                <span className="text-xs text-slate-500">{previewNotice.date}</span>
-              </div>
-
-              <h3 className="text-lg font-bold text-slate-900">
-                {previewNotice.title}
-              </h3>
-
-              <div className="p-3.5 rounded-xl bg-slate-50 text-slate-600 text-xs italic border border-slate-200">
-                "{previewNotice.summary}"
-              </div>
-
-              <div className="text-xs text-slate-700 leading-relaxed space-y-3 whitespace-pre-line">
-                {previewNotice.fullContent}
-              </div>
-
-
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <span>Publicado por: <strong>{previewNotice.author}</strong> ({previewNotice.role})</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
-              <button
-                onClick={() => setPreviewNotice(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition-colors cursor-pointer"
-              >
-                Fechar
-              </button>
-            </div>
+            <p className="border-l-2 border-brand pl-4 text-[15px] font-medium leading-relaxed text-ink">{readingNotice.summary}</p>
+            <div className="whitespace-pre-line text-sm leading-relaxed text-ink-2">{readingNotice.fullContent}</div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
-    </div>
+      {/* Composição */}
+      <Modal
+        isOpen={isComposerOpen}
+        onClose={() => setIsComposerOpen(false)}
+        labelledById="notice-composer-title"
+        title={editingNotice ? 'Editar comunicado' : 'Novo comunicado'}
+        description="Publicado no portal dos responsáveis com vínculo aprovado."
+        icon={Megaphone}
+        size="lg"
+        closeDisabled={isSaving}
+        footer={
+          <>
+            <button type="button" className="btn btn-secondary" onClick={() => setIsComposerOpen(false)} disabled={isSaving}>Cancelar</button>
+            <button type="submit" form="notice-composer-form" className="btn btn-primary" disabled={isSaving || !form.title.trim() || !form.summary.trim() || !form.fullContent.trim()}>
+              {isSaving ? 'Salvando…' : editingNotice ? 'Salvar alterações' : 'Publicar'}
+            </button>
+          </>
+        }
+      >
+        <form id="notice-composer-form" onSubmit={save} className="space-y-5">
+          <Field label="Título" htmlFor="notice-title">
+            <input id="notice-title" className="input" required maxLength={140} value={form.title} onChange={(event) => update('title', event.target.value)} placeholder="Ex.: Reunião de responsáveis do 5º ano" />
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Categoria" htmlFor="notice-category">
+              <select id="notice-category" className="select" value={form.category} onChange={(event) => update('category', event.target.value as Category)}>
+                {CATEGORIES.filter((item) => item.id !== 'Todas').map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Prioridade" htmlFor="notice-priority">
+              <select id="notice-priority" className="select" value={form.priority} onChange={(event) => update('priority', event.target.value as SchoolNotice['priority'])}>
+                <option value="info">Informativo</option>
+                <option value="important">Importante</option>
+                <option value="urgent">Urgente</option>
+              </select>
+            </Field>
+            <Field label="Setor responsável" htmlFor="notice-author">
+              <input id="notice-author" className="input" value={form.author} onChange={(event) => update('author', event.target.value)} />
+            </Field>
+            <Field label="Assinatura" htmlFor="notice-role">
+              <input id="notice-role" className="input" value={form.role} onChange={(event) => update('role', event.target.value)} />
+            </Field>
+          </div>
+          <Field label="Resumo" htmlFor="notice-summary" hint="Aparece no card e na notificação. Seja direto.">
+            <input id="notice-summary" className="input" required maxLength={220} value={form.summary} onChange={(event) => update('summary', event.target.value)} />
+          </Field>
+          <Field label="Conteúdo completo" htmlFor="notice-content">
+            <textarea id="notice-content" className="textarea" rows={6} required value={form.fullContent} onChange={(event) => update('fullContent', event.target.value)} placeholder="Orientações, horários e observações às famílias." />
+          </Field>
+          {!editingNotice && (
+            <label htmlFor="notice-broadcast" className="flex cursor-pointer items-start gap-3 rounded-[10px] border border-line bg-surface px-4 py-3">
+              <input id="notice-broadcast" type="checkbox" className="checkbox mt-0.5" checked={autoBroadcast} onChange={(event) => setAutoBroadcast(event.target.checked)} />
+              <span className="text-[13px] text-ink-2">
+                <span className="font-semibold text-ink">Gerar notificação interna ao publicar.</span> Os responsáveis veem o aviso no portal; não há envio por SMS, e-mail ou WhatsApp.
+              </span>
+            </label>
+          )}
+          {composerError && <Callout tone="negative" role="alert">{composerError}</Callout>}
+        </form>
+      </Modal>
+
+      {/* Exclusão */}
+      <Modal
+        isOpen={Boolean(deleteCandidate)}
+        onClose={() => !isDeleting && setDeleteCandidate(null)}
+        labelledById="delete-notice-title"
+        title="Excluir comunicado"
+        description={deleteCandidate?.title}
+        icon={Trash2}
+        size="sm"
+        closeDisabled={isDeleting}
+        footer={
+          <>
+            <button type="button" className="btn btn-secondary" onClick={() => setDeleteCandidate(null)} disabled={isDeleting}>Cancelar</button>
+            <button type="button" className="btn btn-danger" onClick={() => void confirmDelete()} disabled={isDeleting}>
+              <Trash2 aria-hidden="true" />
+              {isDeleting ? 'Excluindo…' : 'Excluir'}
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-ink-2">O comunicado deixará de aparecer nos portais. A ação fica registrada na auditoria local.</p>
+      </Modal>
+    </>
   );
 };
