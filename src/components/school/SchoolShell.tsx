@@ -112,6 +112,19 @@ export const SchoolShell: React.FC<SchoolShellProps> = ({
     return () => window.clearInterval(interval);
   }, []);
 
+  // A gaveta só existe abaixo de lg (lg:hidden). Ao alargar a janela com ela aberta,
+  // fechamos o estado para que a limpeza do diálogo devolva a rolagem do body.
+  useEffect(() => {
+    if (!isMobileNavOpen) return undefined;
+    const desktop = window.matchMedia('(min-width: 64rem)');
+    const closeOnDesktop = () => {
+      if (desktop.matches) setIsMobileNavOpen(false);
+    };
+    closeOnDesktop();
+    desktop.addEventListener('change', closeOnDesktop);
+    return () => desktop.removeEventListener('change', closeOnDesktop);
+  }, [isMobileNavOpen]);
+
   const mobileNavRef = useAccessibleDialog({ isOpen: isMobileNavOpen, onClose: () => setIsMobileNavOpen(false) });
 
   const management: NavEntry[] = [
