@@ -1,219 +1,171 @@
-import React, { useState } from 'react';
-import { 
-  Users, 
-  Search, 
-  Filter, 
-  Send, 
-  MessageSquare, 
-  Phone, 
-  ShieldCheck, 
-  Clock, 
-  QrCode, 
-  CreditCard, 
-  AlertTriangle, 
-  CheckCircle2,
-  ExternalLink,
-  ChevronRight,
-  UserCheck
-} from 'lucide-react';
-import { Student, Shift } from '../types';
+import React, { useMemo, useState } from 'react';
+import { ArrowUpRight, CheckCircle2, CircleDashed, PauseCircle, Search, ShieldCheck } from 'lucide-react';
+import type { Shift, Student } from '../types';
 import { TURMAS_LIST } from '../data/mockData';
+import { EmptySearchIllustration } from './brand/Illustrations';
+import { Avatar, Callout, Chip, EmptyState, PageHeader, withoutRelation } from './ui';
 
 interface StudentsManagementListProps {
   students: Student[];
   onSelectStudent: (studentId: string) => void;
 }
 
-export const StudentsManagementList: React.FC<StudentsManagementListProps> = ({
-  students,
-  onSelectStudent,
-}) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTurma, setSelectedTurma] = useState<string>('Todas');
-  const [selectedStage, setSelectedStage] = useState<'Todos' | 'Fundamental I' | 'Fundamental II'>('Todos');
-  const [selectedShift, setSelectedShift] = useState<Shift>('Todos');
-  const [statusFilter, setStatusFilter] = useState<'Todos' | 'Ativo' | 'Suspenso'>('Todos');
+const StudentStatus: React.FC<{ status: Student['status'] }> = ({ status }) => {
+  if (status === 'Ativo') return <Chip tone="positive" icon={CheckCircle2}>Ativo</Chip>;
+  if (status === 'Afastado') return <Chip tone="warning" icon={PauseCircle}>Afastado</Chip>;
+  return <Chip tone="neutral" icon={CircleDashed}>{status}</Chip>;
+};
 
-  const filtered = students.filter((s) => {
-    const matchesSearch =
-      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.matricula.includes(searchTerm) ||
-      s.guardianName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.guardianPhone.includes(searchTerm) ||
-      (s.homeroomTeacher && s.homeroomTeacher.toLowerCase().includes(searchTerm.toLowerCase()));
+export const StudentsManagementList: React.FC<StudentsManagementListProps> = ({ students, onSelectStudent }) => {
+  const [search, setSearch] = useState('');
+  const [stage, setStage] = useState<'Todos' | 'Fundamental I' | 'Fundamental II'>('Todos');
+  const [turma, setTurma] = useState('Todas');
+  const [shift, setShift] = useState<Shift>('Todos');
 
-    const matchesTurma = selectedTurma === 'Todas' || s.turma === selectedTurma;
-    const matchesStage = selectedStage === 'Todos' || s.stage === selectedStage;
-    const matchesShift = selectedShift === 'Todos' || s.shift === selectedShift;
-    const matchesStatus = statusFilter === 'Todos' || s.status === statusFilter;
+  const filtered = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase('pt-BR');
+    return students.filter((student) => {
+      const matchesTerm = !term || [student.name, student.matricula, student.guardianName, student.homeroomTeacher ?? '']
+        .some((value) => value.toLocaleLowerCase('pt-BR').includes(term));
+      return matchesTerm
+        && (stage === 'Todos' || student.stage === stage)
+        && (turma === 'Todas' || student.turma === turma)
+        && (shift === 'Todos' || student.shift === shift);
+    });
+  }, [search, shift, stage, students, turma]);
 
-    return matchesSearch && matchesTurma && matchesStage && matchesShift && matchesStatus;
-  });
-
+  const hasFilters = Boolean(search) || stage !== 'Todos' || turma !== 'Todas' || shift !== 'Todos';
+  const clearFilters = () => {
+    setSearch('');
+    setStage('Todos');
+    setTurma('Todas');
+    setShift('Todos');
+  };
 
   return (
-    <div className="space-y-5">
-      
-      {/* Header & Filter Controls Toolbar */}
-      <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" />
-            <h3 className="text-sm font-bold text-slate-900">
-              Diretório de Estudantes
-            </h3>
-          </div>
+    <>
+      <PageHeader
+        eyebrow="Gestão escolar"
+        title="Estudantes"
+        description="Informações essenciais para acolher, identificar e acompanhar."
+        actions={<Chip tone="neutral" icon={ShieldCheck}>Consulta cadastral</Chip>}
+      />
 
-          <span className="text-xs font-semibold text-slate-500">
-            {filtered.length} de {students.length} estudantes
-          </span>
+      <section className="card overflow-hidden" aria-labelledby="students-title">
+        <div className="card-header">
+          <div>
+            <h2 id="students-title" className="card-title">
+              Estudantes da escola <span className="font-normal text-muted">/ {students.length}</span>
+            </h2>
+            <p className="card-subtitle">O piloto não oferece matrícula, edição ou exclusão de estudantes.</p>
+          </div>
         </div>
 
-        {/* Filter controls */}
-        <div className="pt-2 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-3">
-          
-          {/* Search box */}
-          <div className="relative w-full md:w-80">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="grid gap-3 px-6 pb-5 md:grid-cols-[minmax(0,1fr)_repeat(3,minmax(0,170px))]">
+          <div className="relative">
+            <label htmlFor="students-search" className="sr-only">Buscar estudantes</label>
+            <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" />
             <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por nome, matrícula ou responsável..."
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium text-slate-800"
+              id="students-search"
+              type="search"
+              className="input pl-9"
+              placeholder="Nome, matrícula ou responsável"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
             />
           </div>
-
-          {/* Filters */}
-          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-            <select
-              value={selectedStage}
-              onChange={(e) => setSelectedStage(e.target.value as any)}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-orange-50 border border-orange-200 text-orange-800 focus:outline-none"
-            >
-              <option value="Todos">Todos os Ciclos</option>
-              <option value="Fundamental I">Fund. I (1º ao 5º)</option>
-              <option value="Fundamental II">Fund. II (6º ao 9º)</option>
+          <div>
+            <label htmlFor="students-stage" className="sr-only">Ciclo</label>
+            <select id="students-stage" className="select" value={stage} onChange={(event) => setStage(event.target.value as typeof stage)}>
+              <option value="Todos">Todos os ciclos</option>
+              <option value="Fundamental I">Fundamental I</option>
+              <option value="Fundamental II">Fundamental II</option>
             </select>
-
-            <select
-              value={selectedTurma}
-              onChange={(e) => setSelectedTurma(e.target.value)}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 focus:outline-none"
-            >
-              {TURMAS_LIST.map(t => (
-                <option key={t} value={t}>{t === 'Todas' ? 'Todas as Turmas' : t}</option>
+          </div>
+          <div>
+            <label htmlFor="students-turma" className="sr-only">Turma</label>
+            <select id="students-turma" className="select" value={turma} onChange={(event) => setTurma(event.target.value)}>
+              {TURMAS_LIST.map((item) => (
+                <option key={item} value={item}>{item === 'Todas' ? 'Todas as turmas' : item.split(' - ')[0]}</option>
               ))}
             </select>
-
-            <select
-              value={selectedShift}
-              onChange={(e) => setSelectedShift(e.target.value as Shift)}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 focus:outline-none"
-            >
-              <option value="Todos">Todos os Turnos</option>
+          </div>
+          <div>
+            <label htmlFor="students-shift" className="sr-only">Turno</label>
+            <select id="students-shift" className="select" value={shift} onChange={(event) => setShift(event.target.value as Shift)}>
+              <option value="Todos">Todos os turnos</option>
               <option value="Manhã">Manhã</option>
               <option value="Tarde">Tarde</option>
               <option value="Integral">Integral</option>
             </select>
           </div>
-
         </div>
-      </div>
 
-      {/* Students Table / Grid */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/90 text-slate-500 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-200/80">
-              <tr>
-                <th className="py-3 px-4">Estudante & Matrícula</th>
-                <th className="py-3 px-3">Ciclo & Turma</th>
-                <th className="py-3 px-3">Responsável Legal</th>
-                <th className="py-3 px-3">Telefone Cadastrado</th>
-                <th className="py-3 px-3 text-center">Ficha</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filtered.map((student) => (
-                <tr key={student.id} className="hover:bg-slate-50/80 transition-colors group">
-                  
-                  {/* Student Name and Photo */}
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={student.avatar}
-                        alt={student.name}
-                        className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100 group-hover:ring-orange-300 transition-all shadow-xs"
-                      />
-                      <div>
-                        <button
-                          onClick={() => onSelectStudent(student.id)}
-                          className="font-bold text-slate-900 hover:text-orange-600 text-sm transition-colors text-left flex items-center gap-1.5"
-                        >
-                          <span>{student.name}</span>
-                          {student.age && (
-                            <span className="text-[11px] font-normal text-slate-400">
-                              ({student.age} anos)
-                            </span>
-                          )}
-                        </button>
-                        <div className="text-[11px] text-slate-500 font-mono">
-                          Matrícula: #{student.matricula}
-                          {student.homeroomTeacher && (
-                            <span className="font-sans text-slate-400 ml-1.5">• Regente: {student.homeroomTeacher}</span>
-                          )}
+        {filtered.length === 0 ? (
+          <EmptyState
+            illustration={<EmptySearchIllustration className="mb-4 h-20" />}
+            title="Nenhum resultado"
+            description="Ajuste os filtros para continuar."
+            action={<button type="button" className="btn btn-secondary btn-sm" onClick={clearFilters}>Limpar filtros</button>}
+          />
+        ) : (
+          <div className="table-scroll">
+            <table className="data-table min-w-[900px]">
+              <caption className="sr-only">Estudantes cadastrados na unidade</caption>
+              <thead>
+                <tr>
+                  <th scope="col" className="pl-6">Estudante / matrícula</th>
+                  <th scope="col">Turma / ciclo</th>
+                  <th scope="col">Turno</th>
+                  <th scope="col">Responsável</th>
+                  <th scope="col">Situação</th>
+                  <th scope="col" className="pr-6 text-right">Ficha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((student) => (
+                  <tr key={student.id}>
+                    <td className="pl-6">
+                      <div className="flex items-center gap-3">
+                        <Avatar name={student.name} />
+                        <div className="min-w-0">
+                          <p className="cell-primary">{student.name}</p>
+                          <p className="cell-secondary num">{student.matricula}</p>
                         </div>
                       </div>
-                    </div>
-                  </td>
+                    </td>
+                    <td>
+                      <p className="whitespace-nowrap">{student.turma.split(' - ')[0]}</p>
+                      <p className="cell-secondary">{student.stage ?? student.turma.split(' - ')[1]}</p>
+                    </td>
+                    <td>{student.shift}</td>
+                    <td>
+                      <p>{withoutRelation(student.guardianName)}</p>
+                      <p className="cell-secondary">{student.guardianRelation}</p>
+                    </td>
+                    <td><StudentStatus status={student.status} /></td>
+                    <td className="pr-6 text-right">
+                      <button type="button" className="btn-link" onClick={() => onSelectStudent(student.id)} aria-label={`Ver ficha de ${student.name}`}>
+                        <ArrowUpRight aria-hidden="true" />
+                        Ver ficha
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-                  {/* Turma and Stage */}
-                  <td className="py-3.5 px-3 whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-slate-800">{student.turma}</span>
-                      {student.stage && (
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          student.stage === 'Fundamental I'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-sky-100 text-sky-800'
-                        }`}>
-                          {student.stage === 'Fundamental I' ? 'Fund. I' : 'Fund. II'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-[11px] text-slate-400 font-semibold">{student.shift}</div>
-                  </td>
-
-                  {/* Guardian Name */}
-                  <td className="py-3.5 px-3 whitespace-nowrap">
-                    <div className="font-semibold text-slate-800">{student.guardianName}</div>
-                    <div className="text-[11px] text-slate-400">{student.guardianRelation}</div>
-                  </td>
-
-                  {/* Phone */}
-                  <td className="py-3.5 px-3 whitespace-nowrap font-mono text-slate-700 text-xs">
-                    {student.guardianPhone}
-                  </td>
-
-                  {/* Full Profile */}
-                  <td className="py-3.5 px-3 text-center whitespace-nowrap">
-                    <button
-                      onClick={() => onSelectStudent(student.id)}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition-colors"
-                      title="Abrir detalhes do aluno"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </td>
-
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="table-footer">
+          <span>{filtered.length} de {students.length} estudantes · Dados fictícios</span>
+          {hasFilters && <button type="button" className="btn-link" onClick={clearFilters}>Limpar filtros</button>}
         </div>
-      </div>
+      </section>
 
-    </div>
+      <Callout tone="neutral" icon={ShieldCheck} className="mt-5">
+        A situação cadastral não deve ser interpretada como autorização para bloquear fisicamente a entrada de um estudante.
+      </Callout>
+    </>
   );
 };
