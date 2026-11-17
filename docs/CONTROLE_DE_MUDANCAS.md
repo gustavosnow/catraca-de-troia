@@ -281,3 +281,11 @@ Ajustes: substituída a data obsoleta de 13/10/2026 por uma data fixa de confer�
 A gestão de justificativas ainda exibia uma mensagem antiga afirmando armazenamento de novos anexos, apesar do bloqueio já aplicado na API. O texto foi corrigido para justificativas exclusivamente textuais. O cadastro deixou de sugerir WhatsApp como canal implementado na validação do telefone; o resumo do orçamento explicita a inclusão de ambas as reservas e a base dos percentuais.
 
 Validação e limites: ver `VERIFICACAO_APRESENTACAO_2026-11-04.md`. Ensaio com celular e rede do local continua necessário; não foram gerados APK, túnel ou publicação pública. Datas históricas de testes, documentos e decisões foram preservadas.
+
+## MC-035 — Redesign do frontend em 17/11/2026
+
+Solicitação: reestruturar somente o frontend conforme o protótipo de interfaces publicado na Vercel, evitando estética genérica e priorizando tabelas e menus profissionais.
+
+Ajustes: criado um design system (Inter, laranja para ação, azul-marinho para leitura, estados sempre com ícone e texto, contraste AA conferido) e componentes base compartilhados. O painel escolar passou a usar barra lateral agrupada (Gestão escolar, Administração, Ferramentas), com rota própria por seção (`#/escola/<seção>`) e tabelas administrativas com filtros. Landing, login, cadastro e portal dos responsáveis foram redesenhados; o portal deixou a moldura de smartphone e passou a ser responsivo, com navegação inferior no celular. Estudantes aparecem por iniciais, sem fotografias. Novas ilustrações em SVG seguem o traço da identidade visual oficial, que foi preservada. O cartão de presença deixou de afirmar reconhecimento facial e notificação no app como fatos e passou a exibir o último registro demonstrativo; indicadores do painel deixaram de afirmar "hoje" quando contam todos os eventos carregados. A edição de comunicados ficou visível apenas para os perfis que o backend autoriza. O aceite visual foi adaptado ao layout responsivo.
+
+Limites: backend, contratos, regras de autorização e escopo do piloto não foram alterados. A lista de justificativas do painel escolar continua sem atualização periódica, como antes. Validação: lint, build, PWA, 29 testes de API, 24 cenários de aceite visual e 19 fluxos ponta a ponta executados em base isolada.
