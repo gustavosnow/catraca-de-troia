@@ -1,32 +1,27 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { 
-  X, 
-  Lock, 
-  Mail, 
-  Phone, 
-  User, 
-  ShieldCheck, 
-  Eye, 
-  EyeOff, 
-  School, 
-  CheckCircle2, 
-  AlertCircle, 
-  UserPlus, 
-  LogIn, 
-  KeyRound, 
-  ChevronRight, 
-  Sparkles,
-  Smartphone,
-  Building2,
-  HelpCircle,
+import {
   ArrowLeft,
-  Users
+  ArrowRight,
+  Building2,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  FlaskConical,
+  KeyRound,
+  LogIn,
+  ShieldCheck,
+  Smartphone,
+  UserPlus,
+  Users,
+  ScrollText,
 } from 'lucide-react';
 import { AuthUser, Student } from '../types';
-import { PARENT_ACCOUNTS, STAFF_ACCOUNTS, STUDENTS_DATABASE } from '../data/mockData';
-import { CatracaTroiaLogo } from './CatracaTroiaLogo';
+import { STUDENTS_DATABASE } from '../data/mockData';
 import { authApi } from '../services/authApi';
 import { toAuthUser } from '../services/authUserMapper';
+import { BrandLockup } from './brand/BrandMark';
+import { GateScene } from './brand/Illustrations';
+import { Avatar, Callout, Field } from './ui';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -250,735 +245,354 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }, 700);
   };
 
+
+  const handleForgotRequest = () => {
+    if (!forgotIdentifier.trim()) {
+      setLoginError('Informe seu celular ou e-mail.');
+      return;
+    }
+    setForgotStep('code');
+    setLoginError('');
+    setLoginSuccess('Etapa simulada, sem envio externo. Código fictício para teste: 849201');
+  };
+
+  const handleForgotConfirm = () => {
+    if (recoveryCode !== '849201' && recoveryCode.length !== 6) {
+      setLoginError('Código incorreto. Use 849201 para teste.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setLoginError('A nova senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    setLoginError('');
+    setLoginSuccess('Senha redefinida com sucesso! Você já pode entrar com sua nova senha.');
+    setTimeout(() => {
+      setMode('login');
+      setForgotStep('request');
+    }, 1200);
+  };
+
+  const switchMode = (next: 'login' | 'register' | 'forgot_password') => {
+    setMode(next);
+    setLoginError('');
+    if (next !== 'forgot_password') setForgotStep('request');
+    if (next === 'login') setLoginSuccess('');
+  };
+
+  const isParent = role === 'parent';
+  const demoAccounts: Array<{ id: 'claudia' | 'rodrigo' | 'sem_vinculo' | 'carlos' | 'mariana'; name: string; detail: string }> = isParent
+    ? [
+        { id: 'claudia', name: 'Cláudia Mendes', detail: 'Mãe de Ana Clara e Arthur' },
+        { id: 'rodrigo', name: 'Rodrigo Oliveira', detail: 'Pai de Gabriel e Sophia' },
+        { id: 'sem_vinculo', name: 'Responsável sem vínculo', detail: 'Testar a solicitação à escola' },
+      ]
+    : [
+        { id: 'mariana', name: 'Profª Mariana Costa', detail: 'Coordenação Pedagógica' },
+        { id: 'carlos', name: 'Carlos Mendes', detail: 'Portaria e inspeção' },
+      ];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" onMouseDown={(event) => { if (dismissible && event.target === event.currentTarget) onClose(); }}>
-      
-      {/* Modal Card */}
-      <div 
-        className="bg-[#0B192C] text-white rounded-3xl border border-slate-700/80 shadow-2xl w-full max-w-xl my-auto overflow-hidden relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Glow ambient background */}
-        <div className="absolute -top-12 -right-12 w-64 h-64 bg-orange-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-title"
+      className="fixed inset-0 z-[70] overflow-y-auto bg-white"
+    >
+      <div className="grid min-h-full lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        {/* Painel da marca */}
+        <aside className="relative hidden flex-col justify-between overflow-hidden border-r border-brand-line bg-[#fff7f0] px-12 py-12 lg:flex xl:px-20">
+          <BrandLockup size={38} />
+          <div className="max-w-md">
+            <p className="eyebrow">Cuidado que começa na entrada</p>
+            <h2 className="display-title mt-5 text-[44px]">
+              Mais segurança.
+              <span className="block text-action">Mais tranquilidade.</span>
+            </h2>
+            <p className="mt-5 text-[15px] leading-relaxed text-ink-2">
+              Uma visão clara das movimentações, dos estudantes e das informações que precisam da sua atenção.
+            </p>
+            <ul className="mt-7 space-y-3.5 text-[15px] text-ink">
+              {[
+                [ShieldCheck, 'Acesso conforme o seu perfil'],
+                [Users, 'Vínculos validados pela escola'],
+                [ScrollText, 'Registros com rastreabilidade'],
+              ].map(([Icon, label]) => {
+                const IconComponent = Icon as typeof ShieldCheck;
+                return (
+                  <li key={label as string} className="flex items-center gap-3">
+                    <IconComponent aria-hidden="true" className="h-[18px] w-[18px] text-action" />
+                    {label as string}
+                  </li>
+                );
+              })}
+            </ul>
+            <GateScene className="mt-10 h-auto w-full max-w-[420px]" />
+          </div>
+          <p className="text-[13px] leading-relaxed text-muted">
+            Protótipo acadêmico local · Dados fictícios
+            <br />
+            Hardware e biometria não integrados.
+          </p>
+        </aside>
 
-        {/* Header Superior */}
-        <div className="p-5 sm:p-6 border-b border-slate-800/80 relative z-10 flex items-start justify-between gap-4">
-          <div id="auth-modal-title">
-            <CatracaTroiaLogo
-              size={48}
-              variant="dark"
-              subtitle={mode === 'login'
-                ? (role === 'parent' ? 'Acesso de Pais e Responsáveis' : 'Acesso da Equipe Escolar')
+        {/* Formulário */}
+        <main className="flex flex-col px-5 py-8 sm:px-10 lg:px-16 lg:py-12">
+          <div className="flex items-center justify-between lg:justify-end">
+            <span className="lg:hidden"><BrandLockup size={30} /></span>
+            {dismissible && (
+              <button type="button" className="btn-link" onClick={onClose}>
+                <ArrowLeft aria-hidden="true" className="!translate-x-0" />
+                Voltar à apresentação
+              </button>
+            )}
+          </div>
+
+          <div className="mx-auto w-full max-w-[460px] flex-1 py-10 lg:py-14">
+            <p className="eyebrow">{isParent ? 'Portal dos responsáveis' : 'Painel escolar'}</p>
+            <h1 id="auth-modal-title" className="display-title mt-3 text-[30px] sm:text-[34px]">
+              {mode === 'forgot_password'
+                ? 'Recuperar acesso.'
                 : mode === 'register'
-                  ? 'Novo Cadastro no Sistema'
-                  : 'Recuperação de Senha Segura'}
-            />
-          </div>
+                  ? (isParent ? 'Criar cadastro de responsável.' : 'Solicitar credencial da equipe.')
+                  : (isParent ? 'Bem-vindo ao portal da família.' : 'Bem-vindo à gestão escolar.')}
+            </h1>
+            <p className="mt-2 text-[15px] text-ink-2">
+              {mode === 'forgot_password'
+                ? 'Etapa demonstrativa: nenhum código é enviado por canal externo.'
+                : mode === 'register'
+                  ? (isParent ? 'Depois do cadastro, a escola confere o vínculo com o estudante.' : 'A credencial depende de aprovação institucional.')
+                  : (isParent ? 'Acompanhe a rotina escolar de quem você ama.' : 'Informações organizadas para cuidar de cada entrada.')}
+            </p>
 
-          {dismissible && (
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Fechar"
-              aria-label="Fechar autenticação"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-
-        {/* Navigation Tabs (Login / Cadastro) */}
-        {mode !== 'forgot_password' && (
-          <div className="px-5 sm:px-6 pt-4 pb-2 border-b border-slate-800/60 flex items-center justify-between gap-2">
-            <div className="flex rounded-xl bg-slate-900/90 p-1 border border-slate-800 w-full">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('login');
-                  setLoginError('');
-                }}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                  mode === 'login'
-                    ? 'bg-orange-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-                aria-pressed={mode === 'login'}
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Entrar (Login)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('register');
-                  setLoginError('');
-                }}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                  mode === 'register'
-                    ? 'bg-orange-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-                aria-pressed={mode === 'register'}
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                <span>Criar Conta (Cadastro)</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Modal Body */}
-        <div className="p-5 sm:p-6 relative z-10 max-h-[72vh] overflow-y-auto space-y-4 custom-scrollbar">
-          
-          <p className="text-xs text-amber-200">Sessão validada pela API local com contas fictícias. Cadastro, recuperação e integração com identidade institucional permanecem demonstrativos.</p>
-          {/* Feedback Messages */}
-          {loginError && (
-            <div role="alert" className="p-3 rounded-xl bg-red-950/70 border border-red-800/60 text-red-300 text-xs flex items-center gap-2.5 animate-in fade-in">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-              <span>{loginError}</span>
-            </div>
-          )}
-
-          {loginSuccess && (
-            <div role="status" aria-live="polite" className="p-3 rounded-xl bg-emerald-950/70 border border-emerald-800/60 text-emerald-300 text-xs flex items-center gap-2.5 animate-in fade-in">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{loginSuccess}</span>
-            </div>
-          )}
-
-          {/* ------------------------------------------------------------- */}
-          {/* TELA 1: LOGIN                                                 */}
-          {/* ------------------------------------------------------------- */}
-          {mode === 'login' && (
-            <div className="space-y-4">
-              
-              {/* O acesso é fixado pela rota; o seletor existe apenas em usos genéricos. */}
-              {!allowedRole && <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRole('parent')}
-                  className={`flex-1 p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    role === 'parent'
-                      ? 'bg-slate-800/90 border-orange-500/70 text-orange-300 shadow-md ring-1 ring-orange-500/30'
-                      : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:bg-slate-850'
-                  }`}
-                >
-                  <Smartphone className="w-3.5 h-3.5 text-orange-400" />
-                  <span>Portal dos Pais / Família</span>
+            {mode !== 'forgot_password' && (
+              <div role="tablist" aria-label="Acesso" className="tabs mt-7">
+                <button type="button" role="tab" aria-selected={mode === 'login'} className="tab inline-flex items-center gap-2" onClick={() => switchMode('login')}>
+                  <LogIn aria-hidden="true" className="h-4 w-4" /> Entrar
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => setRole('staff')}
-                  className={`flex-1 p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    role === 'staff'
-                      ? 'bg-slate-800/90 border-orange-500/70 text-orange-300 shadow-md ring-1 ring-orange-500/30'
-                      : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:bg-slate-850'
-                  }`}
-                >
-                  <School className="w-3.5 h-3.5 text-orange-400" />
-                  <span>Gestão Escolar & Portaria</span>
+                <button type="button" role="tab" aria-selected={mode === 'register'} className="tab inline-flex items-center gap-2" onClick={() => switchMode('register')}>
+                  <UserPlus aria-hidden="true" className="h-4 w-4" /> {isParent ? 'Criar cadastro' : 'Solicitar credencial'}
                 </button>
-              </div>}
+              </div>
+            )}
 
-              {allowedRole && (
-                <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 px-3 py-2.5 text-xs text-slate-200 flex items-center gap-2">
-                  {role === 'parent' ? <Smartphone className="w-4 h-4 text-orange-400" /> : <School className="w-4 h-4 text-orange-400" />}
-                  <span>
-                    {role === 'parent'
-                      ? 'Área exclusiva para pais e responsáveis vinculados.'
-                      : 'Área exclusiva para equipe escolar e portaria.'}
-                  </span>
-                </div>
-              )}
+            {!allowedRole && mode !== 'forgot_password' && (
+              <div className="segmented mt-5 w-full" role="group" aria-label="Perfil">
+                <button type="button" className="flex-1" aria-pressed={isParent} onClick={() => setRole('parent')}>Responsáveis</button>
+                <button type="button" className="flex-1" aria-pressed={!isParent} onClick={() => setRole('staff')}>Gestão escolar</button>
+              </div>
+            )}
 
-              {/* Formulário de Login */}
-              <form onSubmit={handleLoginSubmit} className="space-y-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    {role === 'parent' ? 'Celular, CPF ou E-mail' : 'E-mail Institucional ou Reg. Funcional (MAT)'}
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                      {role === 'parent' ? <Phone className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
-                    </div>
+            <div className="mt-6 space-y-3" aria-live="polite">
+              {loginError && <Callout tone="negative" role="alert">{loginError}</Callout>}
+              {loginSuccess && <Callout tone={loginSuccess.startsWith('Validando') ? 'info' : 'positive'} role="status">{loginSuccess}</Callout>}
+            </div>
+
+            {mode === 'login' && (
+              <>
+                <form onSubmit={handleLoginSubmit} className="mt-6 space-y-5" noValidate>
+                  <Field label={isParent ? 'Celular, CPF ou e-mail' : 'E-mail institucional ou matrícula funcional'} htmlFor="auth-identifier">
                     <input
+                      id="auth-identifier"
                       ref={loginIdentifierRef}
-                      type="text"
+                      className="input h-11"
                       autoComplete="username"
                       value={loginIdentifier}
-                      onChange={(e) => setLoginIdentifier(e.target.value)}
-                      placeholder={role === 'parent' ? 'Ex: (11) 98765-4321 ou claudia@gmail.com' : 'Ex: carlos.mendes@emef.educacao.sp.gov.br'}
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                      onChange={(event) => setLoginIdentifier(event.target.value)}
+                      placeholder={isParent ? 'nome@exemplo.com' : 'nome@escola.example'}
                     />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-semibold text-slate-300">Senha de Acesso</label>
-                    <button
-                      type="button"
-                      onClick={() => setMode('forgot_password')}
-                      className="text-[11px] text-orange-400 hover:text-orange-300 cursor-pointer font-medium"
-                    >
-                      Esqueceu a senha?
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                      <Lock className="w-4 h-4" />
+                  </Field>
+                  <div>
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <label htmlFor="auth-password" className="field-label mb-0">Senha</label>
+                      <button type="button" className="btn-link text-xs" onClick={() => switchMode('forgot_password')}>Esqueci minha senha</button>
                     </div>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      autoComplete="current-password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full pl-9 pr-10 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                    <div className="relative">
+                      <input
+                        id="auth-password"
+                        type={showPassword ? 'text' : 'password'}
+                        className="input h-11 pr-11"
+                        autoComplete="current-password"
+                        value={loginPassword}
+                        onChange={(event) => setLoginPassword(event.target.value)}
+                        placeholder="Digite a senha demonstrativa"
+                      />
+                      <button
+                        type="button"
+                        className="icon-btn absolute right-1 top-1/2 -translate-y-1/2"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                        aria-pressed={showPassword}
+                      >
+                        {showPassword ? <EyeOff /> : <Eye />}
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-1">
-                  <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-orange-600 focus:ring-orange-500"
-                    />
-                    <span>Lembrar meu dispositivo</span>
+                  <label htmlFor="auth-remember" className="flex cursor-pointer items-center gap-2.5 text-[13px] text-ink-2">
+                    <input id="auth-remember" type="checkbox" className="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} />
+                    Lembrar este dispositivo
                   </label>
-                </div>
+                  <button type="submit" className="btn btn-primary btn-lg w-full" disabled={isAuthenticating}>
+                    {isAuthenticating ? 'Entrando…' : 'Entrar'}
+                    {!isAuthenticating && <ArrowRight aria-hidden="true" />}
+                  </button>
+                </form>
 
-                <button
-                  type="submit"
-                  disabled={isAuthenticating}
-                  className="w-full py-2.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-500 disabled:opacity-60 disabled:cursor-wait text-white font-extrabold text-xs shadow-lg shadow-orange-950/40 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <LogIn className="w-4 h-4" />
-                  <span>{isAuthenticating ? 'Validando…' : 'Entrar no Sistema'}</span>
-                </button>
-              </form>
+                <section aria-labelledby="demo-accounts-title" className="mt-8 border-t border-line pt-6">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <h2 id="demo-accounts-title" className="text-[13px] font-semibold text-ink">Contas de demonstração</h2>
+                    <span className="text-xs text-muted">Senha: <span className="font-mono text-ink-2">Troia@2026</span></span>
+                  </div>
+                  <ul className="mt-3 divide-y divide-line rounded-[10px] border border-line">
+                    {demoAccounts.map((account) => (
+                      <li key={account.id}>
+                        <button
+                          type="button"
+                          className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface disabled:opacity-60"
+                          onClick={() => handleQuickDemoLogin(account.id)}
+                          disabled={isAuthenticating}
+                        >
+                          <Avatar name={account.name} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold text-ink">{account.name}</span>
+                            <span className="block text-xs text-muted">{account.detail}</span>
+                          </span>
+                          <ArrowRight aria-hidden="true" className="h-4 w-4 text-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-action" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
 
-              {/* Acesso Rápido de Demonstração (1-Clique) */}
-              <div className="pt-3 border-t border-slate-800/80 space-y-2">
-                <div className="flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="font-bold uppercase tracking-wider text-orange-400/90">Acesso Rápido (Demonstração)</span>
-                  <span>Senha: Troia@2026</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {role === 'parent' && <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('claudia')}
-                    disabled={isAuthenticating}
-                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-wait border border-slate-700/60 text-left transition-colors cursor-pointer"
-                  >
-                    <div className="text-xs font-bold text-white truncate">Cláudia Mendes</div>
-                    <div className="text-[10px] text-slate-400 truncate">Mãe de 2 alunos (Ana e Arthur)</div>
-                  </button>}
-
-                  {role === 'parent' && <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('rodrigo')}
-                    disabled={isAuthenticating}
-                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-wait border border-slate-700/60 text-left transition-colors cursor-pointer"
-                  >
-                    <div className="text-xs font-bold text-white truncate">Rodrigo Oliveira</div>
-                    <div className="text-[10px] text-slate-400 truncate">Pai de Gabriel e Sophia</div>
-                  </button>}
-
-                  {role === 'parent' && <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('sem_vinculo')}
-                    disabled={isAuthenticating}
-                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-wait border border-slate-700/60 text-left transition-colors cursor-pointer"
-                  >
-                    <div className="text-xs font-bold text-white truncate">Responsável sem vínculo</div>
-                    <div className="text-[10px] text-amber-400 font-medium truncate">Testar solicitação escolar</div>
-                  </button>}
-
-                  {role === 'staff' && <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('carlos')}
-                    disabled={isAuthenticating}
-                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-wait border border-slate-700/60 text-left transition-colors cursor-pointer"
-                  >
-                    <div className="text-xs font-bold text-white truncate">Carlos Mendes</div>
-                    <div className="text-[10px] text-orange-400 font-medium truncate">Inspetor & Operador</div>
-                  </button>}
-
-                  {role === 'staff' && <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('mariana')}
-                    disabled={isAuthenticating}
-                    className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-wait border border-slate-700/60 text-left transition-colors cursor-pointer"
-                  >
-                    <div className="text-xs font-bold text-white truncate">Profª Mariana Costa</div>
-                    <div className="text-[10px] text-orange-400 font-medium truncate">Coordenação Pedagógica</div>
-                  </button>}
-                </div>
                 {onSwitchAccess && (
-                  <button
-                    type="button"
-                    onClick={onSwitchAccess}
-                    className="w-full text-center text-xs font-semibold text-slate-300 hover:text-orange-300 transition-colors"
-                  >
-                    {role === 'parent' ? 'Acessar como equipe escolar' : 'Acessar como pai ou responsável'}
+                  <button type="button" className="btn btn-secondary mt-5 w-full" onClick={onSwitchAccess}>
+                    {isParent ? <Building2 aria-hidden="true" /> : <Smartphone aria-hidden="true" />}
+                    {isParent ? 'Sou da equipe escolar' : 'Sou pai, mãe ou responsável'}
                   </button>
                 )}
+              </>
+            )}
+
+            {mode === 'register' && isParent && (
+              <form onSubmit={handleRegisterParentSubmit} className="mt-6 space-y-5" noValidate>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Nome completo" htmlFor="reg-name" className="sm:col-span-2">
+                    <input id="reg-name" className="input" autoComplete="name" value={parentName} onChange={(event) => setParentName(event.target.value)} />
+                  </Field>
+                  <Field label="Parentesco" htmlFor="reg-relation">
+                    <select id="reg-relation" className="select" value={parentRelation} onChange={(event) => setParentRelation(event.target.value as typeof parentRelation)}>
+                      <option value="Mãe">Mãe</option>
+                      <option value="Pai">Pai</option>
+                      <option value="Avó / Avô">Avó / Avô</option>
+                      <option value="Tutor(a) Legal">Tutor(a) legal</option>
+                      <option value="Responsável">Responsável</option>
+                    </select>
+                  </Field>
+                  <Field label="CPF" htmlFor="reg-cpf">
+                    <input id="reg-cpf" className="input tabular" inputMode="numeric" value={parentCpf} onChange={(event) => handleCpfChange(event.target.value)} placeholder="000.000.000-00" />
+                  </Field>
+                  <Field label="Celular" htmlFor="reg-phone">
+                    <input id="reg-phone" className="input tabular" inputMode="tel" autoComplete="tel" value={parentPhone} onChange={(event) => handlePhoneChange(event.target.value, setParentPhone)} placeholder="(11) 98765-4321" />
+                  </Field>
+                  <Field label="E-mail (opcional)" htmlFor="reg-email">
+                    <input id="reg-email" type="email" className="input" autoComplete="email" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} />
+                  </Field>
+                  <Field label="Matrícula do estudante" htmlFor="reg-enrollment" hint="Será conferida pela escola antes de liberar qualquer dado." className="sm:col-span-2">
+                    <input id="reg-enrollment" className="input tabular" value={requestedEnrollment} onChange={(event) => setRequestedEnrollment(event.target.value)} placeholder="Ex.: 2024-0182" />
+                  </Field>
+                  <Field label="Senha" htmlFor="reg-password">
+                    <input id="reg-password" type="password" className="input" autoComplete="new-password" value={registerPassword} onChange={(event) => setRegisterPassword(event.target.value)} placeholder="Mínimo de 6 caracteres" />
+                  </Field>
+                  <Field label="Confirmar senha" htmlFor="reg-password-confirm">
+                    <input id="reg-password-confirm" type="password" className="input" autoComplete="new-password" value={registerPasswordConfirm} onChange={(event) => setRegisterPasswordConfirm(event.target.value)} />
+                  </Field>
+                </div>
+                <label htmlFor="reg-notify" className="flex cursor-pointer items-start gap-3 rounded-[10px] border border-line bg-surface px-4 py-3 text-[13px] text-ink-2">
+                  <input id="reg-notify" type="checkbox" className="checkbox mt-0.5" checked={acceptTerms} onChange={(event) => setAcceptTerms(event.target.checked)} />
+                  <span>Quero receber avisos de entrada e saída (preferência demonstrativa). O tratamento biométrico e o vínculo com estudantes dependem de validação institucional.</span>
+                </label>
+                <button type="submit" className="btn btn-primary btn-lg w-full">
+                  <UserPlus aria-hidden="true" />
+                  Concluir cadastro
+                </button>
+              </form>
+            )}
+
+            {mode === 'register' && !isParent && (
+              <form onSubmit={handleRegisterStaffSubmit} className="mt-6 space-y-5" noValidate>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Nome completo" htmlFor="staff-name" className="sm:col-span-2">
+                    <input id="staff-name" className="input" autoComplete="name" value={staffName} onChange={(event) => setStaffName(event.target.value)} />
+                  </Field>
+                  <Field label="Matrícula funcional" htmlFor="staff-registry">
+                    <input id="staff-registry" className="input" value={staffMatricula} onChange={(event) => setStaffMatricula(event.target.value)} placeholder="MAT-2026/0481" />
+                  </Field>
+                  <Field label="Função" htmlFor="staff-role">
+                    <select id="staff-role" className="select" value={staffRole} onChange={(event) => setStaffRole(event.target.value as typeof staffRole)}>
+                      <option value="Operador de Portaria & Inspetor">Portaria e inspeção</option>
+                      <option value="Coordenação Pedagógica">Coordenação Pedagógica</option>
+                      <option value="Direção Escolar">Direção Escolar</option>
+                      <option value="Segurança Patrimonial">Segurança Patrimonial</option>
+                    </select>
+                  </Field>
+                  <Field label="E-mail institucional" htmlFor="staff-email">
+                    <input id="staff-email" type="email" className="input" autoComplete="email" value={staffEmail} onChange={(event) => setStaffEmail(event.target.value)} placeholder="nome@escola.example" />
+                  </Field>
+                  <Field label="Telefone ou ramal (opcional)" htmlFor="staff-phone">
+                    <input id="staff-phone" className="input tabular" inputMode="tel" value={staffPhone} onChange={(event) => handlePhoneChange(event.target.value, setStaffPhone)} />
+                  </Field>
+                  <Field label="Chave da unidade escolar" htmlFor="staff-key" hint="Para testes de homologação use EMEF-2026-SP." className="sm:col-span-2">
+                    <input id="staff-key" className="input font-mono" value={schoolAuthKey} onChange={(event) => setSchoolAuthKey(event.target.value)} />
+                  </Field>
+                  <Field label="Senha" htmlFor="staff-password">
+                    <input id="staff-password" type="password" className="input" autoComplete="new-password" value={registerPassword} onChange={(event) => setRegisterPassword(event.target.value)} placeholder="Mínimo de 6 caracteres" />
+                  </Field>
+                  <Field label="Confirmar senha" htmlFor="staff-password-confirm">
+                    <input id="staff-password-confirm" type="password" className="input" autoComplete="new-password" value={registerPasswordConfirm} onChange={(event) => setRegisterPasswordConfirm(event.target.value)} />
+                  </Field>
+                </div>
+                <button type="submit" className="btn btn-primary btn-lg w-full">
+                  <KeyRound aria-hidden="true" />
+                  Solicitar credencial
+                </button>
+              </form>
+            )}
+
+            {mode === 'forgot_password' && (
+              <div className="mt-6 space-y-5">
+                <button type="button" className="btn-link" onClick={() => switchMode('login')}>
+                  <ArrowLeft aria-hidden="true" />
+                  Voltar para entrar
+                </button>
+                {forgotStep === 'request' ? (
+                  <>
+                    <Field label="Celular ou e-mail cadastrado" htmlFor="forgot-identifier">
+                      <input id="forgot-identifier" className="input h-11" value={forgotIdentifier} onChange={(event) => setForgotIdentifier(event.target.value)} />
+                    </Field>
+                    <button type="button" className="btn btn-primary btn-lg w-full" onClick={handleForgotRequest}>Gerar código de recuperação</button>
+                  </>
+                ) : (
+                  <>
+                    <Field label="Código de 6 dígitos" htmlFor="forgot-code">
+                      <input id="forgot-code" className="input h-11 tabular tracking-[0.4em]" inputMode="numeric" maxLength={6} value={recoveryCode} onChange={(event) => setRecoveryCode(event.target.value.replace(/\D/g, ''))} placeholder="000000" />
+                    </Field>
+                    <Field label="Nova senha" htmlFor="forgot-password">
+                      <input id="forgot-password" type="password" className="input h-11" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="Mínimo de 6 caracteres" />
+                    </Field>
+                    <button type="button" className="btn btn-primary btn-lg w-full" onClick={handleForgotConfirm}>
+                      <CheckCircle2 aria-hidden="true" />
+                      Redefinir senha
+                    </button>
+                  </>
+                )}
               </div>
+            )}
 
-            </div>
-          )}
-
-          {/* ------------------------------------------------------------- */}
-          {/* TELA 2: CADASTRO                                              */}
-          {/* ------------------------------------------------------------- */}
-          {mode === 'register' && (
-            <div className="space-y-4">
-              
-              {/* O cadastro demonstrativo segue o perfil definido pela rota. */}
-              {!allowedRole && <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRole('parent')}
-                  className={`flex-1 p-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    role === 'parent'
-                      ? 'bg-slate-800/90 border-orange-500/70 text-orange-300 shadow-md ring-1 ring-orange-500/30'
-                      : 'bg-slate-900/50 border-slate-800 text-slate-400'
-                  }`}
-                >
-                  <Users className="w-3.5 h-3.5 text-orange-400" />
-                  <span>Responsável (Pai / Mãe)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setRole('staff')}
-                  className={`flex-1 p-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    role === 'staff'
-                      ? 'bg-slate-800/90 border-orange-500/70 text-orange-300 shadow-md ring-1 ring-orange-500/30'
-                      : 'bg-slate-900/50 border-slate-800 text-slate-400'
-                  }`}
-                >
-                  <Building2 className="w-3.5 h-3.5 text-orange-400" />
-                  <span>Equipe Escolar / Portaria</span>
-                </button>
-              </div>}
-
-              {/* FORM CADASTRO: RESPONSÁVEL */}
-              {role === 'parent' && (
-                <form onSubmit={handleRegisterParentSubmit} className="space-y-3.5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Nome Completo *</label>
-                      <input
-                        type="text"
-                        value={parentName}
-                        onChange={(e) => setParentName(e.target.value)}
-                        placeholder="Ex: Vanessa de Souza"
-                        className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Grau de Parentesco *</label>
-                      <select
-                        value={parentRelation}
-                        onChange={(e) => setParentRelation(e.target.value as any)}
-                        className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500 cursor-pointer"
-                      >
-                        <option value="Mãe">Mãe</option>
-                        <option value="Pai">Pai</option>
-                        <option value="Avó / Avô">Avó / Avô</option>
-                        <option value="Tutor(a) Legal">Tutor(a) Legal</option>
-                        <option value="Responsável">Responsável</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">CPF (Documento) *</label>
-                      <input
-                        type="text"
-                        value={parentCpf}
-                        onChange={(e) => handleCpfChange(e.target.value)}
-                        placeholder="000.000.000-00"
-                        className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 font-mono"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Celular *</label>
-                      <input
-                        type="text"
-                        value={parentPhone}
-                        onChange={(e) => handlePhoneChange(e.target.value, setParentPhone)}
-                        placeholder="(11) 98765-4321"
-                        className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 font-mono"
-                        required
-                      />
-                      <span className="text-[10px] text-orange-400/90 mt-0.5 block">
-                        Receberá os alertas instantâneos de passagem na catraca
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">E-mail para Avisos</label>
-                    <input
-                      type="email"
-                      value={parentEmail}
-                      onChange={(e) => setParentEmail(e.target.value)}
-                      placeholder="seu.email@exemplo.com"
-                      className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
-                    />
-                  </div>
-
-                  {/* Identificação para futura solicitação de vínculo */}
-                  <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-700/80 space-y-2.5">
-                    <label className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <School className="w-3.5 h-3.5 text-orange-400" />
-                      <span>Matrícula para conferência posterior *</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={requestedEnrollment}
-                      onChange={(e) => setRequestedEnrollment(e.target.value)}
-                      placeholder="Ex.: 2024-0182"
-                      minLength={4}
-                      maxLength={40}
-                      required
-                      className="w-full px-3 py-2 bg-slate-800/90 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 font-mono"
-                    />
-                    <p className="text-[10px] leading-relaxed text-slate-400">
-                      A matrícula não libera acesso. O vínculo será solicitado após o login e dependerá de aprovação da Coordenação ou Direção.
-                    </p>
-                  </div>
-
-                  {/* Senha e Confirmação */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Criar Senha *</label>
-                      <input
-                        type="password"
-                        value={registerPassword}
-                        onChange={(e) => setRegisterPassword(e.target.value)}
-                        placeholder="Mínimo 6 caracteres"
-                        className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Confirmar Senha *</label>
-                      <input
-                        type="password"
-                        value={registerPasswordConfirm}
-                        onChange={(e) => setRegisterPasswordConfirm(e.target.value)}
-                        placeholder="Repita a senha"
-                        className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <label className="flex items-start gap-2 text-xs text-slate-300 cursor-pointer pt-1">
-                    <input
-                      type="checkbox"
-                      checked={acceptTerms}
-                      onChange={(e) => setAcceptTerms(e.target.checked)}
-                      className="w-4 h-4 mt-0.5 rounded border-slate-700 bg-slate-900 text-orange-600 focus:ring-orange-500"
-                    />
-                    <span>
-                      Desejo receber notificações sobre entrada e saída (preferência demonstrativa). O tratamento biométrico e o vínculo com estudantes dependem de validação institucional.
-                    </span>
-                  </label>
-
-                  <button
-                    type="submit"
-                    className="w-full py-2.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs shadow-lg shadow-orange-950/40 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    <span>Concluir Cadastro & Acessar</span>
-                  </button>
-                </form>
-              )}
-
-              {/* FORM CADASTRO: EQUIPE ESCOLAR */}
-              {role === 'staff' && (
-                <form onSubmit={handleRegisterStaffSubmit} className="space-y-3.5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Nome Completo *</label>
-                      <input
-                        type="text"
-                        value={staffName}
-                        onChange={(e) => setStaffName(e.target.value)}
-                        placeholder="Ex: Marcos Vinicius"
-                        className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Registro Funcional (MAT) *</label>
-                      <input
-                        type="text"
-                        value={staffMatricula}
-                        onChange={(e) => setStaffMatricula(e.target.value)}
-                        placeholder="Ex: 0481 ou MAT-2026/0481"
-                        className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 font-mono"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Função / Cargo *</label>
-                      <select
-                        value={staffRole}
-                        onChange={(e) => setStaffRole(e.target.value as any)}
-                        className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500 cursor-pointer"
-                      >
-                        <option value="Operador de Portaria & Inspetor">Operador de Portaria & Inspetor</option>
-                        <option value="Coordenação Pedagógica">Coordenação Pedagógica</option>
-                        <option value="Direção Escolar">Direção Escolar</option>
-                        <option value="Segurança Patrimonial">Segurança Patrimonial</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Telefone / Ramal</label>
-                      <input
-                        type="text"
-                        value={staffPhone}
-                        onChange={(e) => handlePhoneChange(e.target.value, setStaffPhone)}
-                        placeholder="(11) 98111-2233"
-                        className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">E-mail Institucional *</label>
-                    <input
-                      type="email"
-                      value={staffEmail}
-                      onChange={(e) => setStaffEmail(e.target.value)}
-                      placeholder="nome.sobrenome@emef.educacao.sp.gov.br"
-                      className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
-                      required
-                    />
-                  </div>
-
-                  <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-700/80 space-y-2">
-                    <label className="block text-xs font-bold text-orange-400">
-                      Chave de Autorização da Unidade Escolar *
-                    </label>
-                    <input
-                      type="text"
-                      value={schoolAuthKey}
-                      onChange={(e) => setSchoolAuthKey(e.target.value)}
-                      placeholder="Digite a chave da escola (Use: EMEF-2026-SP)"
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 font-mono"
-                      required
-                    />
-                    <p className="text-[10px] text-slate-400">
-                      Código fornecido pela diretoria da EMEF Profª. Cecília Meireles para novos operadores.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Senha de Operador *</label>
-                      <input
-                        type="password"
-                        value={registerPassword}
-                        onChange={(e) => setRegisterPassword(e.target.value)}
-                        placeholder="Mínimo 6 caracteres"
-                        className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Confirmar Senha *</label>
-                      <input
-                        type="password"
-                        value={registerPasswordConfirm}
-                        onChange={(e) => setRegisterPasswordConfirm(e.target.value)}
-                        placeholder="Repita a senha"
-                        className="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-2.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs shadow-lg shadow-orange-950/40 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <Building2 className="w-4 h-4" />
-                    <span>Cadastrar Credencial de Operador</span>
-                  </button>
-                </form>
-              )}
-
-            </div>
-          )}
-
-          {/* ------------------------------------------------------------- */}
-          {/* TELA 3: ESQUECI A SENHA                                       */}
-          {/* ------------------------------------------------------------- */}
-          {mode === 'forgot_password' && (
-            <div className="space-y-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('login');
-                  setLoginError('');
-                  setLoginSuccess('');
-                }}
-                className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1 cursor-pointer font-semibold mb-2"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Voltar para tela de Login</span>
-              </button>
-
-              {forgotStep === 'request' && (
-                <div className="space-y-3.5">
-                  <div className="p-3 bg-slate-900/80 rounded-2xl border border-slate-800 text-xs text-slate-300">
-                    <p className="font-semibold text-white mb-1">Recuperar Senha</p>
-                    <p className="text-slate-400">
-                      Recuperação demonstrativa: nenhum código é enviado por canal externo. A recuperação institucional ainda não está implementada.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                      Celular ou e-mail cadastrado
-                    </label>
-                    <input
-                      type="text"
-                      value={forgotIdentifier}
-                      onChange={(e) => setForgotIdentifier(e.target.value)}
-                      placeholder="Ex: (11) 98765-4321 ou seu.email@gmail.com"
-                      className="w-full px-3 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!forgotIdentifier.trim()) {
-                        setLoginError('Informe seu celular ou e-mail.');
-                        return;
-                      }
-                      setForgotStep('code');
-                      setLoginError('');
-                      setLoginSuccess('Etapa simulada, sem envio externo. Código fictício para teste: 849201');
-                    }}
-                    className="w-full py-2.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <KeyRound className="w-4 h-4" />
-                    <span>Enviar Código de Recuperação</span>
-                  </button>
-                </div>
-              )}
-
-              {forgotStep === 'code' && (
-                <div className="space-y-3.5">
-                  <div className="p-3 bg-slate-900/80 rounded-2xl border border-slate-800 text-xs text-slate-300">
-                    <p className="font-semibold text-white mb-1">Digite o Código de 6 Dígitos</p>
-                    <p className="text-slate-400">
-                      Enviamos para <span className="text-orange-300 font-mono">{forgotIdentifier}</span>. (Código de teste: <span className="text-emerald-400 font-bold">849201</span>)
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">Código de Confirmação</label>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      value={recoveryCode}
-                      onChange={(e) => setRecoveryCode(e.target.value.replace(/\D/g, ''))}
-                      placeholder="849201"
-                      className="w-full px-3 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-sm font-mono tracking-widest text-center text-white placeholder-slate-600 focus:outline-none focus:border-orange-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">Nova Senha</label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Mínimo 6 caracteres"
-                      className="w-full px-3 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (recoveryCode !== '849201' && recoveryCode.length !== 6) {
-                        setLoginError('Código incorreto. Use 849201 para teste.');
-                        return;
-                      }
-                      if (!newPassword || newPassword.length < 6) {
-                        setLoginError('A nova senha deve ter pelo menos 6 caracteres.');
-                        return;
-                      }
-                      setLoginSuccess('Senha redefinida com sucesso! Você já pode entrar com sua nova senha.');
-                      setTimeout(() => {
-                        setMode('login');
-                        setForgotStep('request');
-                      }, 1200);
-                    }}
-                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Confirmar Nova Senha</span>
-                  </button>
-                </div>
-              )}
-
-            </div>
-          )}
-
-        </div>
-
-        {/* Footer do Modal */}
-        <div className="p-4 bg-slate-950/70 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-400">
-          <div className="flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Ambiente Seguro • Rede Pública de Ensino</span>
+            <Callout tone="neutral" icon={FlaskConical} className="mt-8">
+              Sessão validada pela API local com contas fictícias. Cadastro, recuperação e identidade institucional permanecem demonstrativos.
+            </Callout>
           </div>
-          {dismissible && (
-            <button type="button" onClick={onClose} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-bold text-orange-300 transition-colors hover:bg-orange-500/10 hover:text-orange-200">
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Voltar à apresentação
-            </button>
-          )}
-          <span className="font-mono text-slate-500">INEP #35019284</span>
-        </div>
-
+        </main>
       </div>
     </div>
   );
