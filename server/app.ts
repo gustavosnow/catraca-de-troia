@@ -4,6 +4,11 @@ import { AppDatabase } from './db';
 import { ApiError } from './errors';
 import { createJustificationRouter } from './modules/justifications/routes';
 import { JustificationService } from './modules/justifications/service';
+import {
+  createAccessDeviceAdminRouter,
+  createDeviceRecognitionRouter,
+} from './modules/accessDevices/routes';
+import { AccessDeviceService } from './modules/accessDevices/service';
 import { createAccessEventRouter } from './modules/accessEvents/routes';
 import { AccessEventService } from './modules/accessEvents/service';
 import {
@@ -82,9 +87,13 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
     );
   }
 
+  const accessDeviceService = new AccessDeviceService(database, options.now);
+  app.use('/api/v1', createDeviceRecognitionRouter(accessDeviceService));
+
   const authService = new AuthService(database, options.now);
   app.use('/api/v1', createAuthRouter(database, authService, options.now));
   app.use('/api/v1', createSessionAuth(database, options.now));
+  app.use('/api/v1', createAccessDeviceAdminRouter(accessDeviceService));
   app.use(
     '/api/v1',
     createJustificationRouter(new JustificationService(database, options.now)),

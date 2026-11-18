@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 import { Request, Router } from 'express';
+import { ACCESS_EVENT_SOURCES, type AccessEventSource } from '../../../shared/contracts/accessEvents';
 import type { AccessEventSyncPayload } from '../../../shared/contracts/accessEventSync';
 import { invalidRequest, unauthorized } from '../../errors';
 import { AccessEventSyncReceiver } from './syncService';
@@ -35,7 +36,7 @@ const parsePayload = (body: unknown): AccessEventSyncPayload => {
   if (!['ENTRY', 'EXIT'].includes(value.direction || '')
     || !['AUTHORIZED', 'MANUAL_RELEASE'].includes(value.status || '')
     || !['FACIAL', 'MANUAL'].includes(value.method || '')
-    || value.source !== 'DEMO_SIMULATION'
+    || !ACCESS_EVENT_SOURCES.includes(value.source as AccessEventSource)
     || !['DELIVERED', 'PENDING'].includes(value.whatsappStatus || '')
     || !['DELIVERED', 'PENDING'].includes(value.pushStatus || '')
     || Number.isNaN(Date.parse(value.occurredAt || ''))) {
