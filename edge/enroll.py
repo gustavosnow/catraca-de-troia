@@ -4,18 +4,20 @@ Use SOMENTE rostos de adultos da equipe, com consentimento, ligados a
 estudantes fictícios da base demonstrativa. Nenhuma foto é salva; apenas
 vetores em edge/data/gallery.npz (fora do Git).
 
-  python enroll.py --list
+  python enroll.py --list [--json]
   python enroll.py --student std-1 --label "Integrante A" --consenti
   python enroll.py --remove std-1
 """
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import time
 
 import cv2
 
+import supervision
 from config import load_settings
 from faces import FaceEngine, Gallery, open_camera
 
@@ -29,6 +31,8 @@ def capture_samples(engine: FaceEngine, source: int | str, samples: int) -> list
     message = "Olhe para a camera. Varie levemente o angulo."
     try:
         while len(collected) < samples:
+            if supervision.should_stop():
+                return []
             ok, frame = capture.read()
             if not ok:
                 message = "Sem imagem da camera..."
@@ -70,12 +74,20 @@ def main() -> int:
                         help="Confirma que a pessoa é adulta da equipe e consentiu com o teste")
     parser.add_argument("--remove", metavar="STUDENT_ID", help="Apaga os vetores desse studentId")
     parser.add_argument("--list", action="store_true", help="Lista quem está cadastrado")
+    parser.add_argument("--json", action="store_true", help="Com --list, imprime JSON (usado pela API)")
     args = parser.parse_args()
+    supervision.start()
 
     gallery = Gallery.load()
 
     if args.list:
         people = gallery.people()
+        if args.json:
+            print(json.dumps([
+                {"studentId": sid, "label": label, "samples": count}
+                for sid, (label, count) in people.items()
+            ], ensure_ascii=False))
+            return 0
         if not people:
             print("Nenhum rosto cadastrado.")
         for sid, (label, count) in people.items():

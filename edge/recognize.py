@@ -18,13 +18,15 @@ from datetime import datetime, timezone
 
 import cv2
 
-from config import METRICS_PATH, Settings, load_settings
+import supervision
+from config import GALLERY_PATH, METRICS_PATH, Settings, load_settings
 from faces import FaceEngine, Gallery, Identification, open_camera
 
 WINDOW = "Catraca de Troia - prototipo facial (q para sair)"
 RESULT_HOLD_SECONDS = 2.5   # tempo exibindo LIBERADO/NEGADO
 UNKNOWN_PAUSE_SECONDS = 4.0  # evita registrar várias negações da mesma pessoa
 NO_FACE_RESET_FRAMES = 5
+GALLERY_CHECK_SECONDS = 2.0  # recarrega a galeria quando um novo cadastro termina
 
 GREEN, RED, YELLOW, WHITE, NAVY, ORANGE = (
     (60, 180, 75), (40, 40, 220), (0, 200, 255), (255, 255, 255), (44, 25, 11), (12, 88, 234),
@@ -167,15 +169,23 @@ def decide(api: ApiClient, streak: Streak, settings: Settings) -> Banner:
                   RED, now + max(RESULT_HOLD_SECONDS, UNKNOWN_PAUSE_SECONDS))
 
 
+def gallery_mtime() -> float:
+    try:
+        return GALLERY_PATH.stat().st_mtime
+    except OSError:
+        return 0.0
+
+
 def main() -> int:
+    supervision.start()
     settings = load_settings()
     if not settings.device_token:
         print("Defina DEVICE_TOKEN em edge/.env (npm run device:register).")
         return 1
     gallery = Gallery.load()
+    loaded_mtime = gallery_mtime()
     if not gallery.student_ids:
-        print("Nenhum rosto cadastrado. Rode: python enroll.py --student std-1 --label \"Nome\" --consenti")
-        return 1
+        print("Nenhum rosto cadastrado: todas as leituras serão negadas até o primeiro cadastro.")
 
     engine = FaceEngine(settings.process_width)
     engine.use_gallery(gallery)
@@ -185,9 +195,10 @@ def main() -> int:
 
     streak, banner = Streak(), None
     last_flush, last_frame, fps = 0.0, time.time(), 0.0
+    last_gallery_check = time.time()
     failures = 0
     try:
-        while True:
+        while not supervision.should_stop():
             ok, frame = capture.read()
             if not ok:
                 failures += 1
@@ -203,6 +214,16 @@ def main() -> int:
             now = time.time()
             fps = 0.9 * fps + 0.1 * (1.0 / max(now - last_frame, 1e-3))
             last_frame = now
+
+            if now - last_gallery_check > GALLERY_CHECK_SECONDS:
+                last_gallery_check = now
+                current_mtime = gallery_mtime()
+                if current_mtime != loaded_mtime:
+                    loaded_mtime = current_mtime
+                    gallery = Gallery.load()
+                    engine.use_gallery(gallery)
+                    streak.reset()
+                    print(f"Galeria recarregada: {len(gallery.people())} pessoa(s) cadastrada(s).")
 
             if api.pending and now - last_flush > 5:
                 api.flush_pending()

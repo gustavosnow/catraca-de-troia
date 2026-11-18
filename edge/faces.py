@@ -5,6 +5,7 @@ amostra, ligados a um studentId fictício. Ver MC-036.
 """
 from __future__ import annotations
 
+import os
 import time
 from dataclasses import dataclass
 
@@ -47,20 +48,31 @@ class Gallery:
     def load(cls) -> "Gallery":
         gallery = cls()
         if GALLERY_PATH.exists():
-            data = np.load(GALLERY_PATH, allow_pickle=False)
-            gallery.student_ids = [str(item) for item in data["student_ids"]]
-            gallery.labels = [str(item) for item in data["labels"]]
-            gallery.embeddings = data["embeddings"].astype(np.float32)
+            with np.load(GALLERY_PATH, allow_pickle=False) as data:
+                gallery.student_ids = [str(item) for item in data["student_ids"]]
+                gallery.labels = [str(item) for item in data["labels"]]
+                gallery.embeddings = data["embeddings"].astype(np.float32)
         return gallery
 
     def save(self) -> None:
+        # Grava em arquivo temporário e substitui de uma vez: catracas em execução
+        # recarregam a galeria e nunca devem ler um arquivo pela metade.
         GALLERY_PATH.parent.mkdir(parents=True, exist_ok=True)
-        np.savez(
-            GALLERY_PATH,
-            student_ids=np.array(self.student_ids),
-            labels=np.array(self.labels),
-            embeddings=self.embeddings,
-        )
+        temporary = GALLERY_PATH.with_suffix(".tmp")
+        with temporary.open("wb") as handle:
+            np.savez(
+                handle,
+                student_ids=np.array(self.student_ids),
+                labels=np.array(self.labels),
+                embeddings=self.embeddings,
+            )
+        for attempt in range(10):
+            try:
+                os.replace(temporary, GALLERY_PATH)
+                return
+            except PermissionError:  # Windows: outra catraca lendo o arquivo neste instante
+                time.sleep(0.05 * (attempt + 1))
+        os.replace(temporary, GALLERY_PATH)
 
     def add(self, student_id: str, label: str, embeddings: list[np.ndarray]) -> None:
         self.remove(student_id)
