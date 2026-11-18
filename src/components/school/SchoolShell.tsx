@@ -176,7 +176,7 @@ export const SchoolShell: React.FC<SchoolShellProps> = ({
           <Building2 aria-hidden="true" className="h-4 w-4" />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold text-ink">{user.schoolUnit || 'EMEF Profª. Cecília Meireles'}</p>
+          <p className="truncate text-[13px] font-semibold text-ink" title={user.schoolUnit || 'EMEF Profª. Cecília Meireles'}>{user.schoolUnit || 'EMEF Profª. Cecília Meireles'}</p>
           <p className="text-[11px] text-muted">Unidade demonstrativa</p>
         </div>
       </div>
@@ -226,7 +226,7 @@ export const SchoolShell: React.FC<SchoolShellProps> = ({
       <div className="flex items-center gap-3 border-t border-line px-4 py-4">
         <Avatar name={user.name} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-semibold text-ink">{user.name}</p>
+          <p className="truncate text-[13px] font-semibold text-ink" title={user.name}>{user.name}</p>
           <p className="truncate text-xs text-muted">{roleLabel(user.staffRole)}</p>
         </div>
         <button type="button" className="icon-btn" onClick={onLogout} aria-label="Sair da conta" title="Sair">
