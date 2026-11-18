@@ -1,181 +1,150 @@
 import React, { useState } from 'react';
-import { 
-  Megaphone, 
-  AlertTriangle, 
-  Info, 
-  CheckCircle2, 
-  Download, 
-  Calendar, 
-  ChevronRight, 
-  Sparkles, 
-  X, 
-  FileText
-} from 'lucide-react';
-import { SchoolNotice } from '../../types';
+import { ArrowRight, CheckCircle2, Megaphone } from 'lucide-react';
+import type { SchoolNotice } from '../../types';
+import { EmptyInboxIllustration } from '../brand/Illustrations';
+import { CategoryChip, PriorityChip } from '../SchoolNoticesManager';
+import { EmptyState, Modal } from '../ui';
 
 interface SchoolNoticesSectionProps {
   notices: SchoolNotice[];
   onMarkAsRead: (id: string) => void;
   canMarkAsRead?: boolean;
+  variant?: 'summary' | 'full';
+  onViewAll?: () => void;
 }
 
 export const SchoolNoticesSection: React.FC<SchoolNoticesSectionProps> = ({
   notices,
   onMarkAsRead,
   canMarkAsRead = true,
+  variant = 'full',
+  onViewAll,
 }) => {
-  const [selectedNotice, setSelectedNotice] = useState<SchoolNotice | null>(null);
+  const [selected, setSelected] = useState<SchoolNotice | null>(null);
+  const unread = notices.filter((notice) => notice.isUnread).length;
+  const visible = variant === 'summary' ? notices.slice(0, 2) : notices;
 
-  const handleOpenNotice = (notice: SchoolNotice) => {
-    setSelectedNotice(notice);
-    if (notice.isUnread && canMarkAsRead) {
-      onMarkAsRead(notice.id);
-    }
+  const open = (notice: SchoolNotice) => {
+    setSelected(notice);
+    if (notice.isUnread && canMarkAsRead) onMarkAsRead(notice.id);
   };
 
-  return (
-    <section className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-            <Megaphone className="w-4 h-4" />
+  const reader = (
+    <Modal
+      isOpen={Boolean(selected)}
+      onClose={() => setSelected(null)}
+      labelledById="parent-notice-title"
+      title={selected?.title}
+      description={selected ? `${selected.author} · ${selected.date}` : undefined}
+      size="lg"
+      footer={
+        <>
+          <span className="mr-auto flex items-center gap-1.5 text-xs text-muted">
+            <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5" />
+            {canMarkAsRead ? 'Leitura registrada no portal' : 'Reconecte-se para registrar a leitura'}
+          </span>
+          <button type="button" className="btn btn-primary" onClick={() => setSelected(null)}>Fechar</button>
+        </>
+      }
+    >
+      {selected && (
+        <div className="space-y-5">
+          <div className="flex flex-wrap gap-2">
+            <CategoryChip category={selected.category} />
+            <PriorityChip priority={selected.priority} />
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
-              Canal de Avisos da Direção
-            </h3>
-            <p className="text-[11px] text-slate-500">
-              Comunicados e informes oficiais da gestão escolar
-            </p>
-          </div>
+          <p className="border-l-2 border-brand pl-4 text-[15px] font-medium leading-relaxed text-ink">{selected.summary}</p>
+          <div className="whitespace-pre-line text-sm leading-relaxed text-ink-2">{selected.fullContent}</div>
+          <p className="text-xs text-muted">{selected.role}</p>
         </div>
+      )}
+    </Modal>
+  );
 
-        <div className="flex items-center gap-2">
-          {notices.some(n => n.isUnread) && (
-            <span className="text-[11px] font-bold text-purple-800 bg-purple-100 px-2 py-0.5 rounded-full border border-purple-200 animate-pulse">
-              Novo
+  if (variant === 'summary') {
+    return (
+      <section className="card p-6" aria-labelledby="notices-summary-title">
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="notices-summary-title" className="card-title">Da escola para você</h2>
+          {unread > 0 && (
+            <span className="chip chip-brand">
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brand" />
+              {unread} {unread === 1 ? 'novo' : 'novos'}
             </span>
           )}
         </div>
-      </div>
-
-      {/* Notices List */}
-      <div className="space-y-3">
-        {notices.map((notice) => {
-          const isUrgent = notice.priority === 'urgent';
-          const isImportant = notice.priority === 'important';
-
-          return (
-            <div
-              key={notice.id}
-              onClick={() => handleOpenNotice(notice)}
-              className={`p-3.5 rounded-xl border transition-all cursor-pointer group hover:shadow-xs ${
-                notice.isUnread
-                  ? 'bg-purple-50/40 border-purple-200'
-                  : 'bg-slate-50/50 hover:bg-slate-100/60 border-slate-200/70'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2 mb-1.5">
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${
-                    isUrgent
-                      ? 'bg-red-100 text-red-800 border border-red-200'
-                      : isImportant
-                      ? 'bg-amber-100 text-amber-900 border border-amber-200'
-                      : 'bg-blue-100 text-blue-800 border border-blue-200'
-                  }`}>
-                    {notice.category}
-                  </span>
-
-                  {notice.isUnread && (
-                    <span className="w-2 h-2 rounded-full bg-purple-600"></span>
-                  )}
+        {visible.length === 0 ? (
+          <EmptyState compact illustration={<EmptyInboxIllustration className="mb-3 h-16" />} title="Nenhum aviso publicado" />
+        ) : (
+          <ul className="mt-2 divide-y divide-line">
+            {visible.map((notice) => (
+              <li key={notice.id} className="flex gap-3.5 py-5">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-action">
+                  <Megaphone aria-hidden="true" className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+                    {notice.title}
+                    {notice.isUnread && <span className="sr-only">(não lido)</span>}
+                    {notice.isUnread && <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />}
+                  </p>
+                  <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-ink-2">{notice.summary}</p>
+                  <button type="button" className="btn-link mt-2.5" onClick={() => open(notice)}>
+                    <ArrowRight aria-hidden="true" />
+                    Ler comunicado
+                  </button>
                 </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {onViewAll && notices.length > 0 && (
+          <button type="button" className="btn btn-secondary mt-1 w-full" onClick={onViewAll}>Ver todos os avisos</button>
+        )}
+        {reader}
+      </section>
+    );
+  }
 
-                <span className="text-[11px] font-mono text-slate-500">
-                  {notice.date}
-                </span>
-              </div>
-
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                {notice.title}
-              </h4>
-
-              <p className="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">
-                {notice.summary}
-              </p>
-
-              <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-200/50 text-[11px] text-slate-500">
-                <span className="font-medium truncate">
-                  {notice.author} • {notice.role}
-                </span>
-                <span className="text-blue-600 font-bold flex items-center gap-0.5 shrink-0 group-hover:translate-x-0.5 transition-transform">
-                  Ler aviso <ChevronRight className="w-3.5 h-3.5" />
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Modal for full notice reading */}
-      {selectedNotice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-500/30 text-purple-300 border border-purple-500/40">
-                  {selectedNotice.category}
-                </span>
-                <span className="text-xs text-slate-400 font-mono">{selectedNotice.date}</span>
-              </div>
-
-              <button
-                onClick={() => setSelectedNotice(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-5 overflow-y-auto flex-1 space-y-4">
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
-                {selectedNotice.title}
-              </h2>
-
-              <div className="flex items-center gap-2 text-xs text-slate-600 pb-3 border-b border-slate-100">
-                <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-700">
-                  {selectedNotice.author[0]}
-                </div>
-                <div>
-                  <div className="font-bold text-slate-800">{selectedNotice.author}</div>
-                  <div className="text-[11px] text-slate-500">{selectedNotice.role}</div>
-                </div>
-              </div>
-
-              <div className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
-                {selectedNotice.fullContent}
-              </div>
-
-
-            </div>
-
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
-              <span className="text-xs text-slate-500 flex items-center gap-1">
-                <CheckCircle2 className={`w-4 h-4 ${canMarkAsRead ? 'text-emerald-600' : 'text-amber-600'}`} />
-                {canMarkAsRead ? 'Leitura registrada no app' : 'Reconecte-se para registrar a leitura'}
-              </span>
-              <button
-                onClick={() => setSelectedNotice(null)}
-                className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors"
-              >
-                Fechar Comunicado
-              </button>
-            </div>
-          </div>
+  return (
+    <section aria-labelledby="notices-full-title">
+      <div className="mb-5 flex items-end justify-between gap-3">
+        <div>
+          <h2 id="notices-full-title" className="text-xl font-semibold tracking-tight text-ink">Avisos da escola</h2>
+          <p className="mt-1 text-sm text-muted">Comunicados oficiais da gestão escolar.</p>
         </div>
+        {unread > 0 && <span className="chip chip-brand">{unread} não {unread === 1 ? 'lido' : 'lidos'}</span>}
+      </div>
+      {visible.length === 0 ? (
+        <div className="card">
+          <EmptyState illustration={<EmptyInboxIllustration className="mb-4 h-20" />} title="Nenhum aviso publicado" description="Os comunicados da escola aparecem aqui." />
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {visible.map((notice) => (
+            <li key={notice.id}>
+              <button
+                type="button"
+                onClick={() => open(notice)}
+                className={`card group block w-full p-5 text-left transition-colors hover:border-line-strong ${notice.isUnread ? 'shadow-[inset_3px_0_0_var(--color-brand)]' : ''}`}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <CategoryChip category={notice.category} />
+                  <PriorityChip priority={notice.priority} />
+                  {notice.isUnread && <span className="chip chip-brand">Novo</span>}
+                  <span className="ml-auto text-xs text-muted">{notice.date}</span>
+                </div>
+                <p className="mt-3 text-[15px] font-semibold text-ink">{notice.title}</p>
+                <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-ink-2">{notice.summary}</p>
+                <span className="btn-link mt-3">
+                  Ler comunicado <ArrowRight aria-hidden="true" />
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
+      {reader}
     </section>
   );
 };

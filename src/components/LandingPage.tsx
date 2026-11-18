@@ -1,26 +1,22 @@
 import React from 'react';
 import {
-  Activity,
   ArrowRight,
-  BellRing,
+  ArrowUpRight,
+  Building2,
   CheckCircle2,
-  ChevronRight,
-  Clock3,
-  Database,
-  Eye,
-  GraduationCap,
-  LayoutDashboard,
+  FlaskConical,
   LockKeyhole,
   Menu,
-  Radio,
+  School,
   ScanFace,
   ShieldCheck,
-  Smartphone,
   Users,
-  WifiOff,
+  Wifi,
   X,
 } from 'lucide-react';
-import { CatracaTroiaLogo } from './CatracaTroiaLogo';
+import { BrandLockup } from './brand/BrandMark';
+import { FamilyIllustration, IdentifyIllustration, RecordIllustration } from './brand/Illustrations';
+import { Avatar } from './ui';
 
 interface LandingPageProps {
   onParentLogin: () => void;
@@ -28,329 +24,357 @@ interface LandingPageProps {
   onSchoolLogin: () => void;
 }
 
-const audiences = [
-  {
-    icon: Radio,
-    title: 'Portaria mais informada',
-    description: 'Uma visão contínua das entradas e saídas registradas, com contingência local e sinalização clara de ocorrências.',
-    accent: 'text-orange-300 bg-orange-500/15 border-orange-500/25',
-  },
-  {
-    icon: LayoutDashboard,
-    title: 'Gestão com contexto',
-    description: 'Painel único para acompanhar eventos, vínculos, justificativas, comunicados e trilhas de auditoria.',
-    accent: 'text-sky-300 bg-sky-500/15 border-sky-500/25',
-  },
-  {
-    icon: Smartphone,
-    title: 'Famílias conectadas',
-    description: 'Portal responsivo para consultar o histórico autorizado de cada dependente e interagir com a escola.',
-    accent: 'text-emerald-300 bg-emerald-500/15 border-emerald-500/25',
-  },
-];
-
-const plannedGoals = [
-  ['≥ 95%', 'meta de acurácia facial'],
-  ['≤ 500 ms', 'meta de inferência em 95% das tentativas'],
-  ['≥ 99%', 'meta de disponibilidade no horário escolar'],
-];
-
-const navigationItems = [
-  ['visao', 'A proposta'],
-  ['fluxo', 'Como funciona'],
-  ['confianca', 'Premissas'],
+const NAV_ITEMS = [
+  ['como-funciona', 'Como funciona'],
+  ['para-quem', 'Para quem'],
+  ['o-projeto', 'O projeto'],
 ] as const;
 
-export const LandingPage: React.FC<LandingPageProps> = ({
-  onParentLogin,
-  onParentRegister,
-  onSchoolLogin,
-}) => {
+const STEPS = [
+  {
+    number: '01',
+    title: 'Identificar com cuidado',
+    text: 'A portaria confere o estudante e registra a passagem. O reconhecimento facial está previsto para o piloto físico.',
+    Illustration: IdentifyIllustration,
+  },
+  {
+    number: '02',
+    title: 'Registrar com clareza',
+    text: 'Cada passagem reúne estudante, horário, movimento, catraca, método e operador responsável.',
+    Illustration: RecordIllustration,
+  },
+  {
+    number: '03',
+    title: 'Aproximar a família',
+    text: 'Responsáveis com vínculo aprovado consultam os registros, acompanham avisos e enviam justificativas textuais.',
+    Illustration: FamilyIllustration,
+  },
+];
+
+const GOALS = [
+  ['≥ 95%', 'acurácia de identificação'],
+  ['≤ 500 ms', 'de inferência em 95% das tentativas'],
+  ['≥ 99%', 'de disponibilidade no horário escolar'],
+];
+
+const FAQ = [
+  ['Preciso instalar um aplicativo?', 'Não. O portal abre no navegador do celular por link ou QR Code. Adicionar à tela inicial é opcional; o aplicativo Android segue como objetivo do produto, ainda não publicado.'],
+  ['O cadastro libera os dados de um estudante?', 'Não. Depois do cadastro, o responsável solicita o vínculo informando a matrícula, e a escola confere a documentação antes de aprovar. Sem vínculo aprovado, nenhum dado do estudante é exibido.'],
+  ['O reconhecimento facial já está funcionando?', 'Não. Nesta demonstração as passagens são simuladas ou assistidas pela portaria. O reconhecimento facial com Python e OpenCV é previsto para o piloto, com metas que ainda serão homologadas.'],
+  ['Posso enviar atestados ou anexos?', 'Não. As justificativas de ausência são textuais e analisadas pela Coordenação ou pela Direção da escola.'],
+  ['O que acontece se a internet cair?', 'Na proposta, identificação e registro continuam no servidor local da escola, com fila e sincronização posterior. O cache do portal no celular não substitui essa continuidade.'],
+];
+
+/** Composição do produto no hero — painel e celular com dados fictícios. */
+const ProductPreview: React.FC = () => (
+  <div className="relative mx-auto w-full max-w-[560px] pb-10 pr-6 sm:pr-10" aria-hidden="true">
+    <div className="card overflow-hidden shadow-[0_24px_60px_-24px_rgb(27_42_65/0.28)] lg:rotate-[-1.5deg]">
+      <div className="flex items-center justify-between border-b border-line bg-surface px-4 py-2.5">
+        <span className="flex items-center gap-2 text-[11px] font-semibold text-ink-2">
+          <Building2 className="h-3.5 w-3.5" />
+          Gestão escolar
+        </span>
+        <span className="chip chip-brand h-5 text-[10px]"><FlaskConical />Demonstração</span>
+      </div>
+      <div className="p-4">
+        <p className="text-[13px] font-semibold text-ink">Bom dia, Mariana.</p>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {[['Entradas hoje', '06'], ['Saídas hoje', '02'], ['Na escola', '04']].map(([label, value], index) => (
+            <div key={label} className={`relative rounded-lg border border-line p-2.5 ${index === 0 ? 'before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-lg before:bg-brand' : ''}`}>
+              <p className="text-[9px] text-muted">{label}</p>
+              <p className="tabular mt-1 text-lg font-bold leading-none text-ink">{value}</p>
+            </div>
+          ))}
+        </div>
+        <ul className="mt-3 divide-y divide-line rounded-lg border border-line">
+          {[['Ana Clara de Souza', '07:10', 'Entrada'], ['Arthur Mendes', '07:15', 'Entrada'], ['Gabriel Oliveira', '07:20', 'Entrada'], ['Sophia Oliveira', '12:31', 'Saída']].map(([name, time, move]) => (
+            <li key={name} className="flex items-center gap-2.5 px-3 py-2">
+              <Avatar name={name} size="sm" />
+              <span className="flex-1 truncate text-[11px] font-medium text-ink">{name}</span>
+              <span className="tabular text-[10px] text-muted">{time}</span>
+              <span className={`chip h-5 px-1.5 text-[10px] ${move === 'Entrada' ? 'chip-positive' : 'chip-neutral'}`}>{move}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-[10px] text-muted">2 catracas · Sem hardware conectado</p>
+      </div>
+    </div>
+
+    <div className="absolute -bottom-2 right-0 w-[172px] rounded-[26px] border-[5px] border-ink bg-white p-3 shadow-[0_24px_48px_-16px_rgb(27_42_65/0.4)] sm:w-[188px] lg:rotate-[3deg]">
+      <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-line-strong" />
+      <p className="text-[10px] text-muted">Olá, Claudia</p>
+      <div className="mt-2 flex items-center gap-2">
+        <Avatar name="Ana Clara Mendes" size="sm" />
+        <span className="text-[11px] font-semibold text-ink">Ana Clara</span>
+      </div>
+      <div className="mt-3 rounded-xl border border-positive-line bg-positive-soft p-3">
+        <School className="h-4 w-4 text-positive" />
+        <p className="mt-2 text-[12px] font-bold leading-tight text-[#145f3e]">Ana Clara está na escola.</p>
+        <p className="mt-1 text-[9px] leading-snug text-[#2c6b4c]">Entrada às 07:10 · Catraca 01<br />Evento demonstrativo</p>
+      </div>
+      <p className="mt-3 text-[9px] leading-snug text-muted">Mais perto da rotina de quem você ama.</p>
+    </div>
+  </div>
+);
+
+export const LandingPage: React.FC<LandingPageProps> = ({ onParentLogin, onParentRegister, onSchoolLogin }) => {
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const [activeSection, setActiveSection] = React.useState('topo');
   const [isScrolled, setIsScrolled] = React.useState(false);
-  const [scrollProgress, setScrollProgress] = React.useState(0);
 
   React.useEffect(() => {
-    const updateScrollState = () => {
-      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-      setIsScrolled(window.scrollY > 12);
-      setScrollProgress(scrollable > 0 ? Math.min(100, (window.scrollY / scrollable) * 100) : 0);
-    };
-    updateScrollState();
-    window.addEventListener('scroll', updateScrollState, { passive: true });
-
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
-      if (visible?.target.id) setActiveSection(visible.target.id);
-    }, { rootMargin: '-22% 0px -62% 0px', threshold: [0, 0.1, 0.35] });
-
-    ['topo', ...navigationItems.map(([id]) => id)].forEach((id) => {
-      const section = document.getElementById(id);
-      if (section) observer.observe(section);
-    });
-
-    const requestedSection = window.location.hash.slice(1);
-    const knownSections = ['topo', ...navigationItems.map(([id]) => id)];
-    let secondFrame = 0;
-    const firstFrame = window.requestAnimationFrame(() => {
-      secondFrame = window.requestAnimationFrame(() => {
-        if (!knownSections.includes(requestedSection)) return;
-        document.getElementById(requestedSection)?.scrollIntoView({ behavior: 'auto', block: 'start' });
-        setActiveSection(requestedSection);
-      });
-    });
-
-    return () => {
-      window.removeEventListener('scroll', updateScrollState);
-      observer.disconnect();
-      window.cancelAnimationFrame(firstFrame);
-      window.cancelAnimationFrame(secondFrame);
-    };
+    const onScroll = () => setIsScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    const requested = window.location.hash.slice(1);
+    if (NAV_ITEMS.some(([id]) => id === requested)) {
+      window.requestAnimationFrame(() => document.getElementById(requested)?.scrollIntoView({ block: 'start' }));
+    }
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const navigateToSection = (id: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+  const goTo = (id: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${id}`);
-    setActiveSection(id);
     setMenuOpen(false);
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#07111f] font-sans text-white selection:bg-orange-500 selection:text-white">
-      <a href="#landing-content" className="fixed left-3 top-3 z-[100] -translate-y-24 rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition-transform focus:translate-y-0">
-        Ir para o conteúdo principal
+    <div className="min-h-screen bg-white text-ink">
+      <a href="#landing-content" className="fixed left-3 top-3 z-[100] -translate-y-24 rounded-lg bg-action px-4 py-2 text-sm font-semibold text-white shadow-lg transition-transform focus:translate-y-0">
+        Pular para o conteúdo
       </a>
 
-      <header className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-300 ${isScrolled ? 'border-white/10 bg-[#07111f]/95 shadow-2xl shadow-black/25 backdrop-blur-2xl' : 'border-transparent bg-[#07111f]/75 backdrop-blur-xl'}`}>
-        <div className={`mx-auto flex max-w-7xl items-center justify-between px-5 transition-[height] duration-300 sm:px-8 ${isScrolled ? 'h-[4.5rem]' : 'h-24'}`}>
-          <a href="#topo" onClick={navigateToSection('topo')} aria-label="Catraca de Troia — início" className="rounded-xl">
-            <CatracaTroiaLogo size={isScrolled ? 46 : 54} showText variant="dark" subtitle="Monitoramento escolar • Protótipo acadêmico" />
+      <header
+        className={`sticky z-40 border-b bg-white/95 backdrop-blur transition-colors ${isScrolled ? 'border-line' : 'border-transparent'}`}
+        style={{ top: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div className="mx-auto flex h-[72px] max-w-6xl items-center gap-6 px-5 sm:px-8">
+          <a href="#topo" onClick={goTo('topo')} aria-label="Catraca de Troia, início" className="rounded-lg">
+            <BrandLockup size={48} />
           </a>
-
-          <nav aria-label="Navegação da apresentação" className="hidden items-center gap-7 text-sm font-semibold text-slate-300 lg:flex">
-            {navigationItems.map(([id, label]) => (
-              <a key={id} href={`#${id}`} onClick={navigateToSection(id)} aria-current={activeSection === id ? 'location' : undefined} className={`relative rounded-lg px-1 py-2 transition-colors after:absolute after:inset-x-0 after:-bottom-1 after:mx-auto after:h-0.5 after:rounded-full after:bg-orange-500 after:transition-all ${activeSection === id ? 'text-white after:w-full' : 'text-slate-400 after:w-0 hover:text-white hover:after:w-1/2'}`}>
-                {label}
-              </a>
+          <nav aria-label="Seções da página" className="mx-auto hidden items-center gap-8 md:flex">
+            {NAV_ITEMS.map(([id, label]) => (
+              <a key={id} href={`#${id}`} onClick={goTo(id)} className="text-sm font-medium text-ink-2 transition-colors hover:text-action-ink">{label}</a>
             ))}
           </nav>
-
-          <div className="hidden items-center gap-2 sm:flex">
-            <button type="button" onClick={onSchoolLogin} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-300 transition-colors hover:bg-white/5 hover:text-white">
-              Acesso da escola
-            </button>
-            <button type="button" onClick={onParentLogin} className="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-orange-950/30 transition hover:bg-orange-500">
-              Entrar no portal <ArrowRight className="h-4 w-4" />
+          <div className="ml-auto hidden items-center gap-2 md:flex">
+            <button type="button" className="btn btn-secondary" onClick={onSchoolLogin}>Gestão escolar</button>
+            <button type="button" className="btn btn-primary" onClick={onParentLogin}>
+              <ArrowUpRight aria-hidden="true" />
+              Sou responsável
             </button>
           </div>
-
-          <button type="button" onClick={() => setMenuOpen((current) => !current)} aria-expanded={menuOpen} aria-controls="landing-mobile-menu" aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} className="rounded-xl border border-white/10 p-2.5 text-slate-200 sm:hidden">
-            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          <button
+            type="button"
+            className="icon-btn ml-auto md:hidden"
+            aria-expanded={menuOpen}
+            aria-controls="landing-mobile-menu"
+            aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+            onClick={() => setMenuOpen((current) => !current)}
+          >
+            {menuOpen ? <X /> : <Menu />}
           </button>
         </div>
-
         {menuOpen && (
-          <div id="landing-mobile-menu" className="border-t border-white/10 bg-[#07111f] p-4 sm:hidden">
-            <div className="mx-auto grid max-w-7xl gap-2">
-              {navigationItems.map(([id, label]) => (
-                <a key={id} href={`#${id}`} onClick={navigateToSection(id)} aria-current={activeSection === id ? 'location' : undefined} className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${activeSection === id ? 'bg-orange-500/10 text-orange-300' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>{label}</a>
+          <div id="landing-mobile-menu" className="border-t border-line bg-white px-5 pb-5 pt-2 md:hidden">
+            <nav aria-label="Seções da página" className="flex flex-col">
+              {NAV_ITEMS.map(([id, label]) => (
+                <a key={id} href={`#${id}`} onClick={goTo(id)} className="border-b border-line py-3 text-[15px] font-medium text-ink">{label}</a>
               ))}
-              <button type="button" onClick={onSchoolLogin} className="rounded-xl border border-white/10 px-3 py-2.5 text-left text-sm font-bold text-slate-200">Acesso da escola</button>
-              <button type="button" onClick={onParentLogin} className="rounded-xl bg-orange-600 px-3 py-2.5 text-left text-sm font-extrabold text-white">Entrar no portal</button>
+            </nav>
+            <div className="mt-4 grid gap-2">
+              <button type="button" className="btn btn-primary" onClick={onParentLogin}>Sou responsável</button>
+              <button type="button" className="btn btn-secondary" onClick={onSchoolLogin}>Gestão escolar</button>
             </div>
           </div>
         )}
-        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-px bg-white/5">
-          <div className="h-full bg-gradient-to-r from-orange-600 to-amber-400 transition-[width] duration-150" style={{ width: `${scrollProgress}%` }} />
-        </div>
       </header>
 
-      <main id="landing-content" tabIndex={-1}>
-        <section id="topo" className="relative isolate scroll-mt-24 overflow-hidden px-5 pb-24 pt-40 sm:px-8 sm:pb-32 sm:pt-48">
-          <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_15%_20%,rgba(234,88,12,0.17),transparent_28%),radial-gradient(circle_at_82%_28%,rgba(14,165,233,0.15),transparent_30%),linear-gradient(180deg,#07111f_0%,#0b192c_72%,#0a1626_100%)]" />
-          <div className="absolute inset-0 -z-10 opacity-30 [background-image:linear-gradient(rgba(148,163,184,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,.08)_1px,transparent_1px)] [background-size:52px_52px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" />
-
-          <div className="mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-[1.02fr_.98fr]">
+      <main id="landing-content" tabIndex={-1} className="outline-none">
+        {/* Hero */}
+        <section id="topo" className="scroll-mt-24 px-5 pb-20 pt-12 sm:px-8 sm:pt-20 lg:pb-28">
+          <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-orange-400/25 bg-orange-500/10 px-3 py-1.5 text-xs font-bold text-orange-200">
-                <GraduationCap className="h-4 w-4" /> Tecnologia pensada para a rotina escolar
-              </div>
-              <h1 className="mt-7 max-w-3xl text-4xl font-black leading-[1.08] tracking-tight text-white sm:text-6xl lg:text-7xl">
-                Cada passagem vira <span className="bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">informação que aproxima.</span>
+              <span className="chip chip-brand">
+                <ScanFace aria-hidden="true" />
+                Controle de acesso escolar
+              </span>
+              <h1 className="display-title mt-6 text-[40px] sm:text-[52px] lg:text-[56px]">
+                Mais segurança na entrada.
+                <span className="block text-action">Mais tranquilidade para acompanhar.</span>
               </h1>
-              <p className="mt-7 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
-                Uma proposta de monitoramento escolar que conecta portaria, gestão e responsáveis em torno de registros de entrada e saída, comunicação e rastreabilidade.
+              <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-ink-2">
+                O Catraca de Troia conecta o controle de acesso da escola ao acompanhamento das famílias, reunindo registros, avisos e justificativas em uma única plataforma.
               </p>
-
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                <button type="button" onClick={onParentRegister} className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-600 px-6 py-4 text-sm font-black text-white shadow-xl shadow-orange-950/40 transition hover:-translate-y-0.5 hover:bg-orange-500">
-                  Cadastrar acesso de responsável <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <button type="button" className="btn btn-primary btn-lg" onClick={onParentLogin}>
+                  <ArrowRight aria-hidden="true" />
+                  Acessar portal dos responsáveis
                 </button>
-                <button type="button" onClick={onParentLogin} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-6 py-4 text-sm font-extrabold text-white backdrop-blur transition hover:border-white/25 hover:bg-white/10">
-                  Já tenho acesso
+                <button type="button" className="btn btn-secondary btn-lg" onClick={onSchoolLogin}>
+                  <Building2 aria-hidden="true" />
+                  Acessar gestão escolar
                 </button>
               </div>
-
-              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold text-slate-400">
-                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /> Acesso por perfil e vínculo</span>
-                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /> Continuidade local planejada</span>
-                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /> Dados fictícios nesta demonstração</span>
-              </div>
+              <p className="mt-5 flex items-center gap-2 text-[13px] text-muted">
+                <LockKeyhole aria-hidden="true" className="h-4 w-4" />
+                Cada pessoa acessa somente o que está autorizado.
+              </p>
             </div>
+            <ProductPreview />
+          </div>
+        </section>
 
-            <div className="relative mx-auto w-full max-w-xl">
-              <div className="absolute -inset-10 -z-10 rounded-full bg-sky-500/10 blur-3xl" />
-              <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/80 shadow-2xl shadow-black/50 backdrop-blur-xl">
-                <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/15 text-orange-300"><Activity className="h-5 w-5" /></span>
-                    <div><p className="text-sm font-black">Visão de monitoramento</p><p className="text-[11px] text-slate-500">Interface demonstrativa</p></div>
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> API local</span>
-                </div>
+        {/* Como funciona */}
+        <section id="como-funciona" className="scroll-mt-20 border-y border-line bg-surface px-5 py-20 sm:px-8 lg:py-24">
+          <div className="mx-auto max-w-6xl">
+            <p className="eyebrow">Tecnologia com propósito</p>
+            <h2 className="display-title mt-3 max-w-xl text-[30px] sm:text-[36px]">Um caminho mais simples. Da entrada ao acompanhamento.</h2>
+            <ol className="mt-12 grid gap-5 md:grid-cols-3">
+              {STEPS.map(({ number, title, text, Illustration }) => (
+                <li key={number} className="card flex flex-col p-6">
+                  <Illustration className="h-auto w-full" />
+                  <span className="tabular mt-6 text-[28px] font-bold leading-none text-brand/40">{number}</span>
+                  <h3 className="mt-3 text-[17px] font-semibold text-ink">{title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-ink-2">{text}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
 
-                <div className="grid gap-3 p-4 sm:grid-cols-3">
-                  {[
-                    ['Registros', 'persistidos', Database, 'text-sky-300'],
-                    ['Perfis', 'segregados', ShieldCheck, 'text-emerald-300'],
-                    ['Fila local', 'preservada', WifiOff, 'text-amber-300'],
-                  ].map(([title, value, Icon, color]) => (
-                    <div key={String(title)} className="rounded-2xl border border-white/8 bg-white/[0.035] p-3.5">
-                      <Icon className={`h-4 w-4 ${color}`} />
-                      <p className="mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">{title}</p>
-                      <p className="mt-1 text-sm font-black text-slate-100">{value}</p>
-                    </div>
+        {/* Para quem */}
+        <section id="para-quem" className="scroll-mt-20 px-5 py-20 sm:px-8 lg:py-24">
+          <div className="mx-auto max-w-6xl">
+            <p className="eyebrow">Duas experiências, o mesmo cuidado</p>
+            <h2 className="display-title mt-3 max-w-xl text-[30px] sm:text-[36px]">Feito para quem cuida da escola. E para quem confia nela.</h2>
+            <div className="mt-12 grid gap-5 md:grid-cols-2">
+              <article className="card flex flex-col p-7">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-action">
+                  <Building2 aria-hidden="true" className="h-5 w-5" />
+                </span>
+                <h3 className="mt-6 text-xl font-semibold text-ink">Gestão escolar</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-ink-2">
+                  Portaria, Coordenação e Direção com as informações e ações adequadas a cada perfil: registros, estudantes, comunicados, justificativas e administração.
+                </p>
+                <ul className="mt-5 space-y-2 text-sm text-ink-2">
+                  {['Visão do dia e das duas catracas', 'Tabelas de registros e estudantes', 'Vínculos, contas e auditoria'].map((item) => (
+                    <li key={item} className="flex items-center gap-2"><CheckCircle2 aria-hidden="true" className="h-4 w-4 text-positive" />{item}</li>
                   ))}
-                </div>
-
-                <div className="px-4 pb-4">
-                  <div className="rounded-2xl border border-white/8 bg-[#0d1b2e] p-4">
-                    <div className="mb-4 flex items-center justify-between"><p className="text-xs font-black uppercase tracking-wider text-slate-300">Fluxo de acesso</p><span className="text-[10px] text-slate-500">simulação acadêmica</span></div>
-                    <div className="space-y-3">
-                      {[
-                        ['07:12', 'Entrada registrada', 'Evento salvo na API local', 'bg-emerald-400'],
-                        ['07:09', 'Responsável vinculado', 'Consulta autorizada pela escola', 'bg-sky-400'],
-                        ['07:04', 'Fila preservada', 'Destino remoto não configurado', 'bg-amber-400'],
-                      ].map(([time, title, description, color]) => (
-                        <div key={String(time)} className="flex items-center gap-3 rounded-xl border border-white/5 bg-black/15 p-3">
-                          <span className={`h-2 w-2 shrink-0 rounded-full ${color}`} />
-                          <span className="w-10 font-mono text-[10px] text-slate-500">{time}</span>
-                          <div className="min-w-0 flex-1"><p className="text-xs font-bold text-slate-200">{title}</p><p className="truncate text-[10px] text-slate-500">{description}</p></div>
-                          <ChevronRight className="h-4 w-4 text-slate-700" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute -bottom-6 -left-4 hidden items-center gap-3 rounded-2xl border border-white/10 bg-[#122238]/95 p-3.5 shadow-xl backdrop-blur sm:flex">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300"><BellRing className="h-5 w-5" /></span>
-                <div><p className="text-xs font-black">Comunicação integrada</p><p className="text-[10px] text-slate-400">Caixa interna demonstrativa</p></div>
-              </div>
+                </ul>
+                <button type="button" className="btn-link mt-auto pt-7" onClick={onSchoolLogin}>
+                  Conhecer o painel escolar <ArrowRight aria-hidden="true" />
+                </button>
+              </article>
+              <article className="card flex flex-col p-7">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-action">
+                  <Users aria-hidden="true" className="h-5 w-5" />
+                </span>
+                <h3 className="mt-6 text-xl font-semibold text-ink">Pais e responsáveis</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-ink-2">
+                  Uma experiência simples no celular para acompanhar estudantes com vínculo aprovado, consultar o histórico, receber avisos e justificar ausências.
+                </p>
+                <ul className="mt-5 space-y-2 text-sm text-ink-2">
+                  {['Presença do dia em destaque', 'Histórico da semana', 'Avisos da escola e justificativas'].map((item) => (
+                    <li key={item} className="flex items-center gap-2"><CheckCircle2 aria-hidden="true" className="h-4 w-4 text-positive" />{item}</li>
+                  ))}
+                </ul>
+                <button type="button" className="btn-link mt-auto pt-7" onClick={onParentLogin}>
+                  Conhecer o portal <ArrowRight aria-hidden="true" />
+                </button>
+              </article>
             </div>
           </div>
         </section>
 
-        <section id="visao" className="scroll-mt-20 border-y border-white/8 bg-[#0b192c] px-5 py-24 sm:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="max-w-3xl">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-orange-400">Uma visão compartilhada</p>
-              <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Informação certa para cada pessoa.</h2>
-              <p className="mt-5 text-base leading-7 text-slate-400">O conceito reúne os fluxos essenciais sem misturar responsabilidades: a escola registra e governa; cada responsável consulta apenas os vínculos aprovados.</p>
-            </div>
+        {/* O projeto */}
+        <section id="o-projeto" className="scroll-mt-20 border-y border-line bg-surface px-5 py-20 sm:px-8 lg:py-24">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+            <div>
+              <p className="eyebrow">Transparência em cada etapa</p>
+              <h2 className="display-title mt-3 text-[30px] sm:text-[36px]">Um piloto local. Um futuro em construção.</h2>
+              <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-ink-2">
+                O projeto acadêmico contempla uma escola pública de ensino fundamental e duas catracas. Os registros atuais são simulados ou feitos por passagem assistida. Integração física, biometria e canais externos ainda não estão operacionais.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2">
+                <span className="chip chip-neutral"><Building2 aria-hidden="true" />1 escola</span>
+                <span className="chip chip-brand"><ScanFace aria-hidden="true" />2 catracas demonstrativas</span>
+                <span className="chip chip-neutral"><FlaskConical aria-hidden="true" />Dados fictícios</span>
+                <span className="chip chip-positive"><ShieldCheck aria-hidden="true" />Vínculos autorizados</span>
+                <span className="chip chip-neutral"><Wifi aria-hidden="true" />Fila local preservada</span>
+              </div>
 
-            <div className="mt-12 grid gap-5 md:grid-cols-3">
-              {audiences.map(({ icon: Icon, title, description, accent }) => (
-                <article key={title} className="group rounded-3xl border border-white/8 bg-white/[0.03] p-6 transition hover:-translate-y-1 hover:border-white/15 hover:bg-white/[0.05]">
-                  <span className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl border ${accent}`}><Icon className="h-6 w-6" /></span>
-                  <h3 className="mt-6 text-xl font-black">{title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-400">{description}</p>
-                </article>
+              <dl className="mt-10 grid gap-4 sm:grid-cols-3">
+                {GOALS.map(([value, label]) => (
+                  <div key={label} className="border-l-2 border-brand pl-4">
+                    <dt className="sr-only">Meta</dt>
+                    <dd className="tabular text-2xl font-bold tracking-tight text-ink">{value}</dd>
+                    <dd className="mt-1 text-[13px] leading-snug text-muted">{label}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="mt-5 text-xs text-muted">Metas de homologação do piloto, não resultados medidos.</p>
+            </div>
+            <figure className="card overflow-hidden p-6">
+              <img
+                src="/logo-catraca-troia.png"
+                width={1470}
+                height={1070}
+                alt="Ilustração da identidade visual: uma catraca tripé ao lado de um rosto em traço fino, ligados por uma malha laranja de pontos de leitura."
+                className="h-auto w-full"
+                loading="lazy"
+              />
+              <figcaption className="mt-4 border-t border-line pt-4 text-xs text-muted">
+                Identidade visual do projeto: a catraca e a pessoa, conectadas por pontos de leitura.
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section aria-labelledby="faq-title" className="px-5 py-20 sm:px-8 lg:py-24">
+          <div className="mx-auto max-w-3xl">
+            <p className="eyebrow">Perguntas frequentes</p>
+            <h2 id="faq-title" className="display-title mt-3 text-[30px] sm:text-[36px]">Clareza para começar.</h2>
+            <div className="mt-10 divide-y divide-line border-y border-line">
+              {FAQ.map(([question, answer]) => (
+                <details key={question} className="group py-5">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[16px] font-semibold text-ink [&::-webkit-details-marker]:hidden">
+                    {question}
+                    <span aria-hidden="true" className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line text-muted transition-transform group-open:rotate-45">+</span>
+                  </summary>
+                  <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-ink-2">{answer}</p>
+                </details>
               ))}
             </div>
           </div>
         </section>
 
-        <section id="fluxo" className="scroll-mt-20 px-5 py-24 sm:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="grid gap-14 lg:grid-cols-[.75fr_1.25fr] lg:items-start">
-              <div className="lg:sticky lg:top-28">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-sky-400">Como a ideia funciona</p>
-                <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Da portaria à família, sem perder o contexto.</h2>
-                <p className="mt-5 text-sm leading-7 text-slate-400">O protótipo demonstra o fluxo de informação. Catracas, câmeras, biometria e canais externos não estão integrados neste projeto acadêmico.</p>
-              </div>
-
-              <ol className="space-y-4">
-                {[
-                  [Eye, '01', 'Identificação no acesso', 'No cenário proposto, a identificação inicia o fluxo. Nesta demonstração, a passagem é simulada e claramente sinalizada.'],
-                  [Database, '02', 'Registro local persistente', 'O evento é gravado na API local com data, direção, origem e trilha de auditoria.'],
-                  [LockKeyhole, '03', 'Regras aplicadas no backend', 'Sessão, perfil e vínculo aprovado determinam quais dados e ações ficam disponíveis.'],
-                  [BellRing, '04', 'Acompanhamento pelo responsável', 'O portal reúne histórico, avisos e justificativas em uma experiência responsiva.'],
-                ].map(([Icon, number, title, description]) => (
-                  <li key={String(number)} className="grid grid-cols-[auto_1fr] gap-4 rounded-3xl border border-white/8 bg-white/[0.025] p-5 sm:grid-cols-[auto_auto_1fr] sm:items-center sm:gap-6 sm:p-6">
-                    <span className="font-mono text-xs font-bold text-orange-400">{number}</span>
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-slate-200"><Icon className="h-5 w-5" /></span>
-                    <div className="col-span-2 sm:col-span-1"><h3 className="text-base font-black">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-400">{description}</p></div>
-                  </li>
-                ))}
-              </ol>
-            </div>
+        {/* CTA final */}
+        <section className="border-t border-line bg-surface px-5 py-20 text-center sm:px-8">
+          <h2 className="display-title text-[30px] sm:text-[40px]">Escola e família, do mesmo lado.</h2>
+          <p className="mx-auto mt-4 max-w-md text-[15px] text-ink-2">Escolha o ambiente adequado ao seu perfil. As contas disponíveis são fictícias.</p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <button type="button" className="btn btn-primary btn-lg" onClick={onParentLogin}>
+              <ArrowRight aria-hidden="true" />
+              Sou responsável
+            </button>
+            <button type="button" className="btn btn-secondary btn-lg" onClick={onSchoolLogin}>
+              <Building2 aria-hidden="true" />
+              Sou da equipe escolar
+            </button>
           </div>
-        </section>
-
-        <section id="confianca" className="scroll-mt-20 px-5 pb-24 pt-4 sm:px-8 sm:pb-32">
-          <div className="mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#11243b] to-[#0b192c]">
-            <div className="grid lg:grid-cols-[1.1fr_.9fr]">
-              <div className="p-7 sm:p-12">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-orange-400">Premissas do projeto</p>
-                <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">Segurança e continuidade começam no desenho.</h2>
-                <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                  {[
-                    [WifiOff, 'Operação local', 'A indisponibilidade externa não deve apagar eventos já registrados.'],
-                    [Users, 'Vínculo validado', 'O responsável acessa somente estudantes autorizados pela escola.'],
-                    [ShieldCheck, 'Rastreabilidade', 'Ações sensíveis exigem perfil adequado e deixam evidência.'],
-                    [ScanFace, 'Biometria responsável', 'Uso real dependeria de governança institucional; aqui permanece simulado.'],
-                  ].map(([Icon, title, text]) => (
-                    <div key={String(title)} className="rounded-2xl border border-white/8 bg-black/10 p-4"><Icon className="h-5 w-5 text-orange-300" /><h3 className="mt-3 text-sm font-black">{title}</h3><p className="mt-2 text-xs leading-5 text-slate-400">{text}</p></div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t border-white/10 bg-black/15 p-7 sm:p-12 lg:border-l lg:border-t-0">
-                <div className="flex items-center gap-3"><Clock3 className="h-5 w-5 text-sky-300" /><p className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">Metas planejadas de homologação</p></div>
-                <div className="mt-7 space-y-6">
-                  {plannedGoals.map(([value, label]) => (
-                    <div key={value} className="border-b border-white/8 pb-5 last:border-0"><p className="text-3xl font-black text-white">{value}</p><p className="mt-1 text-xs leading-5 text-slate-400">{label}</p></div>
-                  ))}
-                </div>
-                <p className="mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/8 p-4 text-[11px] leading-5 text-amber-100">Metas acadêmicas não equivalem a resultados medidos. Este protótipo não realizou homologação de hardware, biometria, carga ou disponibilidade.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t border-white/8 bg-[#0b192c] px-5 py-20 text-center sm:px-8">
-          <div className="mx-auto max-w-3xl">
-            <p className="text-xs font-black uppercase tracking-[0.24em] text-orange-400">Explore a demonstração</p>
-            <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Veja a proposta pelos olhos de quem acompanha.</h2>
-            <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-slate-400">Crie um acesso demonstrativo de responsável ou entre com uma das contas fictícias disponíveis no ambiente.</p>
-            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <button type="button" onClick={onParentRegister} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-600 px-6 py-4 text-sm font-black text-white transition hover:bg-orange-500">Começar pelo cadastro <ArrowRight className="h-4 w-4" /></button>
-              <button type="button" onClick={onSchoolLogin} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-6 py-4 text-sm font-bold text-slate-200 transition hover:bg-white/5">Conhecer o painel escolar</button>
-            </div>
-          </div>
+          <button type="button" className="btn-link mx-auto mt-6 max-w-full whitespace-normal text-center" onClick={onParentRegister}>
+            Ainda não tenho acesso: criar cadastro de responsável <ArrowRight aria-hidden="true" />
+          </button>
         </section>
       </main>
 
-      <footer className="border-t border-white/8 bg-[#07111f] px-5 py-8 sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-          <CatracaTroiaLogo size={34} showText variant="dark" subtitle="Demonstração acadêmica" />
-          <p>Protótipo com dados fictícios. Sem integração real com hardware, biometria ou notificações externas.</p>
+      <footer className="border-t border-line px-5 py-8 sm:px-8">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <BrandLockup size={40} />
+          <p className="text-xs text-muted">Protótipo acadêmico · Escola fictícia · Sem hardware, biometria ou notificações externas integrados.</p>
         </div>
       </footer>
     </div>

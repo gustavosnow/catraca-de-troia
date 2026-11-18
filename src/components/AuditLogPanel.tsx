@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { History, RefreshCw } from 'lucide-react';
 import type { AuditLogRecord } from '../../shared/contracts/audit';
+import { EmptyInboxIllustration } from './brand/Illustrations';
+import { Avatar, Callout, EmptyState, PageHeader, SkeletonRows } from './ui';
 
 interface AuditLogPanelProps {
   records: AuditLogRecord[];
@@ -9,52 +11,128 @@ interface AuditLogPanelProps {
   onRefresh: () => void;
 }
 
-const typeLabels: Record<string, string> = {
+const TYPE_LABELS: Record<string, string> = {
   ACCESS_EVENT: 'Evento de acesso',
-  ATTACHMENT: 'Anexo',
+  ATTACHMENT: 'Anexo legado',
   AUTH_SESSION: 'Sessão',
   GUARDIAN_LINK_REQUEST: 'Solicitação de vínculo',
-  GUARDIAN_STUDENT_LINK: 'Vínculo responsável-estudante',
+  GUARDIAN_STUDENT_LINK: 'Vínculo familiar',
   JUSTIFICATION: 'Justificativa',
   SCHOOL_NOTICE: 'Comunicado',
   USER_ACCOUNT: 'Conta local',
   NOTIFICATION_DELIVERY: 'Entrega demonstrativa',
 };
 
-export const AuditLogPanel: React.FC<AuditLogPanelProps> = ({ records, state, error, onRefresh }) => (
-  <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-    <div className="flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2">
-        <History className="h-5 w-5 text-blue-700" />
-        <div>
-          <h2 className="text-sm font-bold text-slate-900">Trilha de auditoria</h2>
-          <p className="text-[11px] text-slate-500">Metadados das ações locais; conteúdos sensíveis não são exibidos.</p>
+const ACTION_LABELS: Record<string, string> = {
+  CREATED: 'Criação',
+  UPDATED: 'Edição',
+  DELETED: 'Exclusão',
+  APPROVED: 'Aprovação',
+  REJECTED: 'Recusa',
+  REVIEWED: 'Análise',
+  REVOKED: 'Revogação',
+  BLOCKED: 'Bloqueio',
+  ACTIVATED: 'Desbloqueio',
+  DELIVERED: 'Entrega simulada',
+  FAILED: 'Falha simulada',
+  SESSION_CREATED: 'Início de sessão',
+  SESSION_REVOKED: 'Fim de sessão',
+  SESSIONS_REVOKED_REMOTELY: 'Sessões encerradas',
+  SYNC_RECEIVED: 'Sincronização recebida',
+  SYNC_CONFLICT: 'Conflito de sincronização',
+};
+
+export const AuditLogPanel: React.FC<AuditLogPanelProps> = ({ records, state, error, onRefresh }) => {
+  const [type, setType] = useState('todos');
+  const types = useMemo(() => [...new Set(records.map((record) => record.aggregateType))].sort(), [records]);
+  const filtered = type === 'todos' ? records : records.filter((record) => record.aggregateType === type);
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="Administração"
+        title="Auditoria"
+        description="Metadados das ações registradas no servidor local. Conteúdos sensíveis não são exibidos."
+        actions={
+          <button type="button" className="btn btn-secondary" onClick={onRefresh} disabled={state === 'loading'}>
+            <RefreshCw aria-hidden="true" className={state === 'loading' ? 'animate-spin' : undefined} />
+            Atualizar
+          </button>
+        }
+      />
+
+      <section className="card overflow-hidden" aria-labelledby="audit-title">
+        <div className="card-header flex-col sm:flex-row sm:items-center">
+          <div>
+            <h2 id="audit-title" className="card-title">
+              Trilha de auditoria <span className="font-normal text-muted">/ {filtered.length}</span>
+            </h2>
+            <p className="card-subtitle">Quem fez, sobre qual recurso e quando.</p>
+          </div>
+          <div className="w-full sm:w-60">
+            <label htmlFor="audit-type" className="sr-only">Recurso</label>
+            <select id="audit-type" className="select" value={type} onChange={(event) => setType(event.target.value)}>
+              <option value="todos">Todos os recursos</option>
+              {types.map((item) => <option key={item} value={item}>{TYPE_LABELS[item] ?? item}</option>)}
+            </select>
+          </div>
         </div>
-      </div>
-      <button type="button" onClick={onRefresh} className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700">
-        <RefreshCw className={`h-3.5 w-3.5 ${state === 'loading' ? 'animate-spin' : ''}`} /> Atualizar
-      </button>
-    </div>
-    {state === 'unavailable' && <p role="alert" className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">{error || 'Auditoria indisponível.'}</p>}
-    {state === 'loading' && records.length === 0 && <p className="mt-3 text-xs text-slate-500">Carregando registros…</p>}
-    {state !== 'loading' && records.length === 0 && <p className="mt-3 rounded-xl bg-slate-50 p-3 text-xs text-slate-500">Nenhuma ação auditada.</p>}
-    <div className="mt-3 overflow-x-auto">
-      <table className="w-full min-w-[680px] text-left text-xs">
-        <thead className="border-b border-slate-200 text-[11px] uppercase tracking-wide text-slate-500">
-          <tr><th className="px-2 py-2">Quando</th><th className="px-2 py-2">Ator</th><th className="px-2 py-2">Recurso</th><th className="px-2 py-2">Ação</th><th className="px-2 py-2">Referência</th></tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {records.map((record) => (
-            <tr key={record.id}>
-              <td className="whitespace-nowrap px-2 py-2.5 text-slate-600">{new Date(record.occurredAt).toLocaleString('pt-BR')}</td>
-              <td className="px-2 py-2.5 font-semibold text-slate-800">{record.actor.name}</td>
-              <td className="px-2 py-2.5 text-slate-700">{typeLabels[record.aggregateType] || record.aggregateType}</td>
-              <td className="px-2 py-2.5 font-bold text-blue-800">{record.action}</td>
-              <td className="max-w-52 truncate px-2 py-2.5 font-mono text-[11px] text-slate-500" title={record.aggregateId}>{record.aggregateId}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </section>
-);
+
+        {state === 'unavailable' && (
+          <div className="px-6 pb-4"><Callout tone="negative" role="alert">{error || 'Auditoria indisponível.'}</Callout></div>
+        )}
+
+        {state === 'loading' && records.length === 0 ? (
+          <SkeletonRows rows={5} />
+        ) : filtered.length === 0 ? (
+          <EmptyState illustration={<EmptyInboxIllustration className="mb-4 h-20" />} title="Nenhuma ação auditada" icon={History} />
+        ) : (
+          <div className="table-scroll">
+            <table className="data-table min-w-[760px]">
+              <caption className="sr-only">Trilha de auditoria</caption>
+              <thead>
+                <tr>
+                  <th scope="col" className="pl-6">Quando</th>
+                  <th scope="col">Responsável pela ação</th>
+                  <th scope="col">Recurso</th>
+                  <th scope="col">Ação</th>
+                  <th scope="col" className="pr-6">Referência</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((record) => {
+                  const date = new Date(record.occurredAt);
+                  return (
+                    <tr key={record.id}>
+                      <td className="num whitespace-nowrap pl-6">
+                        <p className="font-medium">{date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                        <p className="cell-secondary">{date.toLocaleDateString('pt-BR')}</p>
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2.5">
+                          <Avatar name={record.actor.name} size="sm" />
+                          <span className="font-medium">{record.actor.name}</span>
+                        </div>
+                      </td>
+                      <td>{TYPE_LABELS[record.aggregateType] ?? record.aggregateType}</td>
+                      <td>
+                        <span className="font-medium">{ACTION_LABELS[record.action] ?? record.action}</span>
+                        {ACTION_LABELS[record.action] && <p className="cell-secondary font-mono text-[11px]">{record.action}</p>}
+                      </td>
+                      <td className="pr-6">
+                        <span className="block max-w-[220px] truncate font-mono text-xs text-muted" title={record.aggregateId}>{record.aggregateId}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="table-footer">
+          <span>Registros imutáveis gravados pelo servidor escolar demonstrativo</span>
+        </div>
+      </section>
+    </>
+  );
+};
