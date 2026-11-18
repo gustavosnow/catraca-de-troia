@@ -159,7 +159,7 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
             <ToolRow
               icon={BookOpen}
               title="Sobre o projeto"
-              description="Escopo do piloto, metas de homologação, cronograma e orçamento."
+              description="Resumo da demonstração e acesso à documentação oficial."
               action={<button type="button" className="btn btn-secondary" onClick={onOpenProjectDocs}>Abrir documentação</button>}
             />
           </ul>

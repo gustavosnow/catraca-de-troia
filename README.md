@@ -121,6 +121,7 @@ O identificador `com.gustavosnow.catracatroia` é provisório e deve ser confirm
 
 ## Documentação
 
+- [Pasta oficial no Drive](https://drive.google.com/drive/folders/163EOyyzGW-VMIH2zs_PGTHZEVyHRfeJ9): TAP, Atividade 01, Dicionário da EAP e Plano de Riscos (fontes vigentes, acesso de Leitor pelo link)
 - [Escopo, critérios de aceite e fontes oficiais](docs/PROJETO_CATRACA_DE_TROIA.md)
 - [Rastreabilidade da EAP, estado atual e próximos passos](docs/ALINHAMENTO_E_RASTREABILIDADE.md)
 - [Controle de mudanças](docs/CONTROLE_DE_MUDANCAS.md)
@@ -134,7 +135,7 @@ Linha de base: uma escola, duas catracas, processamento facial local, 24 semanas
 
 ## Estrutura e evolução
 
-`src/components/ParentApp/` contém a experiência dos responsáveis. Os demais componentes compõem o painel escolar e as interfaces compartilhadas. `src/services/accessEventsApi.ts` integra o fluxo persistente, e `demoAccessService.ts` deriva linha do tempo e histórico desses registros. `src/data/mockData.ts` ainda reúne dados visuais fictícios; `projectBaseline.ts` centraliza metas e links das fontes.
+`src/components/ParentApp/` contém a experiência dos responsáveis. Os demais componentes compõem o painel escolar e as interfaces compartilhadas. `src/services/accessEventsApi.ts` integra o fluxo persistente, e `demoAccessService.ts` deriva linha do tempo e histórico desses registros. `src/data/mockData.ts` ainda reúne dados visuais fictícios. A tela **Sobre o projeto** traz apenas um resumo da demonstração e o link para a pasta oficial no Drive; orçamento, prazo, metas e riscos não são copiados para o código.
 
 O corte atual oferece PWA e estrutura Capacitor, além dos serviços locais descritos acima. Na apresentação, use **Ferramentas → Apresentar portal por QR Code** no painel escolar. Mesmo quando o painel está em `localhost`, a central consulta a API local, prioriza a interface Wi-Fi e gera diretamente o QR para `/#/responsaveis`. É possível informar outro endereço HTTPS ou da rede como alternativa. A central nunca codifica loopback, credenciais ou parâmetros de sessão. Veja [o roteiro sem APK](docs/APRESENTACAO_SEM_APK.md).
 
