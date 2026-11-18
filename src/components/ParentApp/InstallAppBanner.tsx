@@ -42,8 +42,9 @@ export const InstallAppBanner: React.FC = () => {
     setInstallPrompt(null);
   };
 
+  // sm:p-5 redefiniria o padding dos quatro lados, por isso o sm:pr-12 preserva o espaço do X.
   return (
-    <aside className="card relative flex items-start gap-3 p-4 pr-12 sm:items-center sm:gap-4 sm:p-5" aria-label="Adicionar à tela inicial">
+    <aside className="card relative flex items-start gap-3 p-4 pr-12 sm:items-center sm:gap-4 sm:p-5 sm:pr-12" aria-label="Adicionar à tela inicial">
       <span className="inline-flex h-10 w-10 shrink-0 items-center max-[359px]:hidden justify-center rounded-[10px] bg-brand-soft text-action">
         <Smartphone aria-hidden="true" className="h-5 w-5" />
       </span>
