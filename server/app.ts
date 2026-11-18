@@ -9,6 +9,8 @@ import {
   createDeviceRecognitionRouter,
 } from './modules/accessDevices/routes';
 import { AccessDeviceService } from './modules/accessDevices/service';
+import { createEdgeAgentRouter } from './modules/edgeAgents/routes';
+import { EdgeAgentService } from './modules/edgeAgents/service';
 import { createAccessEventRouter } from './modules/accessEvents/routes';
 import { AccessEventService } from './modules/accessEvents/service';
 import {
@@ -38,6 +40,8 @@ export interface AppOptions {
   syncService?: AccessEventSyncService;
   corsOrigins?: string[];
   presentationOrigins?: string[];
+  /** Comando dos agentes de borda pelo painel (MC-037); sem isto, as rotas respondem desligado. */
+  edgeAgents?: EdgeAgentService;
 }
 
 export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
@@ -94,6 +98,12 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
   app.use('/api/v1', createAuthRouter(database, authService, options.now));
   app.use('/api/v1', createSessionAuth(database, options.now));
   app.use('/api/v1', createAccessDeviceAdminRouter(accessDeviceService));
+  app.use('/api/v1', createEdgeAgentRouter(options.edgeAgents ?? new EdgeAgentService(
+    database,
+    accessDeviceService,
+    { enabled: false, edgeDir: 'edge', apiUrl: 'http://127.0.0.1:3001' },
+    options.now,
+  )));
   app.use(
     '/api/v1',
     createJustificationRouter(new JustificationService(database, options.now)),

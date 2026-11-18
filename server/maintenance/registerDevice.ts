@@ -2,6 +2,7 @@
  * Cadastra (ou renova o token de) uma catraca do protótipo facial (MC-036).
  *
  *   npm run device:register -- --id cat-01-entrada --direction ENTRY
+ *   npm run device:register -- --id cat-01-saida --direction EXIT --camera http://192.168.0.8:4747/video
  *   npm run device:register -- --id cat-01-entrada --deactivate
  *
  * O token aparece uma única vez; a base guarda apenas o hash.
@@ -20,6 +21,7 @@ const { values } = parseArgs({
     operator: { type: 'string', default: 'staff-1' },
     school: { type: 'string', default: 'school-1' },
     'min-score': { type: 'string', default: '0.40' },
+    camera: { type: 'string' },
     deactivate: { type: 'boolean', default: false },
   },
 });
@@ -48,8 +50,12 @@ try {
       direction: direction as 'ENTRY' | 'EXIT',
       operatorUserId: values.operator!,
       minScore: Number(values['min-score']),
+      cameraSource: values.camera,
     });
     console.log(`Catraca ${device.id} cadastrada: ${device.turnstile.name}, ${device.direction === 'ENTRY' ? 'entrada' : 'saída'}, limiar mínimo ${device.minScore}.`);
+    console.log(device.cameraSource
+      ? `Câmera: ${device.cameraSource}.`
+      : 'Câmera ainda não definida: use --camera ou configure pelo painel para iniciar o agente pela API.');
     console.log('');
     console.log('Token do dispositivo (copie agora para edge/.env como DEVICE_TOKEN; ele não será exibido de novo):');
     console.log(token);

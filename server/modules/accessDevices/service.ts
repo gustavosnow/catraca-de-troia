@@ -34,6 +34,7 @@ export interface AccessDeviceRow {
   active: 0 | 1;
   created_at: string;
   last_seen_at: string | null;
+  camera_source: string | null;
 }
 
 interface AccessDenialRow {
@@ -52,7 +53,33 @@ interface AccessDenialRow {
 export const hashDeviceToken = (token: string) =>
   createHash('sha256').update(token).digest('hex');
 
-const mapDevice = (row: AccessDeviceRow): AccessDeviceRecord => ({
+const generateDeviceToken = () => `dev_${randomBytes(32).toString('base64url')}`;
+
+/**
+ * Valida a origem do vídeo: índice de webcam (0 a 99) ou URL http(s)/rtsp sem
+ * usuário e senha embutidos, para que nenhuma credencial fique gravada na base.
+ */
+export const normalizeCameraSource = (value: unknown): string => {
+  if (typeof value !== 'string') throw invalidRequest('cameraSource deve ser texto.');
+  const source = value.trim();
+  if (/^\d{1,2}$/.test(source)) return String(Number(source));
+  let url: URL;
+  try {
+    url = new URL(source);
+  } catch {
+    throw invalidRequest('Informe o índice da webcam (ex.: 0) ou a URL do vídeo (ex.: http://192.168.0.5:4747/video).');
+  }
+  if (!['http:', 'https:', 'rtsp:'].includes(url.protocol)) {
+    throw invalidRequest('A URL da câmera deve usar http, https ou rtsp.');
+  }
+  if (url.username || url.password) {
+    throw invalidRequest('Não inclua usuário ou senha na URL da câmera.');
+  }
+  if (source.length > 300) throw invalidRequest('A URL da câmera deve ter até 300 caracteres.');
+  return source;
+};
+
+export const mapDevice = (row: AccessDeviceRow): AccessDeviceRecord => ({
   id: row.id,
   name: row.name,
   turnstile: { id: row.turnstile_id, name: row.turnstile_name },
@@ -60,6 +87,7 @@ const mapDevice = (row: AccessDeviceRow): AccessDeviceRecord => ({
   minScore: row.min_score,
   active: row.active === 1,
   lastSeenAt: row.last_seen_at ?? undefined,
+  cameraSource: row.camera_source ?? undefined,
 });
 
 const mapDenial = (row: AccessDenialRow): AccessDenialRecord => ({
@@ -96,6 +124,7 @@ export class AccessDeviceService {
     direction: AccessDirectionRecord;
     operatorUserId: string;
     minScore: number;
+    cameraSource?: string;
   }): { device: AccessDeviceRecord; token: string } {
     if (!/^[A-Za-z0-9_-]{3,60}$/.test(params.id)) {
       throw invalidRequest('O identificador da catraca deve ter de 3 a 60 caracteres (letras, números, - ou _).');
@@ -109,12 +138,15 @@ export class AccessDeviceService {
     if (!operator || operator.role === 'GUARDIAN' || operator.account_status !== 'ACTIVE') {
       throw invalidRequest('O operador responsável deve ser uma conta escolar ativa.');
     }
-    const token = `dev_${randomBytes(32).toString('base64url')}`;
+    const cameraSource = params.cameraSource === undefined
+      ? null
+      : normalizeCameraSource(params.cameraSource);
+    const token = generateDeviceToken();
     this.database.prepare(`
       INSERT INTO access_devices (
         id, school_id, name, turnstile_id, turnstile_name, direction,
-        operator_user_id, min_score, token_hash, active, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+        operator_user_id, min_score, token_hash, active, created_at, camera_source
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         name = excluded.name,
         turnstile_id = excluded.turnstile_id,
@@ -123,13 +155,27 @@ export class AccessDeviceService {
         operator_user_id = excluded.operator_user_id,
         min_score = excluded.min_score,
         token_hash = excluded.token_hash,
-        active = 1
+        active = 1,
+        camera_source = COALESCE(excluded.camera_source, access_devices.camera_source)
     `).run(
       params.id, params.schoolId, params.name.trim(), params.turnstileId.trim(),
       params.turnstileName.trim(), params.direction, params.operatorUserId,
-      params.minScore, hashDeviceToken(token), this.now(),
+      params.minScore, hashDeviceToken(token), this.now(), cameraSource,
     );
     return { device: mapDevice(this.getRow(params.id)), token };
+  }
+
+  /**
+   * Gera novo token para uma catraca já cadastrada e invalida o anterior.
+   * Usado quando a API inicia o agente: o token vai direto para o processo,
+   * sem passar por arquivo nem pela resposta HTTP.
+   */
+  rotateToken(id: string): string {
+    const token = generateDeviceToken();
+    const result = this.database.prepare('UPDATE access_devices SET token_hash = ? WHERE id = ?')
+      .run(hashDeviceToken(token), id);
+    if (result.changes === 0) throw invalidRequest(`Catraca ${id} não encontrada.`);
+    return token;
   }
 
   private getRow(id: string) {

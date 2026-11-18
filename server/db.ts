@@ -214,7 +214,8 @@ ${accessEventsColumns}
     token_hash TEXT NOT NULL UNIQUE,
     active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
     created_at TEXT NOT NULL,
-    last_seen_at TEXT
+    last_seen_at TEXT,
+    camera_source TEXT
   );
 
   CREATE TABLE IF NOT EXISTS access_denials (
@@ -528,6 +529,10 @@ export const createDatabase = (options: DatabaseOptions = {}) => {
   const justificationColumns = database.prepare('PRAGMA table_info(justifications)').all() as Array<{ name: string }>;
   if (!justificationColumns.some((column) => column.name === 'attachment_id')) {
     database.exec('ALTER TABLE justifications ADD COLUMN attachment_id TEXT REFERENCES attachments(id)');
+  }
+  const deviceColumns = database.prepare('PRAGMA table_info(access_devices)').all() as Array<{ name: string }>;
+  if (!deviceColumns.some((column) => column.name === 'camera_source')) {
+    database.exec('ALTER TABLE access_devices ADD COLUMN camera_source TEXT');
   }
   const linkColumns = database.prepare('PRAGMA table_info(guardian_student_links)').all() as Array<{ name: string }>;
   const linkMigrations = [

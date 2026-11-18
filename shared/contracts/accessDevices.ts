@@ -54,4 +54,6 @@ export interface AccessDeviceRecord {
   minScore: number;
   active: boolean;
   lastSeenAt?: string;
+  /** Origem do vídeo usada quando o agente é iniciado pela API (índice da webcam ou URL). */
+  cameraSource?: string;
 }

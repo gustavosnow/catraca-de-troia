@@ -1,5 +1,8 @@
+import path from 'node:path';
 import { createApp } from './app';
 import { createDatabase } from './db';
+import { AccessDeviceService } from './modules/accessDevices/service';
+import { EdgeAgentService } from './modules/edgeAgents/service';
 import {
   AccessEventSyncService,
   HttpAccessEventSyncTransport,
@@ -28,7 +31,16 @@ const syncService = syncRemoteUrl && syncSharedSecret
       new HttpAccessEventSyncTransport(syncRemoteUrl, syncSharedSecret),
     )
   : undefined;
-const app = createApp(database, { syncSharedSecret, syncService, corsOrigins, presentationOrigins });
+// Comando dos agentes Python pelo painel (MC-037): somente com opt-in explícito.
+const edgeAgents = new EdgeAgentService(database, new AccessDeviceService(database), {
+  enabled: process.env.EDGE_CONTROL_ENABLED === 'true',
+  edgeDir: path.resolve(process.env.EDGE_DIR ?? 'edge'),
+  pythonPath: process.env.EDGE_PYTHON || undefined,
+  apiUrl: `http://127.0.0.1:${port}`,
+});
+const app = createApp(database, {
+  syncSharedSecret, syncService, corsOrigins, presentationOrigins, edgeAgents,
+});
 
 let syncTimer: NodeJS.Timeout | undefined;
 const cleanupAttachments = () => {
@@ -54,9 +66,16 @@ const server = app.listen(port, host, () => {
     ? `Sincronização de eventos ativa para ${syncRemoteUrl}.`
     : 'Eventos permanecem na fila local: SYNC_REMOTE_URL/SYNC_SHARED_SECRET não configurados.');
   if (presentationOrigins[0]) console.log(`Apresentação por QR disponível em ${presentationOrigins[0]}/#/responsaveis`);
+  console.log(process.env.EDGE_CONTROL_ENABLED === 'true'
+    ? 'Comando das câmeras pelo painel ativo (EDGE_CONTROL_ENABLED=true).'
+    : 'Comando das câmeras pelo painel desligado.');
 });
 
+// Garante que nenhuma janela de câmera fique presa se a API encerrar.
+process.on('exit', () => edgeAgents.shutdown());
+
 const shutdown = () => {
+  edgeAgents.shutdown();
   if (syncTimer) clearInterval(syncTimer);
   clearInterval(attachmentCleanupTimer);
   server.close(() => {

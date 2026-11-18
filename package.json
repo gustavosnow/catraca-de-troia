@@ -12,7 +12,7 @@
     "preview": "vite preview",
     "presentation:start": "npm run build && concurrently -k -n API,WEB -c yellow,cyan \"npm:api:device\" \"vite preview --port=3000 --host=0.0.0.0\"",
     "presentation:tunnel": "cloudflared tunnel --url http://127.0.0.1:3000",
-    "api:dev": "tsx watch server/index.ts",
+    "api:dev": "cross-env EDGE_CONTROL_ENABLED=true tsx watch server/index.ts",
     "api:device": "cross-env API_HOST=0.0.0.0 tsx watch server/index.ts",
     "api:start": "tsx server/index.ts",
     "test:api": "tsx --test server/test/*.test.ts",
