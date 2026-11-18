@@ -314,32 +314,35 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
           onRefresh={onRefreshData}
         />
 
-        <section className="card px-5 py-4" aria-labelledby="selected-student-label">
-          <p id="selected-student-label" className="eyebrow-muted mb-3">{myChildren.length > 1 ? 'Estudantes vinculados' : 'Estudante selecionado'}</p>
-          <div data-testid="parent-students" className="grid gap-2 sm:grid-cols-2">
-            {myChildren.map((child) => {
-              const selected = child.id === selectedStudent.id;
-              return (
-                <button
-                  key={child.id}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => setSelectedStudent(child)}
-                  className={cx(
-                    'flex min-w-0 items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition-colors',
-                    selected ? 'border-brand bg-[#fffaf5] shadow-[0_0_0_1px_var(--color-brand)]' : 'border-line hover:border-line-strong hover:bg-surface',
-                  )}
-                >
-                  <Avatar name={child.name} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold leading-snug text-ink">{child.name}</span>
-                    <span className="block text-xs text-muted">{child.turma.split(' - ')[0]} · {child.shift} · Vínculo aprovado</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        {/* Avisos são da escola (leitura por responsável): o seletor de estudante não muda essa aba. */}
+        {activeTab !== 'notices' && (
+          <section className="card px-5 py-4" aria-labelledby="selected-student-label">
+            <p id="selected-student-label" className="eyebrow-muted mb-3">{myChildren.length > 1 ? 'Estudantes vinculados' : 'Estudante selecionado'}</p>
+            <div data-testid="parent-students" className="grid gap-2 sm:grid-cols-2">
+              {myChildren.map((child) => {
+                const selected = child.id === selectedStudent.id;
+                return (
+                  <button
+                    key={child.id}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => setSelectedStudent(child)}
+                    className={cx(
+                      'flex min-w-0 items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition-colors',
+                      selected ? 'border-brand bg-[#fffaf5] shadow-[0_0_0_1px_var(--color-brand)]' : 'border-line hover:border-line-strong hover:bg-surface',
+                    )}
+                  >
+                    <Avatar name={child.name} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold leading-snug text-ink">{child.name}</span>
+                      <span className="block text-xs text-muted">{child.turma.split(' - ')[0]} · {child.shift} · Vínculo aprovado</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
 
       {activeTab === 'home' && (
