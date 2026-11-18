@@ -29,7 +29,7 @@ Não integram o piloto atestados ou outros anexos, ficha de saúde, carteirinha 
 
 ## Conferência para a apresentação de 05/11/2026
 
-Os quatro documentos do Drive foram relidos em 04/11/2026, preservando suas datas originais. A tela de documentação usa uma única data de conferência e identifica EAP v1.3. Metas SMART, marcos, riscos R01–R08, prazo e orçamento foram comparados; a apresentação distingue recursos locais implementados das entregas físicas e externas ainda previstas. Ver `VERIFICACAO_APRESENTACAO_2026-11-04.md`.
+Os quatro documentos do Drive foram relidos em 04/11/2026, preservando suas datas originais. A tela de documentação usa uma única data de conferência e identifica EAP v1.3. Metas SMART, marcos, riscos R01–R08, prazo e orçamento foram comparados; a apresentação distingue recursos locais implementados das entregas físicas e externas ainda previstas. Ver `VERIFICACAO_APRESENTACAO_2026-11-04.md`. Desde a revisão do redesign (MC-035), a tela **Sobre o projeto** não replica mais metas, prazo, orçamento ou riscos: mostra um resumo da demonstração e remete à [pasta oficial no Drive](https://drive.google.com/drive/folders/163EOyyzGW-VMIH2zs_PGTHZEVyHRfeJ9), que é a fonte vigente.
 
 ## Correções do escopo vigente
 
