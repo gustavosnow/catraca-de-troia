@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { MetricCards } from './components/MetricCards';
 import { LiveStreamFeed } from './components/LiveStreamFeed';
 import { SideActionsPanel } from './components/SideActionsPanel';
+import { FaceRecognitionPanel } from './components/FaceRecognitionPanel';
 import { ManualReleaseModal } from './components/ManualReleaseModal';
 import { StudentDetailModal } from './components/StudentDetailModal';
 import { AlertsModal } from './components/AlertsModal';
@@ -497,6 +498,7 @@ export default function App() {
           ? await accessEventsApi.listForGuardian(students)
           : await accessEventsApi.listForSchool(students);
         if (!active) return;
+        if (viewMode === 'management_dashboard') announceNewCameraEvents(records);
         setLogs(records);
         setAccessEventsState('persistent');
         setAccessEventsError(undefined);
@@ -563,6 +565,28 @@ export default function App() {
       setIsRetryingSyncConflicts(false);
     }
   };
+
+  // Eventos da câmera chegam pela consulta periódica; avisa no painel os que ainda não foram vistos.
+  const seenCameraEventIds = useRef<Set<string> | null>(null);
+  function announceNewCameraEvents(records: AccessLog[]) {
+    const cameraEvents = records.filter((record) => record.source === 'camera');
+    const seen = seenCameraEventIds.current;
+    seenCameraEventIds.current = new Set(cameraEvents.map((record) => record.id));
+    if (!seen) return;
+    const latest = cameraEvents.find((record) => !seen.has(record.id));
+    if (!latest) return;
+    soundManager.playAccessGranted();
+    setToastMessage({
+      id: latest.id,
+      title: latest.direction === 'entry' ? 'Entrada pela câmera' : 'Saída pela câmera',
+      studentName: latest.studentName,
+      time: latest.exactTime,
+      phone: latest.notification.phoneTarget,
+    });
+    setTimeout(() => {
+      setToastMessage((current) => current?.id === latest.id ? null : current);
+    }, 4500);
+  }
 
   // Real-time live simulation state
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
@@ -980,7 +1004,10 @@ export default function App() {
               </div>
 
               {/* Right: Quick Action Controls, Manual Unlock, Filters, Hardware Status (Takes 1 Column) */}
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-1 space-y-5">
+                <FaceRecognitionPanel
+                  enabled={Boolean(authenticatedUser) && authenticatedUser?.role === 'staff' && isOnline}
+                />
                 <SideActionsPanel
                   onOpenManualRelease={() => setIsManualReleaseOpen(true)}
                   onSelectStudent={handleSelectStudent}

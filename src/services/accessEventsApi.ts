@@ -28,6 +28,8 @@ const mapEvent = (record: AccessEventRecord, students: Student[]): AccessLog => 
     method: record.method === 'FACIAL' ? 'Facial' : 'Manual',
     operator: record.createdById,
     reason: record.reason,
+    source: record.source === 'FACE_PROTOTYPE' ? 'camera' : 'simulacao',
+    recognition: record.recognition,
     notification: {
       whatsapp: record.notification.whatsapp === 'DELIVERED' ? 'Entregue' : 'Pendente',
       pushApp: record.notification.pushApp === 'DELIVERED' ? 'Entregue' : 'Pendente',

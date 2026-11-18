@@ -80,6 +80,32 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
     document.body.removeChild(link);
   };
 
+  // Distingue eventos da câmera do protótipo facial (MC-036) dos simulados.
+  const renderSourceBadge = (log: AccessLog) => {
+    if (log.source === 'camera') {
+      const score = log.recognition ? ` ${Math.round(log.recognition.matchScore * 100)}%` : '';
+      return (
+        <span
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold bg-[#0B192C] text-white border border-[#0B192C]"
+          title={log.recognition
+            ? `Protótipo facial: similaridade ${log.recognition.matchScore.toFixed(3)}, inferência ${Math.round(log.recognition.inferenceMs)} ms (${log.recognition.deviceId})`
+            : 'Protótipo facial'}
+        >
+          <Camera className="w-3 h-3 text-orange-400" />
+          <span>Câmera{score}</span>
+        </span>
+      );
+    }
+    if (log.source === 'simulacao' && log.method === 'Facial') {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold bg-slate-50 text-slate-500 border border-slate-200">
+          Simulação
+        </span>
+      );
+    }
+    return null;
+  };
+
   // Helper method badge icon and color
   const renderMethodBadge = (method: string) => {
     const m = method.toLowerCase();
@@ -329,7 +355,10 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
 
                       {/* Method */}
                       <td className="py-3.5 px-3 whitespace-nowrap">
-                        {renderMethodBadge(log.method)}
+                        <div className="flex items-center gap-1.5">
+                          {renderMethodBadge(log.method)}
+                          {renderSourceBadge(log)}
+                        </div>
                       </td>
 
                       {/* Status */}
@@ -435,6 +464,7 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
                         {log.turnstileName}
                       </span>
                       {renderMethodBadge(log.method)}
+                      {renderSourceBadge(log)}
                     </div>
                   </div>
                 </div>
