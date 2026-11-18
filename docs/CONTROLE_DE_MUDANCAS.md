@@ -281,3 +281,13 @@ Ajustes: substituída a data obsoleta de 13/10/2026 por uma data fixa de confer�
 A gestão de justificativas ainda exibia uma mensagem antiga afirmando armazenamento de novos anexos, apesar do bloqueio já aplicado na API. O texto foi corrigido para justificativas exclusivamente textuais. O cadastro deixou de sugerir WhatsApp como canal implementado na validação do telefone; o resumo do orçamento explicita a inclusão de ambas as reservas e a base dos percentuais.
 
 Validação e limites: ver `VERIFICACAO_APRESENTACAO_2026-11-04.md`. Ensaio com celular e rede do local continua necessário; não foram gerados APK, túnel ou publicação pública. Datas históricas de testes, documentos e decisões foram preservadas.
+
+## MC-036 — Protótipo de reconhecimento facial com câmera em 17/11/2026
+
+Solicitação: deixar de depender apenas da simulação de entrada/saída e demonstrar o fluxo com uma câmera real (webcam ou celular via DroidCam/IP Webcam), reconhecimento em Python/OpenCV e registro pela API local.
+
+Decisão: revê parcialmente o corte de MC-034/consolidação ("hardware e biometria real não serão integrados") **somente para um protótipo de laboratório**. O agente `edge/` usa YuNet (detecção) e SFace (vetor facial) do OpenCV, compara com vetores cadastrados localmente e envia à API apenas o resultado: estudante candidato, similaridade, limiar e tempo de inferência. A API autentica o dispositivo por token opaco (hash SHA-256 armazenado), aplica um limiar mínimo próprio, confere se o estudante pertence à escola e registra o evento com `source = FACE_PROTOTYPE`, reaproveitando fila, auditoria e notificação interna. Negações são gravadas em `access_denials`, sem imagem nem vetor, sem notificar responsáveis; a passagem assistida continua sendo o caminho alternativo.
+
+Governança: o cadastro facial do protótipo deve usar **apenas adultos da equipe, com consentimento**, vinculados a estudantes fictícios. Não usar rostos de crianças ou estudantes reais sem a validação institucional de necessidade, proporcionalidade, base jurídica, retenção e direitos. Vetores e fotos ficam em `edge/data/`, fora do Git, e podem ser apagados pelo script de cadastro.
+
+Limites: sem prova de vida (anti-spoofing), sem catraca física acionada, sem criptografia institucional dos vetores e sem homologação. Similaridade e tempo de inferência registrados servem como medição de protótipo com poucos rostos e não comprovam as metas de 95% de acurácia ou 500 ms. A simulação permanece disponível e é identificada separadamente no painel.
