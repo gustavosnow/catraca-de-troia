@@ -291,3 +291,14 @@ Decisão: revê parcialmente o corte de MC-034/consolidação ("hardware e biome
 Governança: o cadastro facial do protótipo deve usar **apenas adultos da equipe, com consentimento**, vinculados a estudantes fictícios. Não usar rostos de crianças ou estudantes reais sem a validação institucional de necessidade, proporcionalidade, base jurídica, retenção e direitos. Vetores e fotos ficam em `edge/data/`, fora do Git, e podem ser apagados pelo script de cadastro.
 
 Limites: sem prova de vida (anti-spoofing), sem catraca física acionada, sem criptografia institucional dos vetores e sem homologação. Similaridade e tempo de inferência registrados servem como medição de protótipo com poucos rostos e não comprovam as metas de 95% de acurácia ou 500 ms. A simulação permanece disponível e é identificada separadamente no painel.
+
+## MC-037 — Comando das câmeras e do cadastro facial pelo painel em 18/11/2026
+
+Solicitação: iniciar o cadastro facial e as catracas de entrada e saída por botões no front, sem rodar comandos Python. O front será renovado; esta mudança entrega somente a funcionalidade (API, contrato e cliente `src/services/edgeAgentsApi.ts`), sem alterar telas.
+
+Decisão: a API local passa a iniciar e encerrar os scripts de `edge/` como processos filhos no computador do servidor escolar, onde as janelas de vídeo continuam abrindo. Rotas: `GET /api/v1/edge-agents`, `POST /api/v1/edge-agents/recognition/:deviceId/start|stop`, `PATCH /api/v1/access-devices/:deviceId/camera`, `GET|POST /api/v1/face-enrollments`, `POST /api/v1/face-enrollments/current/cancel` e `DELETE /api/v1/face-enrollments/:studentId`. A câmera de cada catraca fica em `access_devices.camera_source` (índice da webcam ou URL http/https/rtsp sem usuário e senha). Cada início de catraca renova o token do dispositivo e o entrega só ao processo, por variável de ambiente; o token não volta na resposta nem é gravado em arquivo. O agente encerra ao ter a entrada padrão fechada (botão parar ou queda da API), liberando a câmera, e a catraca recarrega a galeria quando um cadastro termina.
+
+Segurança e governança: desligado por padrão; ligado somente por `EDGE_CONTROL_ENABLED=true`, definido em `npm run dev` (uso local) e ausente de `api:device` e da apresentação. Argumentos dos scripts vêm da base (catraca, câmera, nome do estudante), nunca de texto livre. Iniciar/parar catraca: perfis escolares. Cadastrar, consultar, remover rostos e configurar câmera: somente Coordenação e Direção; o cadastro exige `consent: true` (adulto da equipe, com consentimento, ligado a estudante fictício). Início, término e remoção ficam em `audit_log` (`FACE_ENROLLMENT`, `EDGE_AGENT`, `ACCESS_DEVICE`). Uma câmera não pode ser usada por dois processos ao mesmo tempo.
+
+Limites: mantém todos os limites de MC-036. O comando só funciona no computador onde a API e o ambiente Python estão instalados; não há controle remoto de outras máquinas nem acionamento de catraca física.
+

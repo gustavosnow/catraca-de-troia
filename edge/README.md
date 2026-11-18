@@ -60,6 +60,23 @@ portal do responsável de `std-1`); vermelho **NEGADO** registra só a tentativa
 Leituras feitas com a API fora do ar ficam pendentes e são reenviadas com o mesmo
 identificador, sem duplicar.
 
+## Comandar pelo painel (MC-037)
+
+Com `npm run dev`, a API pode iniciar e parar os agentes sozinha: o front chama as
+rotas abaixo (cliente pronto em `src/services/edgeAgentsApi.ts`) e as janelas de
+vídeo abrem neste computador. Requer o `.venv` e os modelos desta pasta.
+
+1. Defina a câmera de cada catraca uma vez, pelo painel (`PATCH /api/v1/access-devices/:id/camera`,
+   Coordenação/Direção) ou no cadastro: `npm run device:register -- --id cat-01-saida --direction EXIT --camera http://IP:4747/video`.
+2. Cadastro facial: `POST /api/v1/face-enrollments` com `{ studentId, deviceId, consent: true }`
+   (Coordenação/Direção). Usa a câmera da catraca indicada; ela não pode estar em uso.
+3. Catracas: `POST /api/v1/edge-agents/recognition/cat-01-entrada/start` (e `cat-01-saida`); `.../stop` para parar.
+4. Acompanhamento: `GET /api/v1/edge-agents` traz estado e últimas linhas de cada agente.
+
+Cada início pelo painel renova o token da catraca e o entrega só ao processo; o
+`DEVICE_TOKEN` do `.env` deixa de valer para essa catraca. Para voltar ao modo manual,
+gere outro token com `npm run device:register`. A tecla `q` na janela também encerra.
+
 ## Calibrar o limiar
 
 `MATCH_THRESHOLD` (agente) e `--min-score` (catraca na API) definem a similaridade
