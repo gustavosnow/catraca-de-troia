@@ -302,7 +302,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       <div className="grid min-h-full lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         {/* Painel da marca */}
         <aside className="relative hidden flex-col justify-between overflow-hidden border-r border-brand-line bg-[#fff7f0] px-12 py-12 lg:flex xl:px-20">
-          <BrandLockup size={38} />
+          <BrandLockup size={64} />
           <div className="max-w-md">
             <p className="eyebrow">Cuidado que começa na entrada</p>
             <h2 className="display-title mt-5 text-[44px]">
@@ -339,7 +339,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Formulário */}
         <main className="flex flex-col px-5 py-8 sm:px-10 lg:px-16 lg:py-12">
           <div className="flex items-center justify-between lg:justify-end">
-            <span className="lg:hidden"><BrandLockup size={30} /></span>
+            <span className="lg:hidden"><BrandLockup size={44} /></span>
             {dismissible && (
               <button type="button" className="btn-link" onClick={onClose}>
                 <ArrowLeft aria-hidden="true" className="!translate-x-0" />

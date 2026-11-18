@@ -151,7 +151,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onParentLogin, onParen
       >
         <div className="mx-auto flex h-[72px] max-w-6xl items-center gap-6 px-5 sm:px-8">
           <a href="#topo" onClick={goTo('topo')} aria-label="Catraca de Troia, início" className="rounded-lg">
-            <BrandLockup size={32} />
+            <BrandLockup size={48} />
           </a>
           <nav aria-label="Seções da página" className="mx-auto hidden items-center gap-8 md:flex">
             {NAV_ITEMS.map(([id, label]) => (
@@ -373,7 +373,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onParentLogin, onParen
 
       <footer className="border-t border-line px-5 py-8 sm:px-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <BrandLockup size={28} />
+          <BrandLockup size={40} />
           <p className="text-xs text-muted">Protótipo acadêmico · Escola fictícia · Sem hardware, biometria ou notificações externas integrados.</p>
         </div>
       </footer>

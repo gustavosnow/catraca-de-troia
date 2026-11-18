@@ -68,7 +68,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
     >
       <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 sm:px-6 md:h-[72px]">
         <div data-testid="parent-brand" className="flex min-w-0 shrink-0 items-center">
-          <BrandLockup size={30} />
+          <BrandLockup size={44} />
         </div>
 
         {showNavigation && (

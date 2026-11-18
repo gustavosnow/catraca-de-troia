@@ -165,7 +165,7 @@ export const SchoolShell: React.FC<SchoolShellProps> = ({
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-5 pb-5 pt-6">
-        <BrandLockup size={34} />
+        <BrandLockup size={46} />
         <button type="button" className="icon-btn lg:hidden" onClick={() => setIsMobileNavOpen(false)} aria-label="Fechar navegação">
           <X />
         </button>

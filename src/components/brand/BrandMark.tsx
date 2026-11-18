@@ -31,13 +31,41 @@ export const BrandMark: React.FC<{ size?: number; className?: string; title?: st
   </svg>
 );
 
-export const BrandLockup: React.FC<{ size?: number; className?: string; inverted?: boolean }> = ({
+/** Proporção do recorte do logo oficial usado nos cabeçalhos (480 × 336). */
+const OFFICIAL_LOGO_RATIO = 480 / 336;
+
+/**
+ * Logo oficial (a mesma arte de /logo-catraca-troia.png, recortada e com fundo
+ * transparente) para cabeçalhos da apresentação, do login e dos portais.
+ */
+export const OfficialLogo: React.FC<{ height?: number; className?: string; alt?: string }> = ({
+  height = 40,
+  className,
+  alt = '',
+}) => (
+  <img
+    src="/logo-catraca-troia-header.png"
+    width={Math.round(height * OFFICIAL_LOGO_RATIO)}
+    height={height}
+    alt={alt}
+    className={`block shrink-0 select-none ${className ?? ''}`}
+    draggable={false}
+  />
+);
+
+/**
+ * Assinatura da marca: logo oficial + nome. `compact` troca o logo pelo
+ * símbolo simplificado, reservado a espaços pequenos onde o traço fino da arte
+ * oficial não fica legível.
+ */
+export const BrandLockup: React.FC<{ size?: number; className?: string; inverted?: boolean; compact?: boolean }> = ({
   size = 34,
   className,
   inverted,
+  compact,
 }) => (
   <span className={`inline-flex items-center gap-2.5 ${className ?? ''}`}>
-    <BrandMark size={size} />
+    {compact ? <BrandMark size={size} /> : <OfficialLogo height={size} />}
     <span className={`flex flex-col text-[17px] font-bold leading-[1.02] tracking-tight ${inverted ? 'text-white' : 'text-ink'}`}>
       <span>Catraca</span>
       <span>de Troia</span>
