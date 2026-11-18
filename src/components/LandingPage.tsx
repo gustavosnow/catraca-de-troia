@@ -365,7 +365,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onParentLogin, onParen
               Sou da equipe escolar
             </button>
           </div>
-          <button type="button" className="btn-link mx-auto mt-6" onClick={onParentRegister}>
+          <button type="button" className="btn-link mx-auto mt-6 max-w-full whitespace-normal text-center" onClick={onParentRegister}>
             Ainda não tenho acesso: criar cadastro de responsável <ArrowRight aria-hidden="true" />
           </button>
         </section>
