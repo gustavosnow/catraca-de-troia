@@ -637,7 +637,7 @@ body {
   }
 
   .segmented button {
-    min-height: 30px;
+    min-height: 34px;
     padding: 0 0.75rem;
     border-radius: 7px;
     font-size: 13px;

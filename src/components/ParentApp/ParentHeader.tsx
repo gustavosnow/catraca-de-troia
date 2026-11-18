@@ -87,7 +87,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
                   aria-current={active ? 'page' : undefined}
                   aria-label={tab.id === 'notices' && hasUnreadNotices ? 'Avisos, há itens não lidos' : undefined}
                   className={cx(
-                    'relative flex flex-col items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-medium transition-colors md:h-10 md:flex-row md:gap-2 md:px-3.5 md:text-sm',
+                    'relative flex flex-col items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-medium transition-colors md:h-10 md:flex-row md:gap-2 md:px-3.5 md:text-sm',
                     active ? 'text-action-ink md:bg-brand-soft md:font-semibold' : 'text-muted hover:text-ink md:hover:bg-surface-2',
                   )}
                 >
@@ -105,7 +105,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
               onClick={onOpenAbsence}
               disabled={!canSubmitAbsence}
               title={canSubmitAbsence ? 'Justificar uma ausência' : 'Reconecte-se para enviar uma justificativa'}
-              className="flex flex-col items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-medium text-muted transition-colors hover:text-ink disabled:opacity-50 md:h-10 md:flex-row md:gap-2 md:px-3.5 md:text-sm md:hover:bg-surface-2"
+              className="flex flex-col items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-medium text-muted transition-colors hover:text-ink disabled:opacity-50 md:h-10 md:flex-row md:gap-2 md:px-3.5 md:text-sm md:hover:bg-surface-2"
             >
               <FileText aria-hidden="true" className="h-5 w-5 md:h-[18px] md:w-[18px]" />
               Justificar

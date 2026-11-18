@@ -45,7 +45,7 @@ export const InAppNotificationDrawer: React.FC<InAppNotificationDrawerProps> = (
       description="Entradas, saídas e comunicados dos seus estudantes."
       footer={<button type="button" className="btn btn-secondary w-full" onClick={onClose}>Voltar ao portal</button>}
     >
-      <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line px-5 py-3">
         <div className="segmented" role="group" aria-label="Filtrar notificações">
           <button type="button" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>Todas</button>
           <button type="button" aria-pressed={filter === 'access'} onClick={() => setFilter('access')}>Catraca</button>
@@ -59,13 +59,17 @@ export const InAppNotificationDrawer: React.FC<InAppNotificationDrawerProps> = (
           title={canMarkAsRead ? 'Marcar todas como lidas' : 'Reconecte-se para registrar a leitura'}
         >
           <CheckCheck aria-hidden="true" />
-          <span className="hidden sm:inline">Marcar como lidas</span>
-          <span className="sm:hidden">Lidas</span>
+          Marcar como lidas
         </button>
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState compact icon={Bell} title="Nenhuma notificação nesta categoria" description="As passagens registradas na catraca aparecem aqui." />
+        <EmptyState
+          compact
+          icon={Bell}
+          title={filter === 'all' ? 'Nenhuma notificação' : 'Nenhuma notificação nesta categoria'}
+          description={filter === 'notices' ? 'Os comunicados da escola aparecem aqui.' : filter === 'access' ? 'As passagens registradas na catraca aparecem aqui.' : 'Passagens na catraca e comunicados da escola aparecem aqui.'}
+        />
       ) : (
         <ul className="divide-y divide-line">
           {filtered.map((item) => {

@@ -88,14 +88,14 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({ days, 
               <div className="flex items-center gap-2">
                 <LogIn aria-hidden="true" className="h-4 w-4 text-muted" />
                 <div>
-                  <dt className="text-[11px] text-muted">Entrada</dt>
+                  <dt className="text-xs text-muted">Entrada</dt>
                   <dd className="tabular text-sm font-semibold text-ink">{day.entryTime?.slice(0, 5) ?? '—'}</dd>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <LogOut aria-hidden="true" className="h-4 w-4 text-muted" />
                 <div>
-                  <dt className="text-[11px] text-muted">Saída</dt>
+                  <dt className="text-xs text-muted">Saída</dt>
                   <dd className="tabular text-sm font-semibold text-ink">{day.exitTime?.slice(0, 5) ?? '—'}</dd>
                 </div>
               </div>

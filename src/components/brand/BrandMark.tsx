@@ -66,7 +66,7 @@ export const BrandLockup: React.FC<{ size?: number; className?: string; inverted
 }) => (
   <span className={`inline-flex items-center gap-2.5 ${className ?? ''}`}>
     {compact ? <BrandMark size={size} /> : <OfficialLogo height={size} />}
-    <span className={`flex flex-col text-[17px] font-bold leading-[1.02] tracking-tight ${inverted ? 'text-white' : 'text-ink'}`}>
+    <span className={`flex flex-col whitespace-nowrap text-[17px] font-bold leading-[1.02] tracking-tight ${inverted ? 'text-white' : 'text-ink'}`}>
       <span>Catraca</span>
       <span>de Troia</span>
     </span>

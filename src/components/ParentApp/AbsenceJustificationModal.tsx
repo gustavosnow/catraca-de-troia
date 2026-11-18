@@ -110,7 +110,7 @@ export const AbsenceJustificationModal: React.FC<AbsenceJustificationModalProps>
               <div className="flex items-center gap-3 rounded-[10px] border border-line bg-surface px-4 py-3">
                 <Avatar name={student.name} />
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-ink">{student.name}</p>
+                  <p className="text-sm font-semibold leading-snug text-ink">{student.name}</p>
                   <p className="tabular text-xs text-muted">{student.turma.split(' - ')[0]} · Matrícula {student.matricula}</p>
                 </div>
               </div>
