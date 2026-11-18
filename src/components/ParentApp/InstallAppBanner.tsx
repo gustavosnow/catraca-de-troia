@@ -43,30 +43,31 @@ export const InstallAppBanner: React.FC = () => {
   };
 
   return (
-    <aside className="card flex items-start gap-4 p-5" aria-label="Adicionar à tela inicial">
-      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-brand-soft text-action">
+    <aside className="card relative flex items-start gap-3 p-4 pr-12 sm:items-center sm:gap-4 sm:p-5" aria-label="Adicionar à tela inicial">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center max-[359px]:hidden justify-center rounded-[10px] bg-brand-soft text-action">
         <Smartphone aria-hidden="true" className="h-5 w-5" />
       </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-ink">A escola a um toque de distância.</p>
-        <p className="mt-0.5 text-[13px] text-muted">
-          {showHelp
-            ? isIos
-              ? 'No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.'
-              : 'No menu do navegador, escolha “Adicionar à tela inicial”.'
-            : 'Adicione o portal à tela inicial. A instalação é opcional.'}
-        </p>
-      </div>
-      <div className="flex shrink-0 items-center gap-1">
+      {/* No celular o texto ocupa a largura toda e a ação desce para baixo dele; o X fica no canto. */}
+      <div className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-ink">A escola a um toque de distância.</p>
+          <p className="mt-0.5 text-[13px] leading-relaxed text-muted">
+            {showHelp
+              ? isIos
+                ? 'No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.'
+                : 'No menu do navegador, escolha “Adicionar à tela inicial”.'
+              : 'Adicione o portal à tela inicial. A instalação é opcional.'}
+          </p>
+        </div>
         {!showHelp && (
-          <button type="button" className="btn btn-soft btn-sm" onClick={() => void install()}>
+          <button type="button" className="btn btn-soft btn-sm mt-3 shrink-0 sm:mt-0" onClick={() => void install()}>
             {installPrompt ? 'Instalar' : 'Saiba como'}
           </button>
         )}
-        <button type="button" className="icon-btn" onClick={() => setDismissed(true)} aria-label="Dispensar aviso de instalação">
-          <X />
-        </button>
       </div>
+      <button type="button" className="icon-btn absolute right-2 top-2 sm:top-1/2 sm:-translate-y-1/2" onClick={() => setDismissed(true)} aria-label="Dispensar aviso de instalação">
+        <X />
+      </button>
     </aside>
   );
 };
