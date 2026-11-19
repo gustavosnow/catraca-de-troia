@@ -28,7 +28,7 @@ import type {
   GuardianRelationship,
 } from '../../../shared/contracts/linkRequests';
 import { isNativeApp } from '../../config/runtime';
-import { Avatar, cx, firstNameOf, focusMainContent, greetingForNow } from '../ui';
+import { Avatar, Callout, cx, firstNameOf, focusMainContent, greetingForNow } from '../ui';
 
 interface ParentAppViewProps {
   /** Responsável da sessão. */
@@ -36,6 +36,8 @@ interface ParentAppViewProps {
   schoolName: string;
   /** Estudantes com vínculo aprovado, vindos de /me/students. */
   students: Student[];
+  studentsState?: 'loading' | 'persistent' | 'unavailable';
+  studentsError?: string;
   onSwitchToManagement?: () => void;
   notices: SchoolNotice[];
   notifications: ParentNotification[];
@@ -66,6 +68,8 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   guardian: currentGuardian,
   schoolName,
   students: myChildren,
+  studentsState = 'persistent',
+  studentsError,
   onSwitchToManagement,
   notices,
   notifications,
@@ -209,6 +213,25 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
       <p data-testid="parent-school" className="mt-1 text-xs text-muted">{schoolName}</p>
     </div>
   );
+
+  if (!selectedStudent && studentsState !== 'persistent') {
+    return shell(
+      <>
+        {pageHeading}
+        {studentsState === 'loading' ? (
+          <Callout tone="info" role="status">Carregando estudantes vinculados…</Callout>
+        ) : (
+          <Callout tone="warning" role="status">
+            <div>
+              <p>{studentsError || 'Não foi possível carregar seus vínculos.'}</p>
+              <button type="button" className="btn-link mt-2" onClick={onRefreshData} disabled={!isOnline}>Tentar novamente</button>
+            </div>
+          </Callout>
+        )}
+      </>,
+      false,
+    );
+  }
 
   if (!selectedStudent) {
     return shell(

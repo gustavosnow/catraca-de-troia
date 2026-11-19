@@ -352,3 +352,9 @@ Conteúdo: passagens dos 10 estudantes por turno, com cerca de 1 em 8 assistidas
 Limites: as passagens pela câmera são geradas pela rota de reconhecimento, sem câmera física; similaridade e tempo de inferência são valores de carga, não medições do protótipo.
 
 Ajuste da MC-040: o banco (`.data/`) continua fora do Git, porque guarda hashes de senhas e sessões e mudaria a cada uso. Para a equipe ver os mesmos dados, `npm run db:demo` roda a carga da escola e o movimento num clone novo; sem câmeras a preservar, a carga cadastra entrada e saída da catraca 01. O README avisa que os dados precisam ser ativados e não publica a senha.
+
+## MC-042 — Sessões independentes por aba em 19/11/2026
+
+Cada aba do navegador guarda sua própria sessão. É possível manter contas diferentes abertas ao mesmo tempo. Atualizar a página restaura a sessão daquela aba, e sair ou trocar de portal encerra apenas essa sessão. A opção de estender a duração continua aplicando o prazo de 30 dias na API. A sessão compartilhada da versão anterior é descartada na primeira abertura e exige novo login.
+
+Em navegadores com `BroadcastChannel`, uma aba aberta por outra que copie a sessão pede login próprio quando a original ainda está aberta. As abas usam apenas um identificador para detectar a cópia. Ao encerrar ou mudar de sessão, a interface limpa os dados da conta anterior e descarta respostas pendentes dela.

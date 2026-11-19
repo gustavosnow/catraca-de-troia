@@ -131,6 +131,7 @@ export default function App() {
   useEffect(() => {
     const endSession = () => {
       setAuthenticatedUser(null);
+      resetSessionData();
       setIsAuthModalOpen(true);
     };
     window.addEventListener('catraca:session-ended', endSession);
@@ -143,15 +144,21 @@ export default function App() {
       setIsAuthModalOpen(viewMode !== 'landing');
       return () => window.removeEventListener('catraca:session-ended', endSession);
     }
+    let active = true;
     authApi.restore()
-      .then((user) => handleLoginSuccess(toAuthUser(user)))
-      .catch(() => {
-        authApi.clear();
-        setAuthenticatedUser(null);
-        setIsAuthModalOpen(true);
+      .then((user) => {
+        if (active) handleLoginSuccess(toAuthUser(user));
       })
-      .finally(() => setIsRestoringSession(false));
-    return () => window.removeEventListener('catraca:session-ended', endSession);
+      .catch(() => {
+        if (!active) return;
+        authApi.clear();
+        endSession();
+      })
+      .finally(() => { if (active) setIsRestoringSession(false); });
+    return () => {
+      active = false;
+      window.removeEventListener('catraca:session-ended', endSession);
+    };
   }, []);
 
   const navigateToView = (mode: Exclude<ViewMode, 'landing'>, accessMode?: AccessMode) => {
@@ -214,8 +221,9 @@ export default function App() {
 
   // Handle successful login
   const handleLoginSuccess = (user: AuthUser) => {
+    resetSessionData();
     if (isParentOnlyBuild && user.role === 'staff') {
-      void authApi.logout().catch(() => authApi.clear());
+      void authApi.logout();
       setAuthenticatedUser(null);
       setAuthModalRole('parent');
       setIsAuthModalOpen(true);
@@ -240,7 +248,7 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await authApi.logout().catch(() => authApi.clear());
+    await authApi.logout();
     setAuthenticatedUser(null);
     resetSessionData();
     setAuthModalRole(viewMode === 'parent_app' ? 'parent' : 'staff');
@@ -249,7 +257,7 @@ export default function App() {
   };
 
   const handleSwitchAccess = async (target: Exclude<ViewMode, 'landing'>) => {
-    await authApi.logout().catch(() => authApi.clear());
+    await authApi.logout();
     setAuthenticatedUser(null);
     resetSessionData();
     setAuthModalMode('login');
@@ -724,9 +732,28 @@ export default function App() {
     setNotifications([]);
     setLinkRequests([]);
     setGuardianLinks([]);
+    setAuditRecords([]);
+    setManagedAccounts([]);
+    setDeliverySnapshot(undefined);
+    setSyncStatus(null);
     setTurnstiles([]);
     setAlerts([]);
     setSelectedStudent(null);
+    setToastMessage(null);
+    seenCameraEventIds.current = null;
+    setStudentsState('loading');
+    setStudentsError(undefined);
+    setAccessEventsState('loading');
+    setAccessEventsError(undefined);
+    setAccessEventsUpdatedAt(undefined);
+    setCommunicationsState('loading');
+    setCommunicationsError(undefined);
+    setCommunicationsUpdatedAt(undefined);
+    setJustificationsState('loading');
+    setJustificationsError(undefined);
+    setJustificationsUpdatedAt(undefined);
+    setLinkRequestsState('loading');
+    setLinkRequestsError(undefined);
   };
 
 
@@ -924,6 +951,8 @@ export default function App() {
           guardian={currentGuardian}
           schoolName={authenticatedUser.schoolUnit}
           students={students}
+          studentsState={studentsState}
+          studentsError={studentsError}
           onSwitchToManagement={isParentOnlyBuild ? undefined : () => void handleSwitchAccess('management_dashboard')}
           notices={notices}
           notifications={notifications}
