@@ -12,7 +12,7 @@ import type { GuardianRelationship } from '../../shared/contracts/linkRequests';
  */
 export const SCHOOL = {
   id: 'escola-catraca-troia',
-  name: 'Escola Municipal Catraca de Troia',
+  name: 'EMEF Profª. Cecília Meireles',
   emailDomain: 'catracadetroia.edu.br',
 };
 

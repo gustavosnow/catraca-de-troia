@@ -7,7 +7,7 @@ import type { GuardianLinkRequestRecord } from '../shared/contracts/linkRequests
  * Dados exclusivos do aceite visual (layout do portal em várias larguras).
  * Não são carregados pelo sistema: o portal real lê tudo da API.
  */
-export const VISUAL_SCHOOL_NAME = 'Escola Municipal Catraca de Troia';
+export const VISUAL_SCHOOL_NAME = 'EMEF Profª. Cecília Meireles';
 
 export const visualStudents: Student[] = [
   {

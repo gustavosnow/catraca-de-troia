@@ -179,7 +179,7 @@ try {
       };
       const viewportOverflow = document.documentElement.scrollWidth > window.innerWidth + 1;
       const headerOverflow = header ? header.scrollWidth > header.clientWidth + 1 : true;
-      const schoolVisible = school?.textContent?.includes('Escola Municipal Catraca de Troia') ?? false;
+      const schoolVisible = school?.textContent?.includes('EMEF Profª. Cecília Meireles') ?? false;
       const studentCards = [...document.querySelectorAll('[data-testid="parent-students"] button')];
       const clippedStudentCards = studentCards.filter((card) => card.scrollWidth > card.clientWidth + 1).length;
       return {
