@@ -5,7 +5,6 @@ import {
   ArrowRight,
   BadgeCheck,
   BookOpen,
-  Camera,
   CheckCircle2,
   ClipboardList,
   Cpu,
@@ -23,7 +22,6 @@ import {
   Lock,
   MapPin,
   MessagesSquare,
-  Monitor,
   PlayCircle,
   Rocket,
   ScanFace,
@@ -930,9 +928,6 @@ const Deviation: React.FC = () => {
 const Lessons: React.FC = () => {
   const lessons: Array<[Icon, string, string]> = [
     [FileText, 'Escopo antes do código', 'Conferir requisito e impacto antes de implementar.'],
-    [Camera, 'Câmera bem posicionada', 'Ajustar altura e ângulo e ter a passagem assistida pronta.'],
-    [Monitor, 'Ensaiar o compartilhamento de tela', 'Na sessão on-line, deixe o painel, o portal e o vídeo prontos. Teste a troca de abas e o áudio do vídeo.'],
-    [ShieldCheck, 'Autorizar no servidor', 'Testar contas sem vínculo e perfis diferentes.'],
     [ClipboardList, 'Medir desde o início', 'Registrar datas, horas e despesas para comparar com o plano.'],
     [Lightbulb, 'Separar produto e cenário', 'A plataforma é a entrega; o hardware é contexto.'],
   ];
