@@ -76,6 +76,7 @@ export interface Turnstile {
 /** Ponto de atenção do dia: leitura negada pelo protótipo facial. */
 export interface SecurityAlert {
   id: string;
+  demo: boolean;
   title: string;
   turnstileName: string;
   direction: AccessDirection;
@@ -111,6 +112,7 @@ export interface WeeklyAccessDay {
   method: 'Facial' | 'RFID' | 'QR Code' | 'Biometria' | 'Manual' | '-';
   status: 'presente' | 'atraso_tolerado' | 'ausente_justificado' | 'ausente' | 'em_andamento' | 'sem_registro';
   durationHours: string;
+  hasDemoRecords: boolean;
   notificationDelivered: boolean;
 }
 

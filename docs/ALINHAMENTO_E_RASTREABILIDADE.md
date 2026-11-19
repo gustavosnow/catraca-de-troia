@@ -33,6 +33,8 @@ Os quatro documentos do Drive foram relidos em 04/11/2026, preservando suas data
 
 ## Correções do escopo vigente
 
+- O painel calcula entradas, saídas, presença pela última passagem e totais por catraca sobre o dia completo no fuso da escola (MC-045). O painel, o CSV e o portal sinalizam as passagens da carga de demonstração.
+
 - Atestados e anexos removidos das telas; upload/download desativados e referências novas a anexos rejeitadas pela API. Bancos legados não são apagados.
 - Carteirinha digital retirada; ficha sem dados de saúde e etiquetas RFID. A passagem assistida só aceita estudante cadastrado e registra o operador autenticado.
 - Retiradas ações de contato manual por WhatsApp e campos de anexo em comunicados.

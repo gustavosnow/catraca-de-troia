@@ -137,7 +137,7 @@ scripts/                  aceite visual, verificação da PWA e build do APK
 docs/                     escopo, rastreabilidade, mudanças e roteiros
 ```
 
-`src/services/accessEventsApi.ts` integra o fluxo persistente, e `accessHistory.ts` deriva a linha do tempo e o histórico a partir desses registros. Não há dados fictícios no código do sistema: eles existem só nas fixtures dos testes. A tela **Sobre o projeto** traz apenas um resumo da demonstração e o link para a pasta oficial no Drive. Orçamento, prazo, metas e riscos não são copiados para o código.
+`src/services/accessEventsApi.ts` integra o fluxo persistente, e `accessHistory.ts` deriva a linha do tempo e o histórico a partir desses registros. A carga opcional `db:demo` cria dados fictícios. As movimentações geradas ficam identificadas no painel, na exportação CSV e no portal. A tela **Sobre o projeto** traz um resumo da demonstração e o link para a pasta oficial no Drive.
 
 ## API local, autenticação e sessões
 
@@ -145,7 +145,7 @@ A API inicia em `http://127.0.0.1:3001` e persiste sessões, justificativas, eve
 
 - **Vínculos:** os responsáveis solicitam vínculo pela matrícula em **Meus vínculos**, no menu da conta. Sem vínculo aprovado, o formulário aparece logo ao entrar. Somente Coordenação/Direção analisa, revoga vínculos ativos e consulta a trilha de auditoria. A aprovação ou a revogação atualiza a autorização efetiva no backend, e o responsável consulta somente os estudantes com vínculo aprovado.
 - **Justificativas:** Coordenação/Direção analisa as justificativas textuais, e a Portaria apenas consulta a fila. Não há upload nem download de arquivos no piloto.
-- **Eventos:** cada evento registra estudante, entrada/saída, instante, catraca, origem e ator escolar. Há duas origens: **Protótipo facial** (câmera autenticada por token do dispositivo) e **Passagem assistida** (equipe, com catraca cadastrada e motivo obrigatório). Cada estudante segue a sequência do dia: a primeira passagem é entrada e depois alterna, na câmera e na passagem assistida. A rota manual não aceita passagem facial nem define status de entrega.
+- **Eventos** registram estudante, entrada/saída, instante, catraca, origem e ator escolar. As origens são **Protótipo facial** (câmera autenticada), **Passagem assistida** (operada pela equipe com motivo) e **Dados de demonstração** (carga fictícia). Cada estudante começa o dia com entrada e depois alterna entrada e saída. Os indicadores escolares consultam o dia inteiro no fuso da escola, com uma consulta separada para os registros recentes.
 - **Perfis:** `server/test/rbac.test.ts` confere todas as rotas de leitura para seis perfis e as escritas restritas.
 - **Notificações:** a leitura dos avisos é individual por responsável. As notificações de passagem e do fluxo de justificativas aparecem na caixa interna do portal.
 - **Segurança:** as senhas são derivadas com scrypt e salt, e a API guarda somente o hash dos tokens opacos. No navegador, cada aba tem seu próprio login e mantém a sessão ao ser recarregada. Sair encerra a sessão daquela aba. As sessões expiram em 12 horas, ou em até 30 dias com a opção de estender a duração marcada. A API aplica cabeçalhos básicos de segurança, impede cache das respostas e limita em memória as tentativas repetidas de login e de solicitação de vínculo.

@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertCircle, CheckCircle2, CircleDashed, Clock3, FileText, Info, LogIn, LogOut, Timer } from 'lucide-react';
 import type { WeeklyAccessDay } from '../../types';
+import { DEMO_ACCESS_LABEL } from '../../services/accessHistory';
 import { Chip } from '../ui';
 
 interface WeeklyAccessHistoryProps {
@@ -57,6 +58,7 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({ days, 
                   <td className="pl-6">
                     <p className="cell-primary">{isToday ? 'Hoje' : splitDate(day.fullDate)[0]}</p>
                     <p className="cell-secondary num">{splitDate(day.fullDate)[1]}</p>
+                    {day.hasDemoRecords && <p className="cell-secondary">{DEMO_ACCESS_LABEL}</p>}
                   </td>
                   <td className="num font-medium">{day.entryTime?.slice(0, 5) ?? '—'}</td>
                   <td className="num font-medium">{day.exitTime?.slice(0, 5) ?? '—'}</td>
@@ -81,6 +83,7 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({ days, 
               <div className="min-w-0 grow basis-36">
                 <p className="text-sm font-semibold text-ink">{isToday ? 'Hoje' : splitDate(day.fullDate)[0]}</p>
                 <p className="tabular text-xs text-muted">{splitDate(day.fullDate)[1]}</p>
+                {day.hasDemoRecords && <p className="mt-1 text-xs text-muted">{DEMO_ACCESS_LABEL}</p>}
               </div>
               <DayStatusChip status={day.status} />
             </div>

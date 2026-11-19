@@ -370,3 +370,9 @@ O formulário e o histórico de solicitações passaram da aba **Avisos** para a
 ## MC-044 — Vínculos ativos agrupados por responsável em 19/11/2026
 
 No painel escolar, o nome do responsável aparece uma vez acima de seus estudantes. Cada vínculo mantém data, situação e revogação individual. O agrupamento usa a conta do responsável, por isso contas com o mesmo nome continuam separadas e um estudante pode aparecer em mais de um grupo quando há mais de um vínculo aprovado. A lista se ajusta à tela do celular.
+
+## MC-045 — Indicadores do dia e origem da carga em 19/11/2026
+
+A visão geral consulta todas as passagens do dia no fuso da escola para totalizar entradas, saídas e passagens por catraca. A presença é calculada pela última passagem de cada estudante naquele dia. A listagem recente continua limitada aos últimos registros.
+
+A carga de demonstração grava a origem fictícia das passagens de câmera e assistidas. O painel, o CSV e o portal identificam essas passagens, e as leituras negadas da carga recebem a mesma identificação. As cargas locais anteriores são reconhecidas pelo identificador de origem, preservando os registros do banco e da fila. Os valores artificiais de similaridade e inferência são omitidos das passagens no painel.

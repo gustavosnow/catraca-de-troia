@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, CheckCircle2, Clock3, LogIn, LogOut, School } from 'lucide-react';
 import type { AccessLog, DayTimelineEvent } from '../../types';
+import { DEMO_ACCESS_LABEL } from '../../services/accessHistory';
 import { firstNameOf } from '../ui';
 
 const turnstileLabel = (name?: string) => name?.split(' (')[0] ?? '';
@@ -20,11 +21,15 @@ interface PresenceStatusCardProps {
 export const PresenceStatusCard: React.FC<PresenceStatusCardProps> = ({ studentName, latestAccess }) => {
   const firstName = firstNameOf(studentName);
   const isAtSchool = latestAccess?.direction === 'entry';
+  const isDemo = latestAccess?.source === 'simulacao';
+  const presence = isAtSchool ? `${firstName} está na escola.` : `${firstName} saiu da escola.`;
+  const simulatedPresence = `${isAtSchool ? 'Entrada' : 'Saída'} de ${firstName} na demonstração.`;
   const meta = latestAccess
     ? [
         `${latestAccess.direction === 'entry' ? 'Entrada' : 'Saída'} às ${latestAccess.exactTime.slice(0, 5)}`,
         turnstileLabel(latestAccess.turnstileName),
         dayLabel(latestAccess.timestamp),
+        isDemo ? DEMO_ACCESS_LABEL : '',
       ].filter(Boolean).join(' · ')
     : 'Nenhuma passagem registrada hoje.';
 
@@ -48,7 +53,7 @@ export const PresenceStatusCard: React.FC<PresenceStatusCardProps> = ({ studentN
         )}
       </div>
       <h2 className={`mt-6 text-[26px] font-bold leading-tight tracking-tight sm:text-[28px] ${isAtSchool ? 'text-[#124d34]' : 'text-ink'}`}>
-        {isAtSchool ? `${firstName} está na escola.` : latestAccess ? `${firstName} saiu da escola.` : `Sem passagens de ${firstName}.`}
+        {latestAccess ? (isDemo ? simulatedPresence : presence) : `Sem passagens de ${firstName}.`}
       </h2>
       <p className={`tabular mt-2 text-sm ${isAtSchool ? 'text-[#2c6b4c]' : 'text-muted'}`}>{meta}</p>
       <p className={`mt-5 border-t pt-4 text-[13px] ${isAtSchool ? 'border-positive-line text-[#2c6b4c]' : 'border-line text-muted'}`}>

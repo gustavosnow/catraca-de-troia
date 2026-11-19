@@ -22,6 +22,7 @@ import type {
 } from '../../../shared/contracts/edgeAgents';
 import type { Student } from '../../types';
 import { accessDevicesApi } from '../../services/accessDevicesApi';
+import { DEMO_ACCESS_LABEL } from '../../services/accessHistory';
 import { edgeAgentsApi } from '../../services/edgeAgentsApi';
 import { ApiClientError } from '../../services/apiError';
 import { Callout, EmptyState, Field, Tone } from '../ui';
@@ -499,11 +500,12 @@ export const FaceRecognitionPanel: React.FC<FaceRecognitionPanelProps> = ({
             <ul className="space-y-1.5">
               {denials.map((denial) => (
                 <li key={denial.id} className="flex justify-between gap-3 text-[13px] text-ink-2">
-                  <span className="truncate">
+                  <span className="min-w-0">
                     {DENIAL_LABELS[denial.reason]} · câmera de {denial.direction === 'ENTRY' ? 'entrada' : 'saída'}
+                    {denial.demo && <span className="block text-xs text-muted">{DEMO_ACCESS_LABEL}</span>}
                   </span>
                   <span className="tabular shrink-0 text-muted">
-                    {Math.round(denial.matchScore * 100)}% · {formatTime(denial.occurredAt)}
+                    {!denial.demo && `${Math.round(denial.matchScore * 100)}% · `}{formatTime(denial.occurredAt)}
                   </span>
                 </li>
               ))}

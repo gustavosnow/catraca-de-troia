@@ -14,20 +14,22 @@ import {
   Users,
 } from 'lucide-react';
 import type { AccessLog, SecurityAlert, Turnstile } from '../../types';
+import type { AccessEventOverview } from '../../../shared/contracts/accessEvents';
 import type { AccessEventSyncStatus } from '../../../shared/contracts/accessEventSync';
+import { DEMO_ACCESS_LABEL } from '../../services/accessHistory';
 import { AllClearIllustration, EmptySearchIllustration } from '../brand/Illustrations';
 import { Callout, Chip, EmptyState, SkeletonRows, StatTile, firstNameOf, greetingForNow } from '../ui';
 
 /** Câmera com leitura nos últimos 2 minutos. */
 const READING_WINDOW_MS = 2 * 60 * 1000;
 import { AccessLogTable } from './AccessLogTable';
-import { isToday } from '../../services/accessHistory';
 import { SyncQueueCard } from './SyncQueueCard';
 import type { SchoolSection } from './SchoolShell';
 
 interface OverviewPageProps {
   userName: string;
   totalStudents: number;
+  accessOverview: AccessEventOverview | null;
   logs: AccessLog[];
   logsState: 'loading' | 'persistent' | 'unavailable';
   logsError?: string;
@@ -49,11 +51,12 @@ interface OverviewPageProps {
   onSelectStudent: (studentId: string) => void;
 }
 
-const pad = (value: number) => String(value).padStart(2, '0');
+const pad = (value?: number) => value === undefined ? '—' : String(value).padStart(2, '0');
 
 export const OverviewPage: React.FC<OverviewPageProps> = ({
   userName,
   totalStudents,
+  accessOverview,
   logs,
   logsState,
   logsError,
@@ -74,15 +77,6 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   onNavigate,
   onSelectStudent,
 }) => {
-  // Indicadores do dia: só registros de hoje; "Na escola" pela última passagem de hoje.
-  const todayLogs = logs.filter((log) => isToday(log.timestamp));
-  const entries = todayLogs.filter((log) => log.direction === 'entry').length;
-  const exits = todayLogs.length - entries;
-  const latestByStudent = new Map<string, AccessLog['direction']>();
-  [...todayLogs]
-    .sort((left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime())
-    .forEach((log) => latestByStudent.set(log.studentId, log.direction));
-  const onCampus = [...latestByStudent.values()].filter((direction) => direction === 'entry').length;
   const activeAlerts = alerts;
   const recentLogs = logs.slice(0, 6);
   const firstName = firstNameOf(userName);
@@ -109,9 +103,12 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
 
       <section aria-label="Indicadores do dia" className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatTile label="Estudantes cadastrados" value={pad(totalStudents)} icon={Users} caption="Cadastro da escola" />
-        <StatTile label="Entradas hoje" value={pad(entries)} icon={LogIn} caption="Câmera e passagem assistida" emphasis />
-        <StatTile label="Saídas hoje" value={pad(exits)} icon={LogOut} caption="Câmera e passagem assistida" />
-        <StatTile label="Na escola agora" value={pad(onCampus)} icon={School} caption="Pela última passagem de hoje" />
+        <StatTile label="Entradas hoje" value={pad(accessOverview?.entries)} icon={LogIn} caption="Registros do dia" emphasis />
+        <StatTile label="Saídas hoje" value={pad(accessOverview?.exits)} icon={LogOut} caption="Registros do dia" />
+        <StatTile label="Na escola agora" value={pad(accessOverview?.onCampus)} icon={School} caption="Pela última passagem de hoje" />
+        {accessOverview?.hasDemoRecords && (
+          <p className="col-span-full text-xs text-muted">Os indicadores do dia incluem dados de demonstração.</p>
+        )}
       </section>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -128,7 +125,9 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
                 {turnstiles.map((turnstile) => {
-                  const passes = todayLogs.filter((log) => log.turnstileId === turnstile.id).length;
+                  const passes = accessOverview
+                    ? accessOverview.turnstiles.find(({ id }) => id === turnstile.id)?.passes ?? 0
+                    : undefined;
                   return (
                     <article key={turnstile.id} className="card p-5">
                       <div className="flex items-start gap-3">
@@ -218,7 +217,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                     </span>
                     <div className="min-w-0">
                       <p className="text-[13px] font-semibold text-ink">{alert.title}</p>
-                      <p className="mt-0.5 text-xs text-muted">{alert.turnstileName} · {alert.direction === 'entry' ? 'entrada' : 'saída'}</p>
+                      <p className="mt-0.5 text-xs text-muted">{alert.turnstileName} · {alert.direction === 'entry' ? 'entrada' : 'saída'}{alert.demo && ` · ${DEMO_ACCESS_LABEL}`}</p>
                       <p className="tabular mt-1 text-xs text-subtle">Hoje, {new Date(alert.occurredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                   </li>
