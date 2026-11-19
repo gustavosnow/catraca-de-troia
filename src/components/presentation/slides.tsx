@@ -44,7 +44,7 @@ import { BRAND_SEAL_SRC, BrandArtwork } from '../brand/BrandMark';
 
 /** Pasta oficial da documentação no Drive (TAP, Ciclo de Vida, EAP e Plano de Riscos). */
 const OFFICIAL_DOCS_URL = 'https://drive.google.com/drive/folders/163EOyyzGW-VMIH2zs_PGTHZEVyHRfeJ9';
-const LAB_VIDEO_URL = 'https://drive.google.com/file/d/1W0_vFphnIqT9nNE8Y9d63lcIgvaaakTv/view';
+const LAB_VIDEO_URL = 'https://www.youtube.com/watch?v=p3uTM2nQSGg';
 
 export interface SlideDefinition {
   id: string;
