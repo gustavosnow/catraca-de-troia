@@ -23,6 +23,7 @@ import {
   Lock,
   MapPin,
   MessagesSquare,
+  Monitor,
   PlayCircle,
   Rocket,
   ScanFace,
@@ -43,6 +44,7 @@ import { BRAND_SEAL_SRC, BrandArtwork } from '../brand/BrandMark';
 
 /** Pasta oficial da documentação no Drive (TAP, Ciclo de Vida, EAP e Plano de Riscos). */
 const OFFICIAL_DOCS_URL = 'https://drive.google.com/drive/folders/163EOyyzGW-VMIH2zs_PGTHZEVyHRfeJ9';
+const LAB_VIDEO_URL = 'https://drive.google.com/file/d/1W0_vFphnIqT9nNE8Y9d63lcIgvaaakTv/view';
 
 export interface SlideDefinition {
   id: string;
@@ -155,13 +157,17 @@ const Problem: React.FC = () => (
 /* ------------------------------------------------------------------ */
 const Proposal: React.FC = () => {
   const steps: Array<[Icon, string, string]> = [
-    [ScanFace, 'Identifica', 'A câmera reconhece o estudante na catraca de entrada ou de saída.'],
-    [LayoutDashboard, 'Registra', 'O painel escolar guarda a passagem e acompanha o dia.'],
-    [Smartphone, 'Informa', 'O responsável vê a entrada e a saída no portal, pelo celular.'],
+    [ScanFace, 'Identifica', 'No cenário escolar, a câmera auxilia a identificação. A portaria pode registrar uma passagem assistida.'],
+    [LayoutDashboard, 'Registra', 'O painel reúne as passagens para a equipe acompanhar a rotina da escola.'],
+    [Smartphone, 'Informa', 'Os responsáveis com vínculo aprovado consultam as entradas e saídas pelo celular.'],
   ];
   return (
     <div className="deck-inner">
-      <Heading eyebrow="A proposta" title={<>Uma plataforma, dois públicos, <span className="deck-accent">a mesma regra de acesso.</span></>} />
+      <Heading
+        eyebrow="A proposta"
+        title={<>Registros organizados para a escola, <span className="deck-accent">acesso para as famílias</span></>}
+        lead="Para uma escola pública de Parauapebas (PA), a plataforma centraliza os registros da portaria e permite que as famílias acompanhem as entradas e saídas dos estudantes."
+      />
       <div className="mt-12 grid items-stretch gap-4 md:grid-cols-[1fr_auto_1fr_auto_1fr]">
         {steps.map(([IconComponent, title, text], position) => (
           <React.Fragment key={title}>
@@ -507,6 +513,11 @@ const Acceptance: React.FC = () => {
     [Smartphone, '≥ 95%', 'das notificações processadas para envio em até 5 s, sob conectividade prevista'],
     [Gauge, '≥ 99%', 'de disponibilidade no horário escolar'],
   ];
+  const evidence = [
+    { id: 'RF04', title: 'Passagem facial', detail: 'Ensaio com câmera e registro da passagem no vídeo de laboratório.', href: LAB_VIDEO_URL },
+    { id: 'RF05', title: 'Passagem assistida', detail: 'Registrar ao vivo no painel e consultar no portal.', href: '#/projeto/16' },
+    { id: 'RNF01', title: 'Consulta restrita', detail: 'Verificar perfis e comparar o acesso de responsáveis com e sem vínculo aprovado.' },
+  ];
   return (
     <>
       <Swoosh className="-left-48 -top-48 w-[34rem] max-w-[70vw] -scale-x-100 opacity-50" />
@@ -525,15 +536,24 @@ const Acceptance: React.FC = () => {
                 </article>
               ))}
             </div>
-            <p className="deck-note deck-reveal mt-4" style={d(5)}>Metas para a homologação do cenário, não resultados medidos.</p>
+            <p className="deck-note deck-reveal mt-4" style={d(5)}>Metas de homologação do cenário escolar. A demonstração acadêmica verifica fluxos e regras do protótipo.</p>
           </div>
           <article className="deck-card deck-reveal" style={d(3)}>
-            <h3>O que o aceite acadêmico confere</h3>
-            <ul className="mt-4 grid gap-3">
-              {['Fluxos demonstrados de ponta a ponta', 'Autorização por perfil e por vínculo', 'Persistência no banco SQLite', 'Tratamento de erros e de falhas da API', 'Coerência entre relatório e versão apresentada'].map((item) => (
-                <li key={item} className="flex gap-2.5"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#4ade80]" aria-hidden="true" />{item}</li>
+            <h3>Do requisito à evidência</h3>
+            <dl className="mt-3 divide-y divide-white/10">
+              {evidence.map(({ id, title, detail, href }) => (
+                <div key={id} className="py-2.5">
+                  <dt className="flex flex-wrap items-baseline gap-x-2 font-semibold">
+                    <span className="text-sm font-extrabold text-[#ff6a00]">{id}</span>
+                    {href ? (
+                      <a href={href} target={href === LAB_VIDEO_URL ? '_blank' : undefined} rel={href === LAB_VIDEO_URL ? 'noopener noreferrer' : undefined} className="underline underline-offset-4">{title}</a>
+                    ) : title}
+                  </dt>
+                  <dd className="mt-1 text-sm leading-relaxed text-[#d1d5db]">{detail}</dd>
+                </div>
               ))}
-            </ul>
+            </dl>
+            <p className="mt-3 !text-xs">A seção 3.4 do relatório reúne os 11 RF e 10 RNF do pacote 1.2.1 da EAP.</p>
           </article>
         </div>
       </div>
@@ -663,40 +683,63 @@ const RiskResponses: React.FC = () => {
 /* 15 — Arquitetura                                                    */
 /* ------------------------------------------------------------------ */
 const Architecture: React.FC = () => {
-  const Node: React.FC<{ icon: Icon; title: string; text: string; delay: number; highlight?: boolean }> = ({ icon: IconComponent, title, text, delay, highlight }) => (
-    <div className={`deck-card deck-pop flex items-start gap-3 ${highlight ? '!border-[#ff6a00]' : ''}`} style={d(delay)}>
-      <span className="deck-icon"><IconComponent aria-hidden="true" /></span>
-      <div>
-        <h3 className="!text-[clamp(.98rem,1.15vw,1.15rem)]">{title}</h3>
-        <p className="mt-1 !text-[clamp(.82rem,.92vw,.95rem)]">{text}</p>
-      </div>
-    </div>
-  );
-  const Arrow: React.FC<{ delay: number; label?: string }> = ({ delay, label }) => (
-    <div className="deck-reveal flex flex-col items-center justify-center gap-1 text-[#ff6a00]" style={d(delay)} aria-hidden="true">
-      <ArrowRight className="hidden h-7 w-7 lg:block" />
-      <ArrowDown className="h-6 w-6 lg:hidden" />
-      {label && <span className="text-[11px] font-semibold text-[#9ca3af]">{label}</span>}
-    </div>
-  );
+  const layers: Array<[Icon, string, string]> = [
+    [LayoutDashboard, 'Interfaces e câmera', 'Painel e portal em React e TypeScript. O agente usa Python e OpenCV e envia à API só o resultado da leitura.'],
+    [Lock, 'API Express', 'Centraliza as regras para cada cliente. Confere sessão, perfil e vínculo antes de liberar consultas e valida a sequência ao registrar passagens.'],
+    [Database, 'SQLite local', 'Um arquivo no servidor atende ao protótipo de uma escola. Transações preservam registros e a fila local com pouca infraestrutura.'],
+  ];
+  const entities = [
+    { name: 'Responsável', table: 'users', keys: 'PK id', relation: '1 para 0..N' },
+    { name: 'Vínculo', table: 'guardian_student_links', keys: 'PK composta por guardian_user_id e student_id, ambas FKs', relation: '0..N para 1' },
+    { name: 'Estudante', table: 'students', keys: 'PK id', relation: '1 para 0..N' },
+    { name: 'Evento de acesso', table: 'access_events', keys: 'PK id · FK student_id' },
+  ];
   return (
     <div className="deck-inner">
-      <Heading eyebrow="Arquitetura" title={<>Cada parte <span className="deck-accent">com uma função</span></>} />
-      <div className="mt-9 grid items-center gap-3 lg:grid-cols-[1fr_auto_1fr_auto_1.15fr_auto_1fr]">
-        <Node icon={Camera} title="Câmeras" text="Entrada e saída, em laboratório" delay={1} />
-        <Arrow delay={1.5} label="vídeo" />
-        <Node icon={ScanFace} title="Agente facial" text="Python + OpenCV detecta, compara e envia só o resultado" delay={2} />
-        <Arrow delay={2.5} label="HTTP" />
-        <Node icon={Lock} title="API Express" text="Sessão, perfil, vínculo e sequência de entrada e saída" delay={3} highlight />
-        <Arrow delay={3.5} />
-        <Node icon={Database} title="SQLite" text="Passagens, avisos, justificativas, fila e auditoria" delay={4} />
+      <Heading eyebrow="Arquitetura e decisões técnicas" title={<>A API aplica as regras, <span className="deck-accent">o banco guarda os registros</span></>} />
+      <div className="mt-6 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
+        {layers.map(([IconComponent, title, text], position) => (
+          <React.Fragment key={title}>
+            <div className={`deck-card deck-reveal flex items-start gap-3 !p-4 ${position === 1 ? '!border-[#ff6a00]' : ''}`} style={d(position + 1)}>
+              <span className="deck-icon"><IconComponent aria-hidden="true" /></span>
+              <div className="min-w-0">
+                <h3>{title}</h3>
+                <p className="mt-1 !text-sm">{text}</p>
+              </div>
+            </div>
+            {position < layers.length - 1 && (
+              <div className="flex items-center justify-center text-[#ff6a00]" aria-hidden="true">
+                <ArrowRight className="hidden h-6 w-6 lg:block" />
+                <ArrowDown className="h-5 w-5 lg:hidden" />
+              </div>
+            )}
+          </React.Fragment>
+        ))}
       </div>
-      <div className="mt-4 grid gap-3 lg:ml-[calc(48%)] lg:grid-cols-2">
-        <Node icon={LayoutDashboard} title="Painel escolar" text="React + TypeScript, no navegador" delay={5} />
-        <Node icon={Smartphone} title="Portal dos responsáveis" text="Mesma API; abre por link ou QR Code" delay={5.5} />
-      </div>
-      <p className="deck-note deck-reveal mt-6" style={d(7)}>
-        Os vetores faciais ficam no computador local e nunca vão para a API nem para o repositório.
+      <figure className="deck-reveal mt-6" style={d(4)}>
+        <figcaption className="mb-2 text-base font-bold">Recorte do diagrama entidade-relacionamento (DER)</figcaption>
+        <div className="grid gap-2 lg:grid-cols-[minmax(0,.8fr)_auto_minmax(0,1.25fr)_auto_minmax(0,.8fr)_auto_minmax(0,.9fr)]">
+          {entities.map(({ name, table, keys, relation }) => (
+            <React.Fragment key={table}>
+              <div className="min-w-0 rounded-xl border border-white/15 bg-[#142230] px-3 py-2.5">
+                <p className="text-sm font-bold text-white">{name}</p>
+                <code className="block text-xs leading-relaxed text-[#d1d5db] [overflow-wrap:anywhere]">{table}</code>
+                <p className="mt-1 text-xs text-[#d1d5db] [overflow-wrap:anywhere]">{keys}</p>
+              </div>
+              {relation && (
+                <span className="flex items-center justify-center gap-1 text-xs font-semibold text-[#ff984d]" aria-hidden="true">
+                  <span>{relation}</span>
+                  <ArrowRight className="hidden h-4 w-4 lg:block" />
+                  <ArrowDown className="h-4 w-4 lg:hidden" />
+                </span>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        <p className="sr-only">Cada vínculo liga um responsável a um estudante. Responsáveis e estudantes podem ter vários vínculos. Cada evento pertence a um estudante, que pode ter vários eventos.</p>
+      </figure>
+      <p className="deck-note deck-reveal mt-5" style={d(5)}>
+        <strong>Para várias escolas</strong>, revisar o isolamento de dados e permissões por unidade, medir gravações simultâneas e avaliar um banco servidor para a operação compartilhada.
       </p>
     </div>
   );
@@ -707,39 +750,39 @@ const Architecture: React.FC = () => {
 /* ------------------------------------------------------------------ */
 const Passage: React.FC = () => {
   const steps: Array<[string, string]> = [
-    ['Reconhece', 'A câmera confirma o mesmo rosto em 3 quadros.'],
-    ['Confere', 'A API valida a câmera, o limiar e a sequência do dia.'],
-    ['Registra e avisa', 'A passagem entra no painel e gera uma notificação interna no portal.'],
-  ];
-  const exceptions: Array<[Icon, string, string, string]> = [
-    [XCircle, 'Rosto desconhecido', 'A recusa fica no painel, sem notificar ninguém.', 'text-[#b91c1c]'],
-    [AlertTriangle, 'Entrada repetida', 'Aparece "Já registrado" e nada é gravado.', 'text-[#b45309]'],
-    [Hand, 'Câmera falhou', 'A portaria registra uma passagem assistida, com motivo.', 'text-[#1d4ed8]'],
+    ['Registrar', 'No painel, abra Passagem assistida. Use estudante fictício, escolha a catraca, siga a direção sugerida e informe o motivo.'],
+    ['Conferir no painel', 'Em Registros de acesso, localize a passagem assistida e confira o horário e a catraca.'],
+    ['Consultar no portal', 'Na conta do responsável vinculado, selecione o mesmo estudante e confira a passagem em Movimentações registradas.'],
   ];
   return (
-    <div className="deck-inner grid items-center gap-10 lg:grid-cols-[1.25fr_.75fr]">
+    <div className="deck-inner grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(12rem,.28fr)]">
       <div>
-        <Heading eyebrow="Na prática" title={<>Como funciona <span className="deck-accent">uma passagem</span></>} />
-        <ol className="mt-8 grid gap-3 sm:grid-cols-3">
+        <Heading eyebrow="Demonstração ao vivo · dados fictícios" title={<>Passagem assistida, <span className="deck-accent">do painel ao portal</span></>} />
+        <div className="deck-reveal mt-5 flex flex-wrap gap-2.5" style={d(1)}>
+          <a href="#/escola" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+            <Hand aria-hidden="true" /> Abrir painel escolar
+          </a>
+          <a href="#/responsaveis" target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+            <Smartphone aria-hidden="true" /> Abrir portal dos responsáveis
+          </a>
+          <a href={LAB_VIDEO_URL} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+            <PlayCircle aria-hidden="true" /> Ver ensaio com câmera
+          </a>
+        </div>
+        <ol className="mt-5 grid gap-3 sm:grid-cols-3">
           {steps.map(([title, text], position) => (
-            <li key={title} className="deck-card deck-reveal" style={d(position + 1)}>
-              <p className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#ff6a00] text-sm font-extrabold text-[#1f2937]">{position + 1}</p>
-              <h3 className="mt-3">{title}</h3>
+            <li key={title} className="deck-card deck-reveal !p-4" style={d(position + 2)}>
+              <h3>{title}</h3>
               <p className="mt-1">{text}</p>
             </li>
           ))}
         </ol>
-        <p className="deck-reveal mt-6 text-sm font-bold uppercase tracking-wider text-[#4b5563]" style={d(4)}>E quando algo sai do esperado</p>
-        <ul className="mt-3 grid gap-2">
-          {exceptions.map(([IconComponent, title, text, color], position) => (
-            <li key={title} className="deck-reveal flex items-start gap-3 rounded-xl border border-[#e5e7eb] bg-white px-4 py-3" style={d(position + 5)}>
-              <IconComponent className={`mt-0.5 h-5 w-5 shrink-0 ${color}`} aria-hidden="true" />
-              <p className="text-[clamp(.88rem,1vw,1.02rem)] text-[#374151]"><span className="font-bold text-[#1f2937]">{title}:</span> {text}</p>
-            </li>
-          ))}
-        </ul>
+        <div className="deck-reveal mt-4 flex items-start gap-3 rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#374151]" style={d(5)}>
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[#b45309]" aria-hidden="true" />
+          <p><strong className="text-[#1f2937]">Exceção de sequência.</strong> Repita a mesma direção para o mesmo estudante. Confira a recusa da API e confirme que a lista tem apenas a passagem original.</p>
+        </div>
       </div>
-      <div className="deck-pop mx-auto w-[min(17rem,70vw)]" style={d(3)}>
+      <div className="deck-pop mx-auto w-[min(14rem,68vw)]" style={d(3)}>
         <Phone src="/apresentacao/tela-portal-historico.webp" alt="Histórico da semana no portal do responsável, com entradas e saídas" />
         <p className="deck-note mt-3 text-center">Histórico da semana no portal</p>
       </div>
@@ -787,11 +830,11 @@ const Security: React.FC = () => {
 /* 18 — Evidências                                                     */
 /* ------------------------------------------------------------------ */
 const Evidence: React.FC = () => {
-  const milestones: Array<[string, string]> = [
-    ['04/11', 'Consolidação técnica: PWA e 29 testes'],
-    ['17/11', 'Revisão do TAP, ciclo de vida, riscos e EAP'],
-    ['18/11', 'Redesenho das telas e ensaio com câmera'],
-    ['19/11', 'Fluxo facial integrado à versão principal'],
+  const milestones = [
+    'Consolidação técnica: PWA e 29 testes',
+    'Revisão do TAP, ciclo de vida, riscos e EAP',
+    'Redesenho das telas e ensaio com câmera',
+    'Fluxo facial integrado à versão principal',
   ];
   return (
     <>
@@ -807,12 +850,12 @@ const Evidence: React.FC = () => {
                 <p className="mt-1">
                   {IconComponent === PlayCircle ? (
                     <a
-                      href="https://drive.google.com/file/d/1W0_vFphnIqT9nNE8Y9d63lcIgvaaakTv/view"
+                      href={LAB_VIDEO_URL}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline underline-offset-4"
                     >
-                      {label} de 18/11/2026
+                      {label}
                     </a>
                   ) : label}
                 </p>
@@ -821,20 +864,19 @@ const Evidence: React.FC = () => {
           ))}
         </div>
         <p className="deck-note deck-reveal mt-4" style={d(3)}>
-          Validação local do PR #7 em 19/11/2026. A{' '}
+          Validação local do PR #7. A{' '}
           <a href="https://github.com/gustavosnow/catraca-de-troia/pull/3" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">
             PR #3 (`16d5320`)
           </a>{' '}registrou 40 testes de API e 24 cenários visuais.
         </p>
-        <ol className="relative mt-8 grid gap-5 md:grid-cols-4">
-          {milestones.map(([date, text], position) => (
-            <li key={date + text} className="deck-reveal relative md:pt-7" style={d(position + 4)}>
-              <span className="absolute left-0 top-0 hidden h-[1.15rem] w-[1.15rem] rounded-full border-[3px] border-[#0b151d] bg-[#ff6a00] md:block" aria-hidden="true" />
-              <p className="text-lg font-extrabold text-[#ff6a00]">{date}</p>
-              <p className="mt-1 text-[clamp(.88rem,1vw,1.02rem)] text-[#d1d5db]">{text}</p>
+        <ul className="mt-8 grid gap-5 md:grid-cols-4">
+          {milestones.map((text, position) => (
+            <li key={text} className="deck-reveal flex items-start gap-3 text-[clamp(.88rem,1vw,1.02rem)] text-[#d1d5db]" style={d(position + 4)}>
+              <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-[#ff6a00]" aria-hidden="true" />
+              <span>{text}</span>
             </li>
           ))}
-        </ol>
+        </ul>
         <p className="deck-note deck-reveal mt-8" style={d(8)}>Acurácia, latência e disponibilidade em escola exigem ensaios próprios, ainda não realizados.</p>
       </div>
     </>
@@ -889,7 +931,7 @@ const Lessons: React.FC = () => {
   const lessons: Array<[Icon, string, string]> = [
     [FileText, 'Escopo antes do código', 'Conferir requisito e impacto antes de implementar.'],
     [Camera, 'Câmera bem posicionada', 'Ajustar altura e ângulo e ter a passagem assistida pronta.'],
-    [Wifi, 'Ensaiar na rede da aula', 'Testar o QR Code no Wi-Fi da apresentação.'],
+    [Monitor, 'Ensaiar o compartilhamento de tela', 'Na sessão on-line, deixe o painel, o portal e o vídeo prontos. Teste a troca de abas e o áudio do vídeo.'],
     [ShieldCheck, 'Autorizar no servidor', 'Testar contas sem vínculo e perfis diferentes.'],
     [ClipboardList, 'Medir desde o início', 'Registrar datas, horas e despesas para comparar com o plano.'],
     [Lightbulb, 'Separar produto e cenário', 'A plataforma é a entrega; o hardware é contexto.'],
@@ -918,7 +960,10 @@ const Closing: React.FC = () => (
       <h2 className="deck-reveal mt-8 text-[clamp(2.6rem,6vw,5.4rem)] font-extrabold leading-none tracking-tight" style={d(1)}>
         Obrigado<span className="deck-accent">!</span>
       </h2>
-      <p className="deck-lead deck-reveal mx-auto" style={d(2)}>Perguntas? A plataforma e a documentação estão à disposição.</p>
+      <p className="deck-lead deck-reveal mx-auto" style={d(2)}>
+        Entregamos o protótipo com painel escolar, portal dos responsáveis e passagem assistida, além do ensaio facial em laboratório e da documentação acadêmica.
+      </p>
+      <p className="deck-note deck-reveal mt-3" style={d(2.5)}>O Termo de Encerramento integra o relatório final.</p>
       <div className="deck-reveal mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row" style={d(3)}>
         <a href={OFFICIAL_DOCS_URL} target="_blank" rel="noopener noreferrer" className="inline-flex h-12 items-center gap-2 rounded-full bg-[#c2410c] px-6 font-bold text-white transition-colors hover:bg-[#9a3412]">
           <BookOpen className="h-5 w-5" aria-hidden="true" />
@@ -954,7 +999,7 @@ export const SLIDES: SlideDefinition[] = [
   { id: 'riscos', title: 'Matriz de riscos', theme: 'light', Component: RiskMatrix },
   { id: 'respostas', title: 'Respostas aos riscos altos', theme: 'light', Component: RiskResponses },
   { id: 'arquitetura', title: 'Arquitetura', theme: 'dark', Component: Architecture },
-  { id: 'passagem', title: 'Como funciona uma passagem', theme: 'light', Component: Passage },
+  { id: 'passagem', title: 'Demonstração prática', theme: 'light', Component: Passage },
   { id: 'seguranca', title: 'Segurança e perfis', theme: 'light', Component: Security },
   { id: 'evidencias', title: 'Evidências', theme: 'dark', Component: Evidence },
   { id: 'desvios', title: 'Planejado x executado', theme: 'light', Component: Deviation },
