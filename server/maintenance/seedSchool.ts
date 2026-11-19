@@ -3,11 +3,13 @@
  *
  *   SEED_PASSWORD='...' npm run db:seed
  *   SEED_PASSWORD='...' npm run db:seed -- --reset
+ *   npm run db:seed -- --catracas
  *
  * Sem --reset, recusa um banco que já tenha pessoas cadastradas. Com --reset,
  * cria antes um backup verificado em .data/backups, recria o banco vazio e
  * preserva as câmeras já cadastradas (catraca, sentido, limiar e fonte de vídeo).
- * Sem câmeras para preservar (clone novo), cadastra entrada e saída da catraca 01.
+ * Em um banco novo, cadastra entrada e saída das duas catracas de demonstração.
+ * Use --catracas para incluir câmeras faltantes sem recarregar o banco.
  * A senha inicial vem de SEED_PASSWORD e não fica no código.
  */
 import { existsSync, rmSync } from 'node:fs';
@@ -17,7 +19,7 @@ import { randomUUID } from 'node:crypto';
 import { createDatabase } from '../db';
 import { MIN_PASSWORD_LENGTH, registerCredentials } from '../auth/credentials';
 import { createVerifiedBackup } from './databaseBackup';
-import { AccessDeviceService } from '../modules/accessDevices/service';
+import { ensureDemoTurnstiles } from './demoTurnstiles';
 import { GUARDIANS, SCHOOL, STAFF, STUDENTS } from './schoolData';
 
 interface DeviceRow {
@@ -33,20 +35,36 @@ interface DeviceRow {
   camera_source: string | null;
 }
 
-const { values } = parseArgs({ options: { reset: { type: 'boolean', default: false } } });
+const { values } = parseArgs({ options: {
+  reset: { type: 'boolean', default: false },
+  catracas: { type: 'boolean', default: false },
+} });
 const fail = (message: string): never => {
   console.error(message);
   process.exit(1);
 };
 
-const password = process.env.SEED_PASSWORD ?? '';
-if (password.length < MIN_PASSWORD_LENGTH) {
-  fail(`Defina SEED_PASSWORD com pelo menos ${MIN_PASSWORD_LENGTH} caracteres (senha inicial das contas).`);
-}
-
 const filename = path.resolve(process.env.DATABASE_PATH || '.data/catraca-de-troia.sqlite');
 
 const main = async () => {
+  if (values.catracas) {
+    if (values.reset) fail('Use --catracas sem --reset para preservar a base.');
+    if (!existsSync(filename)) fail('Banco ainda não criado. Rode npm run db:demo.');
+    const database = createDatabase({ filename });
+    try {
+      const created = ensureDemoTurnstiles(database);
+      console.log(created.length ? `Câmeras acrescentadas: ${created.join(', ')}.` : 'As duas catracas já estão cadastradas.');
+    } finally {
+      database.close();
+    }
+    return;
+  }
+
+  const password = process.env.SEED_PASSWORD ?? '';
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    fail(`Defina SEED_PASSWORD com pelo menos ${MIN_PASSWORD_LENGTH} caracteres (senha inicial das contas).`);
+  }
+
   let devices: DeviceRow[] = [];
   if (existsSync(filename)) {
     const current = createDatabase({ filename });
@@ -68,7 +86,7 @@ const main = async () => {
   const coordinator = STAFF.find((member) => member.role === 'STAFF_COORDINATION')!;
   const gate = STAFF.find((member) => member.role === 'STAFF_GATE')!;
 
-  database.transaction(() => {
+  const createdDevices = database.transaction(() => {
     database.prepare('INSERT INTO schools (id, name) VALUES (?, ?)').run(SCHOOL.id, SCHOOL.name);
 
     const insertUser = database.prepare(`
@@ -125,28 +143,9 @@ const main = async () => {
       VALUES (?, ?, ?, 'SCHOOL', ?, 'INITIAL_LOAD', NULL, ?, ?)
     `).run(randomUUID(), SCHOOL.id, coordinator.id, SCHOOL.id,
       `${STAFF.length} equipe, ${GUARDIANS.length} responsáveis, ${STUDENTS.length} estudantes`, now);
+    return devices.length === 0 ? ensureDemoTurnstiles(database) : [];
   })();
 
-  // Clone novo: sem câmeras para preservar, cadastra entrada e saída da catraca 01.
-  // A fonte de vídeo fica para o painel (Ferramentas); o painel gera o token a cada início.
-  const createdDevices: string[] = [];
-  if (devices.length === 0) {
-    const service = new AccessDeviceService(database);
-    for (const direction of ['ENTRY', 'EXIT'] as const) {
-      const id = direction === 'ENTRY' ? 'cat-01-entrada' : 'cat-01-saida';
-      service.register({
-        id,
-        schoolId: SCHOOL.id,
-        name: direction === 'ENTRY' ? 'Câmera de entrada' : 'Câmera de saída',
-        turnstileId: 'cat-01',
-        turnstileName: 'Catraca 01 (Portão Principal)',
-        direction,
-        operatorUserId: gate.id,
-        minScore: 0.4,
-      });
-      createdDevices.push(id);
-    }
-  }
   database.close();
 
   console.log(`Escola: ${SCHOOL.name}`);

@@ -799,7 +799,7 @@ const Evidence: React.FC = () => {
       <div className="deck-inner">
         <Heading eyebrow="Evidências" title={<>O que foi <span className="deck-accent">verificado</span></>} />
         <div className="mt-9 grid gap-4 sm:grid-cols-3">
-          {([[TestTube2, '47', 'testes automatizados da API'], [LayoutDashboard, '44', 'cenários de aceite visual do portal'], [PlayCircle, '1', 'vídeo do ensaio de laboratório']] as Array<[Icon, string, string]>).map(([IconComponent, value, label], position) => (
+          {([[TestTube2, '48', 'testes automatizados da API'], [LayoutDashboard, '44', 'cenários de aceite visual do portal'], [PlayCircle, '1', 'vídeo do ensaio de laboratório']] as Array<[Icon, string, string]>).map(([IconComponent, value, label], position) => (
             <article key={label} className="deck-card deck-reveal flex items-center gap-4" style={d(position + 1)}>
               <span className="deck-icon"><IconComponent aria-hidden="true" /></span>
               <div>

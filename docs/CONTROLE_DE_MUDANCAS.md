@@ -386,3 +386,7 @@ Ajustes: criada a rota pública `#/projeto` com 21 slides, navegação por botõ
 Limites: os slides são material de exposição. Metas, custos e prazo são critérios e estimativas do cenário planejado; integração física, entrega externa de notificações e homologação não foram demonstradas. As imagens são capturas do protótipo, sem dados reais de estudantes ou biometria. Os documentos acadêmicos vinculados continuam como fonte vigente.
 
 A revisão acadêmica conferiu TAP, Atividade 01, EAP v1.6 e Plano de Riscos. O slide de evidências identifica a validação atual e a referência anterior da PR #3. O vídeo documenta o ensaio de laboratório de 18/11/2026.
+
+## MC-047 — Duas catracas na demonstração em 19/11/2026
+
+A carga inicial cadastra Catraca 01 e Catraca 02, cada uma com câmera de entrada e de saída. O movimento gerado em bases novas usa as duas. O comando `npm run db:seed -- --catracas` complementa uma base de demonstração anterior sem recriar contas ou movimentações e mantém as câmeras existentes. O cadastro representa o cenário de demonstração com o protótipo de laboratório.

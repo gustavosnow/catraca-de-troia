@@ -88,14 +88,11 @@ const justifications = new JustificationService(database, clock);
 const linkRequests = new LinkRequestService(database, clock);
 const auth = new AuthService(database, clock);
 
-const deviceRow = (direction: 'ENTRY' | 'EXIT') => database.prepare(`
-  SELECT * FROM access_devices WHERE school_id = ? AND direction = ? AND active = 1 ORDER BY id LIMIT 1
-`).get(SCHOOL.id, direction) as Parameters<AccessDeviceService['recognize']>[0] | undefined;
-const entryCamera = deviceRow('ENTRY');
-const exitCamera = deviceRow('EXIT');
-const turnstile = database.prepare('SELECT turnstile_id, turnstile_name FROM access_devices WHERE school_id = ? LIMIT 1')
-  .get(SCHOOL.id) as { turnstile_id: string; turnstile_name: string } | undefined;
-if (!turnstile) fail('Nenhuma catraca cadastrada. Registre as câmeras com npm run device:register.');
+const cameras = database.prepare(`
+  SELECT * FROM access_devices WHERE school_id = ? AND active = 1 ORDER BY turnstile_id, id
+`).all(SCHOOL.id) as Parameters<AccessDeviceService['recognize']>[0][];
+const turnstileIds = [...new Set(cameras.map((camera) => camera.turnstile_id))];
+if (turnstileIds.length === 0) fail('Nenhuma catraca ativa. Confira o cadastro das câmeras antes de gerar o movimento.');
 
 // ------------------------------------------------------------------ agenda
 /** Tudo entra numa agenda e roda em ordem cronológica, como aconteceria de fato. */
@@ -117,7 +114,10 @@ const EARLY_EXIT_REASON = 'Saída antecipada solicitada pelo responsável e conf
 
 const pass = (studentId: string, direction: 'ENTRY' | 'EXIT', iso: string, assistedReason?: string) => {
   setClock(iso);
-  const camera = direction === 'ENTRY' ? entryCamera : exitCamera;
+  const studentIndex = STUDENTS.findIndex((student) => student.id === studentId);
+  const turnstileId = turnstileIds[studentIndex % turnstileIds.length];
+  const turnstile = cameras.find((item) => item.turnstile_id === turnstileId)!;
+  const camera = cameras.find((item) => item.turnstile_id === turnstileId && item.direction === direction);
   if (!assistedReason && camera && random() > 0.12) {
     const decision = devices.recognize(camera, {
       captureId: `carga-${randomUUID()}`,
@@ -132,8 +132,8 @@ const pass = (studentId: string, direction: 'ENTRY' | 'EXIT', iso: string, assis
   }
   events.create(gate, studentId, {
     direction,
-    turnstileId: turnstile!.turnstile_id,
-    turnstileName: turnstile!.turnstile_name,
+    turnstileId,
+    turnstileName: turnstile.turnstile_name,
     status: 'MANUAL_RELEASE',
     method: 'MANUAL',
     whatsappStatus: 'PENDING',
@@ -144,8 +144,7 @@ const pass = (studentId: string, direction: 'ENTRY' | 'EXIT', iso: string, assis
 };
 
 const deny = (iso: string, reason: 'NO_MATCH' | 'LOW_SCORE') => {
-  const camera = random() > 0.3 ? entryCamera : exitCamera;
-  if (!camera) return;
+  const camera = cameras[between(0, cameras.length - 1)];
   setClock(iso);
   devices.recognize(camera, {
     captureId: `carga-${randomUUID()}`,
