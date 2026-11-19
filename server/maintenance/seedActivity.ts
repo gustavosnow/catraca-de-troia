@@ -115,9 +115,12 @@ const EARLY_EXIT_REASON = 'Saída antecipada solicitada pelo responsável e conf
 const pass = (studentId: string, direction: 'ENTRY' | 'EXIT', iso: string, assistedReason?: string) => {
   setClock(iso);
   const studentIndex = STUDENTS.findIndex((student) => student.id === studentId);
-  const turnstileId = turnstileIds[studentIndex % turnstileIds.length];
-  const turnstile = cameras.find((item) => item.turnstile_id === turnstileId)!;
-  const camera = cameras.find((item) => item.turnstile_id === turnstileId && item.direction === direction);
+  const matchingCameras = cameras.filter((item) => item.direction === direction);
+  const camera = matchingCameras.length > 0
+    ? matchingCameras[studentIndex % matchingCameras.length]
+    : undefined;
+  const turnstile = camera ?? cameras[studentIndex % cameras.length];
+  const turnstileId = turnstile.turnstile_id;
   if (!assistedReason && camera && random() > 0.12) {
     const decision = devices.recognize(camera, {
       captureId: `carga-${randomUUID()}`,

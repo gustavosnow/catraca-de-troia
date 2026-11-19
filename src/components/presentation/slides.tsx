@@ -252,7 +252,7 @@ const Scope: React.FC = () => (
           <h3>Cenário de aplicação (hipotético)</h3>
         </div>
         <ul className="mt-4 grid gap-2">
-          {['Escola pública de ensino fundamental em Parauapebas (PA), unidade a definir', 'Duas catracas eletrônicas, câmeras e servidor local', 'Instalação e operação na portaria da escola', '24 semanas e R$ 291 mil, como exercício de planejamento'].map((item) => (
+          {['Escola pública de ensino fundamental em Parauapebas (PA): EMEF Profª. Cecília Meireles', 'Duas catracas eletrônicas (uma de entrada e outra de saída), câmeras e servidor local', 'Instalação e operação na portaria da escola', '24 semanas e R$ 291 mil, como exercício de planejamento'].map((item) => (
             <li key={item} className="flex gap-2"><span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#9ca3af]" aria-hidden="true" />{item}</li>
           ))}
         </ul>

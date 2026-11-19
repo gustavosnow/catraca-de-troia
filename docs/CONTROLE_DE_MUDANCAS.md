@@ -392,3 +392,11 @@ Na verificação final, o cabeçalho e o rodapé passaram a ocupar linhas própr
 ## MC-047 — Duas catracas na demonstração em 19/11/2026
 
 A carga inicial cadastra Catraca 01 e Catraca 02, cada uma com câmera de entrada e de saída. O movimento gerado em bases novas usa as duas. O comando `npm run db:seed -- --catracas` complementa uma base de demonstração anterior sem recriar contas ou movimentações e mantém as câmeras existentes. O cadastro representa o cenário de demonstração com o protótipo de laboratório.
+
+## MC-048 — Unidade definida, link no YouTube e catracas unidirecionais em 19/11/2026
+
+Solicitação: atualizar o link do vídeo do ensaio para o YouTube, padronizar o nome da unidade escolar, atualizar o slide de escopo e deixar explícito no painel que uma catraca é apenas de entrada e a outra apenas de saída.
+
+Ajustes: o link `LAB_VIDEO_URL` da apresentação passou a apontar para o YouTube (`https://www.youtube.com/watch?v=p3uTM2nQSGg`). A unidade escolar foi padronizada como `EMEF Profª. Cecília Meireles` nos dados de carga, fixtures visuais e slide 05. Na carga inicial (`demoTurnstiles.ts`) e no gerador de movimento (`seedActivity.ts`), a `Catraca 01 (Portão Principal)` passou a manter apenas a câmera de entrada (`ENTRY`) e a `Catraca 02` apenas a câmera de saída (`EXIT`), com indicação explícita (`Apenas entrada` / `Apenas saída`) na Visão Geral, no modal de passagem assistida e no painel das câmeras.
+
+Validação: `npm run lint`, `npm run build` e `npm run test:api` (48 testes) aprovados após a revisão. As mesmas atualizações de referência foram registradas para o relatório final (`main.tex`) e para os documentos do Google Drive.

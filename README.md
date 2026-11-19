@@ -60,7 +60,7 @@ npm run dev
 > **Ative os dados antes de usar.** O banco (`.data/`) não vai para o Git: ele guarda hashes de senhas e
 > sessões e mudaria a cada uso. Sem o `db:demo`, o sistema abre vazio, nenhum login funciona e a API avisa
 > isso no terminal. O comando roda uma vez por computador e cria a escola, as contas, as duas catracas
-> de demonstração, com câmera de entrada e de saída em cada uma, e o movimento das duas últimas semanas letivas. A senha de todas as contas é a que você passar
+> de demonstração (Catraca 01 apenas de entrada e Catraca 02 apenas de saída), e o movimento das duas últimas semanas letivas. A senha de todas as contas é a que você passar
 > em `SEED_PASSWORD`; combine-a com a equipe fora do repositório. As datas do movimento partem do dia em que
 > o comando roda. Para recomeçar: `npm run db:seed -- --reset` (faz backup em `.data/backups/`) e depois
 > `npm run db:seed:atividade`, ambos com `SEED_PASSWORD`. O `db:demo` recusa um banco que já tenha dados.

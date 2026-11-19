@@ -16,7 +16,7 @@ import {
 import type { AccessLog, SecurityAlert, Turnstile } from '../../types';
 import type { AccessEventOverview } from '../../../shared/contracts/accessEvents';
 import type { AccessEventSyncStatus } from '../../../shared/contracts/accessEventSync';
-import { DEMO_ACCESS_LABEL } from '../../services/accessHistory';
+import { DEMO_ACCESS_LABEL, getTurnstileDirections, turnstileDirectionLabel } from '../../services/accessHistory';
 import { AllClearIllustration, EmptySearchIllustration } from '../brand/Illustrations';
 import { Callout, Chip, EmptyState, SkeletonRows, StatTile, firstNameOf, greetingForNow } from '../ui';
 
@@ -128,6 +128,11 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   const passes = accessOverview
                     ? accessOverview.turnstiles.find(({ id }) => id === turnstile.id)?.passes ?? 0
                     : undefined;
+                  const directions = getTurnstileDirections(turnstile);
+                  const directionBadge = turnstileDirectionLabel(turnstile);
+                  const visibleLanes = turnstile.lanes.some((lane) => lane.active)
+                    ? turnstile.lanes.filter((lane) => lane.active)
+                    : turnstile.lanes;
                   return (
                     <article key={turnstile.id} className="card p-5">
                       <div className="flex items-start gap-3">
@@ -135,12 +140,17 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                           <ScanFace aria-hidden="true" className="h-5 w-5" />
                         </span>
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-[15px] font-semibold text-ink">{turnstile.name}</h3>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h3 className="text-[15px] font-semibold text-ink">{turnstile.name}</h3>
+                            {directionBadge && (
+                              <Chip tone={directions[0] === 'entry' ? 'positive' : 'neutral'}>{directionBadge}</Chip>
+                            )}
+                          </div>
                           <p className="text-[13px] text-muted">Reconhecimento facial em protótipo</p>
                         </div>
                       </div>
                       <ul className="mt-4 space-y-2 border-t border-line pt-4">
-                        {turnstile.lanes.map((lane) => {
+                        {visibleLanes.map((lane) => {
                           const reading = Boolean(lane.lastSeenAt) && Date.now() - Date.parse(lane.lastSeenAt!) < READING_WINDOW_MS;
                           return (
                             <li key={lane.deviceId} className="flex items-center justify-between gap-3 text-[13px]">

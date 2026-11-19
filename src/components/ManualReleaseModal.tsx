@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Hand } from 'lucide-react';
 import type { AccessDirection, AccessLog, Student, Turnstile } from '../types';
-import { getStudentAccessLogs, isToday } from '../services/accessHistory';
+import { getStudentAccessLogs, getTurnstileDirections, isToday, turnstileDirectionLabel } from '../services/accessHistory';
 import { Callout, Field, Modal } from './ui';
 
 interface ManualReleaseModalProps {
@@ -53,18 +53,42 @@ export const ManualReleaseModal: React.FC<ManualReleaseModalProps> = ({
   }, [isOpen]);
 
   // Catracas e estudantes chegam da API depois da montagem: mantém a escolha
-  // atual enquanto ela existir e só cai no primeiro item quando ela some.
+  // atual enquanto ela existir e prioriza a catraca compatível com o sentido.
+  const turnstileForDirection = (target: AccessDirection) =>
+    turnstiles.find((item) => {
+      const dirs = getTurnstileDirections(item);
+      return dirs.length === 0 || dirs.includes(target);
+    });
+
   useEffect(() => {
-    setTurnstileId((current) => (turnstiles.some((item) => item.id === current) ? current : turnstiles[0]?.id ?? ''));
+    setTurnstileId((current) => {
+      if (turnstiles.some((item) => item.id === current)) return current;
+      return (turnstileForDirection(direction) ?? turnstiles[0])?.id ?? '';
+    });
   }, [turnstiles]);
   useEffect(() => {
     setStudentId((current) => (students.some((item) => item.id === current) ? current : students[0]?.id ?? ''));
   }, [students]);
 
-  useEffect(() => setDirection(expectedDirection), [expectedDirection, studentId]);
+  const selectDirection = (next: AccessDirection) => {
+    setDirection(next);
+    setTurnstileId((current) => {
+      const selected = turnstiles.find((item) => item.id === current);
+      const dirs = selected ? getTurnstileDirections(selected) : [];
+      if (dirs.length === 0 || dirs.includes(next)) return current;
+      return turnstileForDirection(next)?.id ?? current;
+    });
+  };
+
+  useEffect(() => selectDirection(expectedDirection), [expectedDirection, studentId]);
+
+  const selectedTurnstile = turnstiles.find((item) => item.id === turnstileId);
+  const allowedDirections = selectedTurnstile ? getTurnstileDirections(selectedTurnstile) : [];
+  const directionSupported = allowedDirections.length === 0 || allowedDirections.includes(direction);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!directionSupported) return;
     setPending(true);
     setError('');
     try {
@@ -78,7 +102,7 @@ export const ManualReleaseModal: React.FC<ManualReleaseModalProps> = ({
     }
   };
 
-  const canSubmit = !pending && Boolean(studentId) && Boolean(turnstileId) && reason.trim().length >= 5;
+  const canSubmit = !pending && Boolean(studentId) && Boolean(turnstileId) && directionSupported && reason.trim().length >= 5;
 
   return (
     <Modal
@@ -127,7 +151,14 @@ export const ManualReleaseModal: React.FC<ManualReleaseModalProps> = ({
             </Field>
             <Field label="Catraca" htmlFor="manual-release-turnstile">
               <select id="manual-release-turnstile" required className="select" value={turnstileId} onChange={(event) => setTurnstileId(event.target.value)}>
-                {turnstiles.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                {turnstiles.map((item) => {
+                  const roleLabel = turnstileDirectionLabel(item);
+                  return (
+                    <option key={item.id} value={item.id}>
+                      {item.name}{roleLabel ? ` · ${roleLabel}` : ''}
+                    </option>
+                  );
+                })}
               </select>
             </Field>
           </div>
@@ -136,7 +167,7 @@ export const ManualReleaseModal: React.FC<ManualReleaseModalProps> = ({
             <legend className="field-label">Movimento</legend>
             <div className="segmented w-full" role="group" aria-label="Movimento">
               {(['entry', 'exit'] as const).map((item) => (
-                <button key={item} type="button" className="flex-1" aria-pressed={direction === item} onClick={() => setDirection(item)}>
+                <button key={item} type="button" className="flex-1" aria-pressed={direction === item} onClick={() => selectDirection(item)}>
                   {DIRECTION_LABEL[item]}
                 </button>
               ))}
@@ -146,6 +177,11 @@ export const ManualReleaseModal: React.FC<ManualReleaseModalProps> = ({
                 ? `Última passagem hoje: ${DIRECTION_LABEL[lastToday.direction].toLowerCase()} às ${lastToday.exactTime.slice(0, 5)}. A próxima deve ser ${DIRECTION_LABEL[expectedDirection].toLowerCase()}.`
                 : 'Sem passagem hoje: a primeira deve ser uma entrada.'}
             </p>
+            {!directionSupported && (
+              <p className="field-error" role="alert">
+                {selectedTurnstile?.name ?? 'Esta catraca'} registra {turnstileDirectionLabel(selectedTurnstile!)?.toLowerCase()}. Selecione a catraca correspondente ao sentido.
+              </p>
+            )}
             {direction !== expectedDirection && (
               <p className="field-error" role="alert">
                 Fora da sequência do dia: o servidor vai recusar. Registre antes a {DIRECTION_LABEL[expectedDirection].toLowerCase()}.

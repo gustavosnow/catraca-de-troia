@@ -110,6 +110,19 @@ export const FaceRecognitionPanel: React.FC<FaceRecognitionPanelProps> = ({
   const ready = Boolean(status?.ready.python && status?.ready.models);
   const canCommand = enabled && ready && isOnline;
   const cameras = useMemo(() => status?.cameras ?? [], [status]);
+  const turnstileRole = useMemo(() => {
+    const byTurnstile = new Map<string, Set<'ENTRY' | 'EXIT'>>();
+    for (const { device } of cameras) {
+      const dirs = byTurnstile.get(device.turnstile.id) ?? new Set();
+      dirs.add(device.direction);
+      byTurnstile.set(device.turnstile.id, dirs);
+    }
+    return (turnstileId: string) => {
+      const dirs = byTurnstile.get(turnstileId);
+      if (!dirs || dirs.size !== 1) return undefined;
+      return dirs.has('ENTRY') ? 'Apenas entrada' : 'Apenas saída';
+    };
+  }, [cameras]);
   const enrollment = status?.enrollment;
   const hasActiveRun = cameras.some((camera) => isBusyState(camera.recognition)) || isBusyState(enrollment);
 
@@ -258,7 +271,9 @@ export const FaceRecognitionPanel: React.FC<FaceRecognitionPanelProps> = ({
                           </span>
                         </p>
                         <p className="mt-0.5 text-[13px] text-muted">
-                          {device.turnstile.name} · limiar {device.minScore.toFixed(2)}
+                          {device.turnstile.name}
+                          {turnstileRole(device.turnstile.id) ? ` (${turnstileRole(device.turnstile.id)})` : ''}
+                          {' · '}limiar {device.minScore.toFixed(2)}
                           {device.cameraSource ? ` · câmera ${device.cameraSource}` : ' · sem câmera definida'}
                           {!device.active && ' · desativada'}
                         </p>

@@ -32,14 +32,14 @@ test('carga de catracas completa uma base antiga sem sobrescrever câmeras exist
     cameraSource: '1',
   });
 
-  assert.deepEqual(ensureDemoTurnstiles(database), ['cat-01-saida', 'cat-02-entrada', 'cat-02-saida']);
+  assert.deepEqual(ensureDemoTurnstiles(database), ['cat-02-saida']);
   assert.deepEqual(ensureDemoTurnstiles(database), []);
   assert.equal(devices.authenticate(entry.token).camera_source, '1');
 
   const actor = { id: operator.id, schoolId: SCHOOL.id, name: operator.name, role: operator.role };
   const configured = devices.listDevices(actor);
   assert.deepEqual(configured.find((device) => device.id === entry.device.id), entry.device);
-  assert.deepEqual(configured.filter((device) => device.turnstile.id === 'cat-02').map((device) => device.direction), ['ENTRY', 'EXIT']);
+  assert.deepEqual(configured.filter((device) => device.turnstile.id === 'cat-02').map((device) => device.direction), ['EXIT']);
 });
 
 const startApi = async () => {

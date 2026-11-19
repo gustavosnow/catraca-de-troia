@@ -1,6 +1,19 @@
-import { AbsenceJustification, AccessLog, DayTimelineEvent, WeeklyAccessDay } from '../types';
+import { AbsenceJustification, AccessDirection, AccessLog, DayTimelineEvent, Turnstile, WeeklyAccessDay } from '../types';
 
 export const DEMO_ACCESS_LABEL = 'Dados de demonstração';
+
+/** Sentidos ativos (ou cadastrados) de uma catraca. */
+export const getTurnstileDirections = (turnstile: Turnstile): AccessDirection[] => {
+  const active = turnstile.lanes.filter((lane) => lane.active);
+  const source = active.length > 0 ? active : turnstile.lanes;
+  return [...new Set(source.map((lane) => lane.direction))];
+};
+
+export const turnstileDirectionLabel = (turnstile: Turnstile): string | undefined => {
+  const directions = getTurnstileDirections(turnstile);
+  if (directions.length !== 1) return undefined;
+  return directions[0] === 'entry' ? 'Apenas entrada' : 'Apenas saída';
+};
 
 const TIMELINE_ORIGINS = {
   assistida: 'Passagem assistida pela escola',
