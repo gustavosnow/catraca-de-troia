@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, FileText, ListChecks, LogOut, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, FileText, ListChecks, LogOut, ShieldCheck } from 'lucide-react';
 import { ParentHeader, type ParentTab } from './ParentHeader';
 import { PresenceStatusCard, TodayMovements } from './PresenceStatusCard';
 import { WeeklyAccessHistory } from './WeeklyAccessHistory';
 import { SchoolNoticesSection } from './SchoolNoticesSection';
 import { AbsenceJustificationModal } from './AbsenceJustificationModal';
 import { InAppNotificationDrawer } from './InAppNotificationDrawer';
-import { InstallAppBanner } from './InstallAppBanner';
 import { ParentDataStatus } from './ParentDataStatus';
 import { GuardianLinkRequests } from './GuardianLinkRequests';
 import type {
@@ -130,7 +129,6 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   const [activeTab, setActiveTab] = useState<ParentTab>('home');
   const [absenceModal, setAbsenceModal] = useState<'nova' | 'historico' | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [scrollTarget, setScrollTarget] = useState<string | null>(null);
   const [isCompactViewport, setIsCompactViewport] = useState(() => window.matchMedia('(max-width: 639px)').matches);
 
   useEffect(() => {
@@ -141,18 +139,13 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   }, []);
 
   useEffect(() => {
-    if (scrollTarget) {
-      document.getElementById(scrollTarget)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setScrollTarget(null);
-    } else {
-      window.scrollTo({ top: 0 });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    window.scrollTo({ top: 0 });
+    if (activeTab === 'links') document.getElementById('parent-links-title')?.focus({ preventScroll: true });
   }, [activeTab]);
 
   const goToLinks = () => {
-    setScrollTarget('vinculos');
-    setActiveTab('notices');
+    if (activeTab === 'links') document.getElementById('parent-links-title')?.focus();
+    else setActiveTab('links');
   };
 
   const unreadCount = parentNotifications.filter(n => !n.isRead).length;
@@ -182,10 +175,12 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
         onSelectTab={setActiveTab}
         hasUnreadNotices={hasUnreadNotices}
         onOpenAbsence={() => setAbsenceModal('nova')}
+        onOpenLinks={hasLinkedStudent ? goToLinks : undefined}
         canSubmitAbsence={isOnline && hasLinkedStudent}
         onSwitchToManagement={onSwitchToManagement}
         onLogout={onLogout}
         showNavigation={showNavigation}
+        isCompactViewport={isCompactViewport}
       />
       <main id="parent-app-content" tabIndex={-1} className={cx('mx-auto w-full max-w-5xl px-4 pt-8 outline-none sm:px-6', showNavigation ? 'pb-28 md:pb-16' : 'pb-16')}>
         {content}
@@ -212,6 +207,16 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
       <p className="mt-2 text-sm text-muted">Mais perto da rotina de quem você ama.</p>
       <p data-testid="parent-school" className="mt-1 text-xs text-muted">{schoolName}</p>
     </div>
+  );
+
+  const linkRequestsPanel = (
+    <GuardianLinkRequests
+      requests={linkRequests}
+      state={linkRequestsState}
+      error={linkRequestsError}
+      isOnline={isOnline}
+      onCreate={onCreateLinkRequest}
+    />
   );
 
   if (!selectedStudent && studentsState !== 'persistent') {
@@ -247,16 +252,21 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
             </button>
           )}
         </section>
-        <GuardianLinkRequests
-          requests={linkRequests}
-          state={linkRequestsState}
-          error={linkRequestsError}
-          isOnline={isOnline}
-          onCreate={onCreateLinkRequest}
-        />
-        <div className="mt-6"><InstallAppBanner /></div>
+        {linkRequestsPanel}
       </>,
       false,
+    );
+  }
+
+  if (activeTab === 'links') {
+    return shell(
+      <div className="mx-auto max-w-3xl">
+        <button type="button" className="btn-link mb-4" onClick={() => setActiveTab('home')}>
+          <ArrowLeft aria-hidden="true" /> Voltar ao início
+        </button>
+        <h1 id="parent-links-title" tabIndex={-1} className="display-title mb-5 text-[28px] outline-none sm:text-[32px]">Meus vínculos</h1>
+        {linkRequestsPanel}
+      </div>,
     );
   }
 
@@ -341,7 +351,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
                 Um vínculo de confiança
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-ink-2">Você consulta apenas estudantes com vínculo aprovado pela escola.</p>
-              <button type="button" className="btn-link mt-4" onClick={goToLinks}>
+              <button id="btn-parent-home-links" type="button" className="btn-link mt-4" onClick={goToLinks}>
                 <ArrowRight aria-hidden="true" />
                 Gerenciar meus vínculos
               </button>
@@ -355,19 +365,8 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
       )}
 
       {activeTab === 'notices' && (
-        <div className="space-y-8">
-          <SchoolNoticesSection notices={notices} onMarkAsRead={handleMarkNoticeAsRead} canMarkAsRead={isOnline} />
-          <GuardianLinkRequests
-            requests={linkRequests}
-            state={linkRequestsState}
-            error={linkRequestsError}
-            isOnline={isOnline}
-            onCreate={onCreateLinkRequest}
-          />
-        </div>
+        <SchoolNoticesSection notices={notices} onMarkAsRead={handleMarkNoticeAsRead} canMarkAsRead={isOnline} />
       )}
-
-      <div className="mt-8"><InstallAppBanner /></div>
 
       {absenceModal && (
         <AbsenceJustificationModal

@@ -143,7 +143,7 @@ docs/                     escopo, rastreabilidade, mudanças e roteiros
 
 A API inicia em `http://127.0.0.1:3001` e persiste sessões, justificativas, eventos, avisos, notificações internas e solicitações de vínculo em `.data/catraca-de-troia.sqlite`.
 
-- **Vínculos:** os responsáveis solicitam vínculo pela matrícula. Somente Coordenação/Direção analisa, revoga vínculos ativos e consulta a trilha de auditoria. A aprovação ou a revogação atualiza a autorização efetiva no backend, e o responsável consulta somente os estudantes com vínculo aprovado.
+- **Vínculos:** os responsáveis solicitam vínculo pela matrícula em **Meus vínculos**, no menu da conta. Sem vínculo aprovado, o formulário aparece logo ao entrar. Somente Coordenação/Direção analisa, revoga vínculos ativos e consulta a trilha de auditoria. A aprovação ou a revogação atualiza a autorização efetiva no backend, e o responsável consulta somente os estudantes com vínculo aprovado.
 - **Justificativas:** Coordenação/Direção analisa as justificativas textuais, e a Portaria apenas consulta a fila. Não há upload nem download de arquivos no piloto.
 - **Eventos:** cada evento registra estudante, entrada/saída, instante, catraca, origem e ator escolar. Há duas origens: **Protótipo facial** (câmera autenticada por token do dispositivo) e **Passagem assistida** (equipe, com catraca cadastrada e motivo obrigatório). Cada estudante segue a sequência do dia: a primeira passagem é entrada e depois alterna, na câmera e na passagem assistida. A rota manual não aceita passagem facial nem define status de entrega.
 - **Perfis:** `server/test/rbac.test.ts` confere todas as rotas de leitura para seis perfis e as escritas restritas.
@@ -197,7 +197,7 @@ Preparação do ambiente Python, uso do celular como câmera e comandos: [`edge/
 
 ### PWA
 
-A entrada instalável abre em `/#/responsaveis`, tem manifesto e guarda em cache apenas o shell estático. O service worker não armazena chamadas `/api`, envios nem dados pessoais. Se a conexão cair com o portal aberto, a interface indica o estado offline e mantém somente em memória os últimos dados carregados na sessão. Ela exibe a última atualização, bloqueia escritas e refaz as consultas ao reconectar. Em navegadores compatíveis, use o convite **Instalar**. No Safari iOS, use **Compartilhar → Adicionar à Tela de Início**.
+A entrada instalável abre em `/#/responsaveis`, tem manifesto e guarda em cache apenas o shell estático. O service worker não armazena chamadas `/api`, envios nem dados pessoais. Se a conexão cair com o portal aberto, a interface indica o estado offline e mantém somente em memória os últimos dados carregados na sessão. Ela exibe a última atualização, bloqueia escritas e refaz as consultas ao reconectar. Para instalar, abra o menu da conta no avatar e escolha **Adicionar à tela inicial**. O atalho abre o convite do navegador quando disponível ou mostra as instruções de instalação manual.
 
 Para conferir a versão instalável local, mantenha a API ativa, rode `npm run build:parent` e `npm run preview` e abra `http://localhost:4173/#/responsaveis`. O servidor de desenvolvimento prioriza o HMR. O manifesto e o service worker validados são os do build de produção.
 

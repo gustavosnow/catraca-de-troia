@@ -53,8 +53,8 @@ export const SchoolNoticesSection: React.FC<SchoolNoticesSectionProps> = ({
             <CategoryChip category={selected.category} />
             <PriorityChip priority={selected.priority} />
           </div>
-          <p className="border-l-2 border-brand pl-4 text-[15px] font-medium leading-relaxed text-ink">{selected.summary}</p>
-          <div className="whitespace-pre-line text-sm leading-relaxed text-ink-2">{selected.fullContent}</div>
+          <p className="border-l-2 border-brand pl-4 text-[15px] font-medium leading-relaxed wrap-anywhere text-ink">{selected.summary}</p>
+          <div className="text-sm leading-relaxed wrap-anywhere whitespace-pre-line text-ink-2">{selected.fullContent}</div>
           <p className="text-xs text-muted">{selected.role}</p>
         </div>
       )}
@@ -64,8 +64,8 @@ export const SchoolNoticesSection: React.FC<SchoolNoticesSectionProps> = ({
   if (variant === 'summary') {
     return (
       <section className="card p-6" aria-labelledby="notices-summary-title">
-        <div className="flex items-center justify-between gap-3">
-          <h2 id="notices-summary-title" className="card-title">Da escola para você</h2>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h2 id="notices-summary-title" className="card-title min-w-0 grow basis-36">Da escola para você</h2>
           {unread > 0 && (
             <span className="chip chip-brand">
               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brand" />
@@ -83,12 +83,12 @@ export const SchoolNoticesSection: React.FC<SchoolNoticesSectionProps> = ({
                   <Megaphone aria-hidden="true" className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
-                  <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+                  <p className="flex items-center gap-2 text-sm font-semibold wrap-anywhere text-ink">
                     {notice.title}
                     {notice.isUnread && <span className="sr-only">(não lido)</span>}
                     {notice.isUnread && <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />}
                   </p>
-                  <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-ink-2">{notice.summary}</p>
+                  <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed wrap-anywhere text-ink-2">{notice.summary}</p>
                   <button type="button" className="btn-link mt-2.5" onClick={() => open(notice)}>
                     <ArrowRight aria-hidden="true" />
                     Ler comunicado
@@ -108,8 +108,8 @@ export const SchoolNoticesSection: React.FC<SchoolNoticesSectionProps> = ({
 
   return (
     <section aria-labelledby="notices-full-title">
-      <div className="mb-5 flex items-end justify-between gap-3">
-        <div>
+      <div className="mb-5 flex flex-wrap items-end gap-x-3 gap-y-2">
+        <div className="min-w-0 grow basis-40">
           <h2 id="notices-full-title" className="text-xl font-semibold tracking-tight text-ink">Avisos da escola</h2>
           <p className="mt-1 text-sm text-muted">Comunicados oficiais da gestão escolar.</p>
         </div>
@@ -134,8 +134,8 @@ export const SchoolNoticesSection: React.FC<SchoolNoticesSectionProps> = ({
                   {notice.isUnread && <span className="chip chip-brand">Novo</span>}
                   <span className="ml-auto text-xs text-muted">{notice.date}</span>
                 </div>
-                <p className="mt-3 text-[15px] font-semibold text-ink">{notice.title}</p>
-                <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-ink-2">{notice.summary}</p>
+                <p className="mt-3 text-[15px] font-semibold wrap-anywhere text-ink">{notice.title}</p>
+                <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed wrap-anywhere text-ink-2">{notice.summary}</p>
                 <span className="btn-link mt-3">
                   Ler comunicado <ArrowRight aria-hidden="true" />
                 </span>

@@ -77,8 +77,8 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({ days, 
         const isToday = day.dayName.startsWith('Hoje');
         return (
           <li key={day.fullDate} className="px-4 py-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
+            <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
+              <div className="min-w-0 grow basis-36">
                 <p className="text-sm font-semibold text-ink">{isToday ? 'Hoje' : splitDate(day.fullDate)[0]}</p>
                 <p className="tabular text-xs text-muted">{splitDate(day.fullDate)[1]}</p>
               </div>

@@ -70,8 +70,8 @@ export const TodayMovements: React.FC<TodayMovementsProps> = ({ timeline, isAtSc
 
   return (
     <section className="card p-6" aria-labelledby="today-movements-title">
-      <div className="flex items-center justify-between gap-3">
-        <h2 id="today-movements-title" className="card-title">Movimentações registradas</h2>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h2 id="today-movements-title" className="card-title min-w-0 grow basis-44">Movimentações registradas</h2>
         <button type="button" className="btn-link" onClick={onOpenHistory}>
           <ArrowRight aria-hidden="true" />
           Histórico

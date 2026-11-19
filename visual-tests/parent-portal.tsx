@@ -5,6 +5,7 @@ import {
   VISUAL_SCHOOL_NAME,
   visualGuardian,
   visualJustifications,
+  visualLinkRequests,
   visualLogs,
   visualNotices,
   visualNotifications,
@@ -15,6 +16,7 @@ import '../src/index.css';
 const VisualParentPortal = () => {
   const [isOnline, setIsOnline] = useState(true);
   const dataState = isOnline ? 'persistent' : 'unavailable';
+  const withoutLink = new URLSearchParams(window.location.search).has('sem-vinculo');
 
   return <>
     <button
@@ -26,9 +28,9 @@ const VisualParentPortal = () => {
       Alternar conectividade do aceite visual
     </button>
     <ParentAppView
-      guardian={visualGuardian}
+      guardian={withoutLink ? { ...visualGuardian, childrenIds: [] } : visualGuardian}
       schoolName={VISUAL_SCHOOL_NAME}
-      students={visualStudents}
+      students={withoutLink ? [] : visualStudents}
       notices={visualNotices}
       notifications={visualNotifications}
       sharedAccessLogs={visualLogs}
@@ -43,7 +45,7 @@ const VisualParentPortal = () => {
       isOnline={isOnline}
       dataUpdatedAt="2026-10-16T17:00:00.000Z"
       onRefreshData={() => undefined}
-      linkRequests={[]}
+      linkRequests={visualLinkRequests}
       linkRequestsState={dataState}
       linkRequestsError={isOnline ? undefined : 'API local indisponível no cenário visual.'}
       onCreateLinkRequest={async () => undefined}
