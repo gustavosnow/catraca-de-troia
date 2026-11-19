@@ -73,6 +73,8 @@ vídeo abrem neste computador. Requer o `.venv` e os modelos desta pasta.
 3. Catracas: `POST /api/v1/edge-agents/recognition/cat-01-entrada/start` (e `cat-01-saida`); `.../stop` para parar.
 4. Acompanhamento: `GET /api/v1/edge-agents` traz estado e últimas linhas de cada agente.
 
+Detalhes para as telas (estados, erros, permissões, fluxos): `docs/INTEGRACAO_FRONT_CAMERAS.md`.
+
 Cada início pelo painel renova o token da catraca e o entrega só ao processo; o
 `DEVICE_TOKEN` do `.env` deixa de valer para essa catraca. Para voltar ao modo manual,
 gere outro token com `npm run device:register`. A tecla `q` na janela também encerra.

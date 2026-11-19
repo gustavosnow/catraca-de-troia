@@ -294,7 +294,7 @@ Limites: sem prova de vida (anti-spoofing), sem catraca física acionada, sem cr
 
 ## MC-037 — Comando das câmeras e do cadastro facial pelo painel em 18/11/2026
 
-Solicitação: iniciar o cadastro facial e as catracas de entrada e saída por botões no front, sem rodar comandos Python. O front será renovado; esta mudança entrega somente a funcionalidade (API, contrato e cliente `src/services/edgeAgentsApi.ts`), sem alterar telas.
+Solicitação: iniciar o cadastro facial e as catracas de entrada e saída por botões no front, sem rodar comandos Python. O front será renovado; esta mudança entrega somente a funcionalidade (API, contrato e cliente `src/services/edgeAgentsApi.ts`), sem alterar telas. Guia para quem construir as telas: `INTEGRACAO_FRONT_CAMERAS.md`.
 
 Decisão: a API local passa a iniciar e encerrar os scripts de `edge/` como processos filhos no computador do servidor escolar, onde as janelas de vídeo continuam abrindo. Rotas: `GET /api/v1/edge-agents`, `POST /api/v1/edge-agents/recognition/:deviceId/start|stop`, `PATCH /api/v1/access-devices/:deviceId/camera`, `GET|POST /api/v1/face-enrollments`, `POST /api/v1/face-enrollments/current/cancel` e `DELETE /api/v1/face-enrollments/:studentId`. A câmera de cada catraca fica em `access_devices.camera_source` (índice da webcam ou URL http/https/rtsp sem usuário e senha). Cada início de catraca renova o token do dispositivo e o entrega só ao processo, por variável de ambiente; o token não volta na resposta nem é gravado em arquivo. O agente encerra ao ter a entrada padrão fechada (botão parar ou queda da API), liberando a câmera, e a catraca recarrega a galeria quando um cadastro termina.
 
