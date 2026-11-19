@@ -3,7 +3,7 @@
 Protótipo acadêmico de controle de entrada e saída para uma escola pública de ensino fundamental. Reúne o **painel web da gestão escolar** e o **portal responsivo dos responsáveis**, que compartilham a mesma API e as mesmas regras.
 
 > [!IMPORTANT]
-> **Estado: protótipo acadêmico funcional local.** Os dados e as contas são fictícios, e os eventos de passagem são simulados ou assistidos. O reconhecimento facial é um protótipo de laboratório sem homologação, e nenhuma catraca física é acionada. Os canais externos de notificação não estão integrados. **Não use a demonstração com dados reais de estudantes.**
+> **Estado: protótipo acadêmico funcional local.** Os dados vêm da carga da escola (`npm run db:demo`, MC-039 e MC-040), e as passagens são registradas pelo protótipo facial ou por passagem assistida. O reconhecimento facial é um protótipo de laboratório sem homologação, e nenhuma catraca física é acionada. Os canais externos de notificação não estão integrados. Os estudantes da carga são registros de teste: **não use a demonstração com dados de crianças reais.**
 
 ## Sumário
 
@@ -27,15 +27,15 @@ Protótipo acadêmico de controle de entrada e saída para uma escola pública d
 | Perfil | O que faz na demonstração |
 |---|---|
 | **Responsável** | Solicita vínculo pela matrícula, acompanha entradas e saídas dos estudantes com vínculo aprovado, lê avisos, envia justificativas textuais e recebe notificações internas. |
-| **Portaria** | Registra passagem assistida, consulta a fila de justificativas e comanda as catracas do protótipo facial. |
+| **Portaria** | Registra passagem assistida (entrada ou saída), consulta estudantes, registros e a fila de justificativas e comanda as catracas do protótipo facial. Não acessa administração nem biometria. |
 | **Coordenação/Direção** | Analisa justificativas e vínculos, revoga vínculos ativos, publica avisos, administra contas, consulta a auditoria e reenfileira conflitos de sincronização. |
 
 ### O que existe e o que falta
 
 | Situação | Itens |
 |---|---|
-| **Funcional local** | API Express/SQLite; autenticação com contas fictícias; vínculos autorizados no backend; eventos de entrada/saída; avisos; justificativas textuais; notificações internas; auditoria; fila local com sincronização; backup do SQLite; PWA; projetos-base Android/iOS via Capacitor. |
-| **Simulado ou de laboratório** | Simulação automática de passagens (inicia desativada); reconhecimento facial em Python/OpenCV (`edge/`, MC-036 a MC-038), restrito a adultos da equipe com consentimento ligados a estudantes fictícios. |
+| **Funcional local** | API Express/SQLite com os dados cadastrados da escola; autenticação, cadastro de responsável e RBAC conferido rota a rota por teste; vínculos autorizados no backend; eventos de entrada/saída com sequência obrigatória no dia; avisos; justificativas textuais; notificações internas; auditoria; fila local com sincronização; backup do SQLite; PWA; projetos-base Android/iOS via Capacitor. |
+| **Simulado ou de laboratório** | Reconhecimento facial em Python/OpenCV (`edge/`, MC-036 a MC-039), restrito ao rosto de adultos voluntários da equipe, com consentimento, nunca de crianças; entrega externa de notificações. |
 | **Pendente** | Catraca física; homologação do reconhecimento facial; canais externos (push, e-mail, WhatsApp); provedor institucional de identidade, HTTPS e MFA; APK assinado para distribuição e publicação em lojas. |
 
 O aplicativo Android (APK) continua sendo um objetivo. Para a apresentação, o portal abre no navegador por link ou QR Code, sem instalação.
@@ -52,33 +52,46 @@ Requisito: Node.js com npm. A demonstração atual não exige chave Gemini.
 
 ```bash
 npm ci
+SEED_PASSWORD='senha-combinada' npm run db:demo   # só na primeira vez: ativa os dados
 npm run dev
 ```
 
-O comando inicia a API na porta `3001` e o Vite na porta `3000`. O proxy do Vite mantém as chamadas da interface no mesmo endereço. Abra:
+> [!IMPORTANT]
+> **Ative os dados antes de usar.** O banco (`.data/`) não vai para o Git: ele guarda hashes de senhas e
+> sessões e mudaria a cada uso. Sem o `db:demo`, o sistema abre vazio, nenhum login funciona e a API avisa
+> isso no terminal. O comando roda uma vez por computador e cria a escola, as contas, as duas câmeras da
+> catraca 01 e as duas últimas semanas letivas de movimento. A senha de todas as contas é a que você passar
+> em `SEED_PASSWORD`; combine-a com a equipe fora do repositório. As datas do movimento partem do dia em que
+> o comando roda. Para recomeçar: `npm run db:seed -- --reset` (faz backup em `.data/backups/`) e depois
+> `npm run db:seed:atividade`, ambos com `SEED_PASSWORD`. O `db:demo` recusa um banco que já tenha dados.
+
+O comando `npm run dev` inicia a API na porta `3001` e o Vite na porta `3000`. O proxy do Vite mantém as chamadas da interface no mesmo endereço. Abra:
 
 | Endereço | Conteúdo |
 |---|---|
-| `http://localhost:3000/` | Apresentação pública. Encaminha para o cadastro demonstrativo ou para o login, mesmo com sessão anterior. Também abre em `/#/apresentacao`. |
+| `http://localhost:3000/` | Apresentação pública. Encaminha para o cadastro de responsável ou para o login, mesmo com sessão anterior. Também abre em `/#/apresentacao`. |
 | `http://localhost:3000/#/responsaveis` | Portal dos responsáveis (cadastro em `/#/responsaveis/cadastro`). |
 | `http://localhost:3000/#/escola` | Painel escolar. |
 
 Se a porta `3001` estiver ocupada, use `API_PORT=3101 npm run dev`. O proxy do Vite acompanha a porta escolhida. Reinicie o comando depois de alterar `API_PORT`.
 
-### Contas de demonstração
+### Contas
 
-Use os atalhos da tela de entrada ou uma das contas abaixo. A senha comum é `Troia@2026`.
+Criadas pelo `db:demo` (dados em `server/maintenance/schoolData.ts`), com a senha informada em `SEED_PASSWORD`.
 
-| Perfil | Login |
-|---|---|
-| Responsável | `claudia.mendes@gmail.com` ou `(11) 98765-4321` |
-| Responsável sem vínculo (para testar a solicitação) | `sem.vinculo@gmail.com` |
-| Portaria | `carlos.mendes@emef.educacao.sp.gov.br` ou `MAT-2026/0481` |
-| Coordenação | `mariana.costa@emef.educacao.sp.gov.br` ou `MAT-2026/0129` |
+| Perfil | Login | Acesso |
+|---|---|---|
+| Coordenação | `gustavo.coelho@catracadetroia.edu.br` ou `MAT-2026/0101` | Painel completo, inclusive vínculos, contas, auditoria e cadastro facial |
+| Portaria | `hanrry.junior@catracadetroia.edu.br` ou `MAT-2026/0102` | Registros, estudantes, passagem assistida e câmeras |
+| Responsável | `saylon.batista@catracadetroia.edu.br` | Portal com Lívia, Davi e Helena Batista |
+| Responsáveis | `fernanda.ribeiro@`, `marcos.almeida@`, `patricia.nunes@`, `roberto.teixeira@`, `juliana.moraes@catracadetroia.edu.br` | Portal com os próprios filhos |
+| Cadastro pendente | `ana.almeida@catracadetroia.edu.br` | Nada, até a Coordenação aprovar o vínculo com Miguel Almeida |
+
+Os 10 estudantes têm matrículas `2026-0001` a `2026-0010`. Novos responsáveis se cadastram pelo portal: a conta e o pedido de vínculo são criados juntos, e nenhum dado aparece antes da aprovação. Contas da equipe e redefinição de senha ficam com a escola.
 
 ### Apresentar pelo celular
 
-No painel escolar, use **Ferramentas → Apresentar portal por QR Code**. Mesmo com o painel aberto em `localhost`, a central consulta a API local, dá prioridade à interface Wi-Fi e gera o QR Code para `/#/responsaveis`. Também é possível informar outro endereço HTTPS ou da rede. A central nunca codifica loopback, credenciais nem parâmetros de sessão. Veja o [roteiro sem APK](docs/APRESENTACAO_SEM_APK.md).
+No painel escolar, use **Ferramentas → Portal por QR Code**. Mesmo com o painel aberto em `localhost`, a central consulta a API local, dá prioridade à interface Wi-Fi e gera o QR Code para `/#/responsaveis`. Também é possível informar outro endereço HTTPS ou da rede. A central nunca codifica loopback, credenciais nem parâmetros de sessão. Veja o [roteiro sem APK](docs/APRESENTACAO_SEM_APK.md).
 
 ## Comandos
 
@@ -95,6 +108,9 @@ No painel escolar, use **Ferramentas → Apresentar portal por QR Code**. Mesmo 
 | `npm run test:visual` | Aceite visual em 360, 440, 768 e 1440 px com Firefox headless. Capturas e resultado em `.artifacts/visual-acceptance/`, fora do Git. |
 | `npm run test:pwa` | Verifica o build da PWA. Execute depois do build. |
 | `npm run api:dev` / `api:start` | Somente a API, com ou sem recarga automática. |
+| `npm run db:demo` | Ativa os dados num banco vazio: carga da escola e duas semanas de movimento (exige `SEED_PASSWORD`). |
+| `npm run db:seed` | Carga da escola. Com `-- --reset`, faz backup, recria o banco e preserva as câmeras. |
+| `npm run db:seed:atividade` | Duas semanas letivas de movimento, geradas pelos serviços da API. |
 | `npm run db:backup` | Backup consistente do SQLite. |
 | `npm run device:register` | Cadastra uma catraca do protótipo facial e emite o token. |
 | `npm run cap:sync` | Build do portal e sincronização dos projetos Capacitor. |
@@ -110,11 +126,10 @@ src/
   components/school/      painel escolar (visão geral, registros, ferramentas, reconhecimento facial)
   components/             telas compartilhadas (login, apresentação, avisos, justificativas, administração)
   services/               clientes da API (accessEventsApi, edgeAgentsApi, ...)
-  data/mockData.ts        dados visuais fictícios
 server/
   modules/                módulos da API (eventos, catracas, contas, vínculos, avisos, justificativas, auditoria, ...)
-  maintenance/            backup e cadastro de catracas
-  test/                   testes da API
+  maintenance/            backup, carga da escola e do movimento, cadastro de catracas
+  test/                   testes da API (fixtures de teste em test/fixtures/)
 shared/contracts/         tipos compartilhados entre front e API
 edge/                     agente de reconhecimento facial (Python/OpenCV)
 android/, ios/            projetos Capacitor
@@ -122,20 +137,21 @@ scripts/                  aceite visual, verificação da PWA e build do APK
 docs/                     escopo, rastreabilidade, mudanças e roteiros
 ```
 
-`src/services/accessEventsApi.ts` integra o fluxo persistente, e `demoAccessService.ts` deriva a linha do tempo e o histórico a partir desses registros. A tela **Sobre o projeto** traz apenas um resumo da demonstração e o link para a pasta oficial no Drive. Orçamento, prazo, metas e riscos não são copiados para o código.
+`src/services/accessEventsApi.ts` integra o fluxo persistente, e `accessHistory.ts` deriva a linha do tempo e o histórico a partir desses registros. A carga opcional `db:demo` cria dados fictícios. As movimentações geradas ficam identificadas no painel, na exportação CSV e no portal. A tela **Sobre o projeto** traz um resumo da demonstração e o link para a pasta oficial no Drive.
 
 ## API local, autenticação e sessões
 
 A API inicia em `http://127.0.0.1:3001` e persiste sessões, justificativas, eventos, avisos, notificações internas e solicitações de vínculo em `.data/catraca-de-troia.sqlite`.
 
-- **Vínculos:** os responsáveis solicitam vínculo pela matrícula. Somente Coordenação/Direção analisa, revoga vínculos ativos e consulta a trilha de auditoria. A aprovação ou a revogação atualiza a autorização efetiva no backend, e o responsável consulta somente os estudantes com vínculo aprovado.
+- **Vínculos:** os responsáveis solicitam vínculo pela matrícula em **Meus vínculos**, no menu da conta. Sem vínculo aprovado, o formulário aparece logo ao entrar. Somente Coordenação/Direção analisa, revoga vínculos ativos e consulta a trilha de auditoria. A aprovação ou a revogação atualiza a autorização efetiva no backend, e o responsável consulta somente os estudantes com vínculo aprovado.
 - **Justificativas:** Coordenação/Direção analisa as justificativas textuais, e a Portaria apenas consulta a fila. Não há upload nem download de arquivos no piloto.
-- **Eventos:** cada evento registra estudante, entrada/saída, instante, catraca, método e ator escolar. A passagem assistida exige estudante cadastrado, catraca e motivo, registra a conta escolar autenticada e não envia WhatsApp.
+- **Eventos** registram estudante, entrada/saída, instante, catraca, origem e ator escolar. As origens são **Protótipo facial** (câmera autenticada), **Passagem assistida** (operada pela equipe com motivo) e **Dados de demonstração** (carga fictícia). Cada estudante começa o dia com entrada e depois alterna entrada e saída. Os indicadores escolares consultam o dia inteiro no fuso da escola, com uma consulta separada para os registros recentes.
+- **Perfis:** `server/test/rbac.test.ts` confere todas as rotas de leitura para seis perfis e as escritas restritas.
 - **Notificações:** a leitura dos avisos é individual por responsável. As notificações de passagem e do fluxo de justificativas aparecem na caixa interna do portal.
-- **Segurança:** as senhas são derivadas com scrypt e salt, e a API guarda somente o hash dos tokens opacos. As sessões expiram em 12 horas, ou em 30 dias com "lembrar dispositivo", podem ser restauradas e são revogadas no logout. A API aplica cabeçalhos básicos de segurança, impede cache das respostas e limita em memória as tentativas repetidas de login e de solicitação de vínculo.
+- **Segurança:** as senhas são derivadas com scrypt e salt, e a API guarda somente o hash dos tokens opacos. No navegador, cada aba tem seu próprio login e mantém a sessão ao ser recarregada. Sair encerra a sessão daquela aba. As sessões expiram em 12 horas, ou em até 30 dias com a opção de estender a duração marcada. A API aplica cabeçalhos básicos de segurança, impede cache das respostas e limita em memória as tentativas repetidas de login e de solicitação de vínculo.
 
 > [!NOTE]
-> Este é um corte funcional local. Ainda faltam provedor institucional, HTTPS, proteção e armazenamento nativo dos tokens, política de senha, MFA, recuperação real, limitação distribuída ou persistente e testes formais de segurança.
+> Este é um corte funcional local. Ainda faltam provedor institucional, HTTPS, proteção e armazenamento nativo dos tokens, política de senha, MFA, redefinição de senha pela Coordenação no painel, limitação distribuída ou persistente e testes formais de segurança.
 
 ## Fila local e sincronização de eventos
 
@@ -166,12 +182,14 @@ Por padrão, a origem é `.data/catraca-de-troia.sqlite` e o destino é `.data/b
 
 ## Protótipo de reconhecimento facial
 
-Protótipo de laboratório (MC-036 a MC-038): a câmera, que pode ser uma webcam ou um celular, identifica o rosto com Python/OpenCV no computador da escola, e a API local decide se libera ou nega a passagem. **Não há homologação, nenhuma catraca física é acionada e não há prova de vida.**
+Protótipo de laboratório (MC-036 a MC-039): a câmera, que pode ser uma webcam ou um celular, identifica o rosto com Python/OpenCV no computador da escola, e a API local decide se libera ou nega a passagem. **Não há homologação, nenhuma catraca física é acionada e não há prova de vida.**
 
-- Cadastre apenas **adultos da equipe, com consentimento**, ligados a estudantes **fictícios**. Nunca crianças ou estudantes reais.
+- Cadastre só o rosto de **adultos voluntários da equipe, com consentimento**, representando estudantes no teste. **Nunca o rosto de uma criança.**
 - Nenhuma foto é salva. Ficam somente vetores em `edge/data/`, fora do Git. As negações não guardam imagem, vetor nem identidade.
 - Com `npm run dev`, as catracas e o cadastro facial são comandados em **Ferramentas** no painel escolar. Nos modos de apresentação (`api:device`, `presentation:start`), esse comando fica desligado.
-- As passagens liberadas aparecem no painel e no portal do responsável. No painel, os registros têm a origem **Protótipo facial**, distinta das passagens simuladas e assistidas.
+- As passagens liberadas aparecem no painel e no portal do responsável. No painel, os registros têm a origem **Protótipo facial**, distinta das passagens assistidas.
+- A câmera não grava duas entradas (ou duas saídas) seguidas do mesmo estudante: fora da sequência, a janela mostra **JA REGISTRADO** e nada é gravado.
+- O `db:demo` cadastra as câmeras de entrada e saída sem fonte de vídeo; defina-a em **Ferramentas**.
 
 Preparação do ambiente Python, uso do celular como câmera e comandos: [`edge/README.md`](edge/README.md). Integração com as telas: [`docs/INTEGRACAO_FRONT_CAMERAS.md`](docs/INTEGRACAO_FRONT_CAMERAS.md).
 
@@ -179,7 +197,7 @@ Preparação do ambiente Python, uso do celular como câmera e comandos: [`edge/
 
 ### PWA
 
-A entrada instalável abre em `/#/responsaveis`, tem manifesto e guarda em cache apenas o shell estático. O service worker não armazena chamadas `/api`, envios nem dados pessoais. Se a conexão cair com o portal aberto, a interface indica o estado offline e mantém somente em memória os últimos dados carregados na sessão. Ela exibe a última atualização, bloqueia escritas e refaz as consultas ao reconectar. Em navegadores compatíveis, use o convite **Instalar**. No Safari iOS, use **Compartilhar → Adicionar à Tela de Início**.
+A entrada instalável abre em `/#/responsaveis`, tem manifesto e guarda em cache apenas o shell estático. O service worker não armazena chamadas `/api`, envios nem dados pessoais. Se a conexão cair com o portal aberto, a interface indica o estado offline e mantém somente em memória os últimos dados carregados na sessão. Ela exibe a última atualização, bloqueia escritas e refaz as consultas ao reconectar. Para instalar, abra o menu da conta no avatar e escolha **Adicionar à tela inicial**. O atalho abre o convite do navegador quando disponível ou mostra as instruções de instalação manual.
 
 Para conferir a versão instalável local, mantenha a API ativa, rode `npm run build:parent` e `npm run preview` e abra `http://localhost:4173/#/responsaveis`. O servidor de desenvolvimento prioriza o HMR. O manifesto e o service worker validados são os do build de produção.
 
@@ -225,4 +243,4 @@ Commits no formato [Conventional Commits](https://www.conventionalcommits.org/),
 
 ## Limites
 
-Não use a demonstração com dados reais de estudantes. A sessão local não substitui integração institucional, governança biométrica, HTTPS, armazenamento seguro no aparelho nem testes de segurança. Consulte a [matriz de rastreabilidade](docs/ALINHAMENTO_E_RASTREABILIDADE.md) para distinguir as funcionalidades demonstrativas das entregas pendentes.
+Não use a demonstração com dados de crianças reais. A sessão local não substitui integração institucional, governança biométrica, HTTPS, armazenamento seguro no aparelho nem testes de segurança. Consulte a [matriz de rastreabilidade](docs/ALINHAMENTO_E_RASTREABILIDADE.md) para distinguir as funcionalidades demonstrativas das entregas pendentes.

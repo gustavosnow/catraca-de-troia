@@ -80,16 +80,16 @@ export const InAppNotificationDrawer: React.FC<InAppNotificationDrawerProps> = (
                   <Icon aria-hidden="true" className="h-4 w-4" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <p className={cx('text-sm text-ink', !item.isRead ? 'font-semibold' : 'font-medium')}>
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                    <p className={cx('min-w-0 grow basis-40 text-sm wrap-anywhere text-ink', !item.isRead ? 'font-semibold' : 'font-medium')}>
                       {item.title}
                       {!item.isRead && <span className="sr-only"> (não lida)</span>}
                     </p>
-                    <span className="tabular shrink-0 text-xs text-muted">{item.timestamp}</span>
+                    <span className="tabular text-xs whitespace-nowrap text-muted">{item.timestamp}</span>
                   </div>
-                  <p className="mt-0.5 text-[13px] leading-relaxed text-ink-2">{item.message}</p>
+                  <p className="mt-0.5 text-[13px] leading-relaxed wrap-anywhere text-ink-2">{item.message}</p>
                   {(item.studentName || item.turnstile) && (
-                    <p className="mt-1 text-xs text-muted">{[item.studentName, item.turnstile].filter(Boolean).join(' · ')}</p>
+                    <p className="mt-1 text-xs wrap-anywhere text-muted">{[item.studentName, item.turnstile].filter(Boolean).join(' · ')}</p>
                   )}
                 </div>
                 {!item.isRead && <span aria-hidden="true" className="mt-2 h-2 w-2 shrink-0 rounded-full bg-brand" />}

@@ -82,7 +82,7 @@ export const AccountsAdministrationPanel: React.FC<AccountsAdministrationPanelPr
       <PageHeader
         eyebrow="Administração"
         title="Contas e permissões"
-        description="Identidades fictícias deste ambiente acadêmico e suas sessões ativas."
+        description="Contas da equipe e dos responsáveis, com suas sessões ativas."
         actions={
           <button type="button" className="btn btn-secondary" onClick={onRefresh} disabled={state === 'loading'}>
             <RefreshCw aria-hidden="true" className={state === 'loading' ? 'animate-spin' : undefined} />

@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertCircle, CheckCircle2, CircleDashed, Clock3, FileText, Info, LogIn, LogOut, Timer } from 'lucide-react';
 import type { WeeklyAccessDay } from '../../types';
+import { DEMO_ACCESS_LABEL } from '../../services/accessHistory';
 import { Chip } from '../ui';
 
 interface WeeklyAccessHistoryProps {
@@ -57,6 +58,7 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({ days, 
                   <td className="pl-6">
                     <p className="cell-primary">{isToday ? 'Hoje' : splitDate(day.fullDate)[0]}</p>
                     <p className="cell-secondary num">{splitDate(day.fullDate)[1]}</p>
+                    {day.hasDemoRecords && <p className="cell-secondary">{DEMO_ACCESS_LABEL}</p>}
                   </td>
                   <td className="num font-medium">{day.entryTime?.slice(0, 5) ?? '—'}</td>
                   <td className="num font-medium">{day.exitTime?.slice(0, 5) ?? '—'}</td>
@@ -77,10 +79,11 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({ days, 
         const isToday = day.dayName.startsWith('Hoje');
         return (
           <li key={day.fullDate} className="px-4 py-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
+            <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
+              <div className="min-w-0 grow basis-36">
                 <p className="text-sm font-semibold text-ink">{isToday ? 'Hoje' : splitDate(day.fullDate)[0]}</p>
                 <p className="tabular text-xs text-muted">{splitDate(day.fullDate)[1]}</p>
+                {day.hasDemoRecords && <p className="mt-1 text-xs text-muted">{DEMO_ACCESS_LABEL}</p>}
               </div>
               <DayStatusChip status={day.status} />
             </div>
@@ -108,7 +111,7 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({ days, 
 
     <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-muted">
       <Info aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-      O portal consulta a mesma API local do painel escolar, com eventos simulados. Ele não registra alterações offline; a fila do servidor escolar é que preserva os registros.
+      O portal consulta o mesmo servidor do painel escolar. Ele não registra alterações offline; a fila do servidor da escola é que preserva os registros.
     </p>
   </section>
 );

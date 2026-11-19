@@ -65,7 +65,10 @@ if (syncService) {
 
 const server = app.listen(port, host, () => {
   console.log(`API local em http://${host}:${port}`);
-  console.log('Autenticação por sessão ativa; contas e credenciais atuais são apenas demonstrativas.');
+  const people = (database.prepare('SELECT COUNT(*) AS total FROM users').get() as { total: number }).total;
+  console.log(people > 0
+    ? `Autenticação por sessão ativa; ${people} contas cadastradas.`
+    : 'ATENÇÃO: banco sem dados, nenhum login vai funcionar. Ative os dados com: SEED_PASSWORD=\'...\' npm run db:demo');
   console.log(syncService
     ? `Sincronização de eventos ativa para ${syncRemoteUrl}.`
     : 'Eventos permanecem na fila local: SYNC_REMOTE_URL/SYNC_SHARED_SECRET não configurados.');

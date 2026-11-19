@@ -73,6 +73,10 @@ export const createAccessEventRouter = (
     response.json({ data: service.listForSchool(actorFrom(request), parseLimit(request.query.limit)) });
   });
 
+  router.get('/access-events/overview', (request, response) => {
+    response.json({ data: service.overviewForSchool(actorFrom(request)) });
+  });
+
   router.get('/access-events/sync/status', (request, response) => {
     response.json({ data: syncService.status(actorFrom(request)) });
   });

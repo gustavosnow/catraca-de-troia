@@ -9,8 +9,21 @@ export type AccessMethodRecord = (typeof ACCESS_METHODS)[number];
 export const ACCESS_STATUSES = ['AUTHORIZED', 'MANUAL_RELEASE'] as const;
 export type AccessStatusRecord = (typeof ACCESS_STATUSES)[number];
 
-export const ACCESS_EVENT_SOURCES = ['DEMO_SIMULATION', 'FACE_PROTOTYPE'] as const;
+/**
+ * Origem do registro. `ASSISTED_PASSAGE`: passagem registrada pela equipe com
+ * operador e motivo. `FACE_PROTOTYPE`: câmera do protótipo facial (MC-036).
+ * `DEMO_SIMULATION`: carga do ambiente de demonstração, inclusive registros legados.
+ */
+export const ACCESS_EVENT_SOURCES = ['DEMO_SIMULATION', 'FACE_PROTOTYPE', 'ASSISTED_PASSAGE'] as const;
 export type AccessEventSource = (typeof ACCESS_EVENT_SOURCES)[number];
+
+export interface AccessEventOverview {
+  entries: number;
+  exits: number;
+  onCampus: number;
+  hasDemoRecords: boolean;
+  turnstiles: { id: string; passes: number }[];
+}
 
 export interface AccessEventRecord {
   id: string;

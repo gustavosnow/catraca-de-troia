@@ -46,6 +46,12 @@ export const LinkRequestsManager: React.FC<LinkRequestsManagerProps> = ({
 
   const pending = requests.filter((request) => request.status === 'PENDING');
   const approved = links.filter((link) => link.status === 'APPROVED');
+  const linksByGuardian = new Map<string, GuardianStudentLinkRecord[]>();
+  for (const link of approved) {
+    const group = linksByGuardian.get(link.guardian.id);
+    if (group) group.push(link);
+    else linksByGuardian.set(link.guardian.id, [link]);
+  }
 
   const open = (next: PendingAction) => {
     setAction(next);
@@ -175,50 +181,55 @@ export const LinkRequestsManager: React.FC<LinkRequestsManagerProps> = ({
           <div className="card-header">
             <div>
               <h2 id="active-links-title" className="card-title">Vínculos ativos</h2>
-              <p className="card-subtitle">A revogação bloqueia imediatamente as APIs protegidas.</p>
+              <p className="card-subtitle">Estudantes agrupados por responsável. Cada vínculo pode ser revogado individualmente.</p>
             </div>
           </div>
-          {approved.length === 0 ? (
+          {state === 'loading' && links.length === 0 ? (
+            <SkeletonRows rows={2} />
+          ) : approved.length === 0 ? (
             <EmptyState illustration={<EmptyInboxIllustration className="mb-4 h-20" />} title="Nenhum vínculo ativo" />
           ) : (
-            <div className="table-scroll">
-              <table className="data-table min-w-[760px]">
-                <caption className="sr-only">Vínculos familiares ativos</caption>
-                <thead>
-                  <tr>
-                    <th scope="col" className="pl-6">Responsável</th>
-                    <th scope="col">Estudante</th>
-                    <th scope="col">Aprovado em</th>
-                    <th scope="col">Situação</th>
-                    <th scope="col" className="pr-6 text-right">Ação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {approved.map((link) => (
-                    <tr key={`${link.guardian.id}:${link.student.id}`}>
-                      <td className="pl-6 cell-primary">{link.guardian.name}</td>
-                      <td>
-                        <div className="flex items-center gap-3">
+            <ul role="list">
+              {Array.from(linksByGuardian, ([guardianId, group]) => (
+                <li key={guardianId} className="border-t border-line">
+                  <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-line bg-surface px-4 py-3 sm:px-6">
+                    <h3 className="min-w-0 text-sm font-semibold wrap-anywhere text-ink">{group[0].guardian.name}</h3>
+                    <span className="text-xs text-muted">{group.length} {group.length === 1 ? 'estudante' : 'estudantes'}</span>
+                  </header>
+                  <ul role="list" className="divide-y divide-line">
+                    {group.map((link) => (
+                      <li key={link.student.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 py-3 sm:px-6 md:grid-cols-[minmax(0,1fr)_8rem_5rem_auto]">
+                        <div className="col-span-2 flex min-w-0 items-center gap-3 md:col-span-1">
                           <Avatar name={link.student.name} size="sm" />
-                          <div>
-                            <p className="font-medium">{link.student.name}</p>
-                            <p className="cell-secondary num">{link.student.enrollment}</p>
+                          <div className="min-w-0 wrap-anywhere">
+                            <p className="text-sm font-medium text-ink">{link.student.name}</p>
+                            <p className="tabular mt-0.5 text-xs text-muted">{link.student.enrollment}</p>
                           </div>
                         </div>
-                      </td>
-                      <td className="num whitespace-nowrap">{formatDateTime(link.approvedAt)}</td>
-                      <td><Chip tone="positive" icon={CheckCircle2}>Ativo</Chip></td>
-                      <td className="pr-6 text-right">
-                        <button type="button" className="btn btn-sm btn-danger-outline" onClick={() => open({ type: 'revoke', link })}>
-                          <ShieldX aria-hidden="true" />
-                          Revogar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 md:contents">
+                          <div className="min-w-0 text-xs text-muted">
+                            <p>Aprovado em</p>
+                            <p className="tabular mt-0.5 text-ink-2">{formatDateTime(link.approvedAt)}</p>
+                          </div>
+                          <Chip tone="positive" icon={CheckCircle2} className="justify-self-start">Ativo</Chip>
+                        </div>
+                        {canReview && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-danger-outline justify-self-end"
+                            aria-label={`Revogar vínculo de ${link.student.name} para ${link.guardian.name}`}
+                            onClick={() => open({ type: 'revoke', link })}
+                          >
+                            <ShieldX aria-hidden="true" />
+                            Revogar
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
       )}

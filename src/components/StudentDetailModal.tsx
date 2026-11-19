@@ -22,7 +22,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ student,
       onClose={onClose}
       labelledById="student-detail-title"
       title="Ficha do estudante"
-      description="Consulta cadastral · dados fictícios"
+      description="Consulta cadastral"
       widthClassName="max-w-[480px]"
       footer={<button type="button" className="btn btn-secondary w-full" onClick={onClose}>Fechar ficha</button>}
     >

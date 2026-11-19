@@ -41,8 +41,8 @@ export const ProjectDocsModal: React.FC<ProjectDocsModalProps> = ({ isOpen, onCl
         <strong className="font-semibold text-ink">portal dos responsáveis</strong>, que compartilham a mesma API local.
       </p>
       <p>
-        Entradas e saídas, avisos, notificações internas, justificativas textuais e vínculos usam dados fictícios.
-        Hardware, reconhecimento facial e notificações externas são simulados; metas e entregas do piloto seguem
+        Estudantes, responsáveis, vínculos, passagens, avisos e justificativas ficam no servidor local da escola.
+        O reconhecimento facial é um protótipo de laboratório, sem homologação, e nenhuma catraca física é acionada; a entrega externa de notificações é simulada. Metas e entregas do piloto seguem
         como critérios de homologação, não como resultados medidos.
       </p>
       <p className="rounded-[10px] border border-line bg-surface px-4 py-3 text-[13px] text-muted">

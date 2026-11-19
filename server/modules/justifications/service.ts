@@ -4,7 +4,6 @@ import {
   DemoActor,
   JustificationRecord,
   JustificationStatus,
-  LinkedStudent,
   ReviewJustificationRequest,
 } from '../../../shared/contracts/justifications';
 import { AppDatabase } from '../../db';
@@ -81,22 +80,6 @@ export class JustificationService {
     private readonly database: AppDatabase,
     private readonly now: () => string = () => new Date().toISOString(),
   ) {}
-
-  listLinkedStudents(actor: DemoActor): LinkedStudent[] {
-    if (actor.role === 'GUARDIAN') {
-      return this.database.prepare(`
-        SELECT s.id, s.name, s.enrollment
-        FROM students s
-        JOIN guardian_student_links link ON link.student_id = s.id
-        WHERE link.guardian_user_id = ? AND link.status = 'APPROVED' AND s.school_id = ?
-        ORDER BY s.name
-      `).all(actor.id, actor.schoolId) as LinkedStudent[];
-    }
-
-    return this.database.prepare(`
-      SELECT id, name, enrollment FROM students WHERE school_id = ? ORDER BY name
-    `).all(actor.schoolId) as LinkedStudent[];
-  }
 
   private findAccessibleStudent(actor: DemoActor, studentId: string): StudentRow {
     const student = this.database.prepare(`

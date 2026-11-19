@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type {
+  AccessEventOverview,
   AccessEventRecord,
   AccessEventSource,
   CreateAccessEventRequest,
@@ -7,7 +8,8 @@ import type {
 import type { AccessEventSyncPayload } from '../../../shared/contracts/accessEventSync';
 import type { DemoActor } from '../../../shared/contracts/justifications';
 import type { AppDatabase } from '../../db';
-import { conflict, forbidden, notFound } from '../../errors';
+import { conflict, forbidden, invalidRequest, notFound } from '../../errors';
+import { schoolDayStart } from '../../schoolDay';
 import { notifyStudentGuardians } from '../communications/notificationWriter';
 
 interface AccessEventRow {
@@ -27,6 +29,7 @@ interface AccessEventRow {
   whatsapp_status: AccessEventRecord['notification']['whatsapp'];
   push_status: AccessEventRecord['notification']['pushApp'];
   request_hash: string;
+  idempotency_key: string;
   reason: string | null;
   origin_node_id: string;
   origin_event_id: string;
@@ -46,6 +49,15 @@ const selectEvent = `
   JOIN students student ON student.id = event.student_id
 `;
 
+export const isDemoCapture = (captureId: string) =>
+  /^carga-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(captureId);
+const hexDigit = '[0-9a-f]';
+const legacyDemoGlob = `carga-${[8, 4, 4, 4, 12].map((size) => hexDigit.repeat(size)).join('-')}`;
+
+// As primeiras cargas usavam as mesmas origens das operações manuais e do protótipo.
+const eventSource = (row: Pick<AccessEventRow, 'source' | 'idempotency_key'>): AccessEventSource =>
+  isDemoCapture(row.idempotency_key.replace(/^device:[^:]+:/, '')) ? 'DEMO_SIMULATION' : row.source;
+
 const mapEvent = (row: AccessEventRow): AccessEventRecord => ({
   id: row.id,
   schoolId: row.school_id,
@@ -56,10 +68,10 @@ const mapEvent = (row: AccessEventRow): AccessEventRecord => ({
   status: row.status,
   method: row.method,
   createdById: row.created_by,
-  source: row.source,
+  source: eventSource(row),
   reason: row.reason ?? undefined,
   notification: { whatsapp: row.whatsapp_status, pushApp: row.push_status },
-  ...(row.device_id && row.match_score !== null && row.inference_ms !== null
+  ...(eventSource(row) === 'FACE_PROTOTYPE' && row.device_id && row.match_score !== null && row.inference_ms !== null
     ? {
         recognition: {
           deviceId: row.device_id,
@@ -118,6 +130,36 @@ export class AccessEventService {
     return rows.map(mapEvent);
   }
 
+  overviewForSchool(actor: DemoActor): AccessEventOverview {
+    if (actor.role === 'GUARDIAN') throw forbidden();
+    const now = this.now();
+    const rows = this.database.prepare(`
+      WITH day_events AS (
+        SELECT direction, turnstile_id, source, idempotency_key,
+          ROW_NUMBER() OVER (PARTITION BY student_id ORDER BY occurred_at DESC, id DESC) AS student_order
+        FROM access_events
+        WHERE school_id = ? AND occurred_at >= ? AND occurred_at <= ?
+      )
+      SELECT turnstile_id AS id, COUNT(*) AS passes,
+        SUM(direction = 'ENTRY') AS entries,
+        SUM(direction = 'ENTRY' AND student_order = 1) AS onCampus,
+        MAX(source = 'DEMO_SIMULATION' OR idempotency_key GLOB ?
+          OR idempotency_key GLOB ?) AS hasDemoRecords
+      FROM day_events
+      GROUP BY turnstile_id
+      ORDER BY turnstile_id
+    `).all(actor.schoolId, schoolDayStart(now), now, legacyDemoGlob, `device:*:${legacyDemoGlob}`) as {
+      id: string; passes: number; entries: number; onCampus: number; hasDemoRecords: number;
+    }[];
+    return {
+      entries: rows.reduce((sum, row) => sum + row.entries, 0),
+      exits: rows.reduce((sum, row) => sum + row.passes - row.entries, 0),
+      onCampus: rows.reduce((sum, row) => sum + row.onCampus, 0),
+      hasDemoRecords: rows.some((row) => Boolean(row.hasDemoRecords)),
+      turnstiles: rows.map(({ id, passes }) => ({ id, passes })),
+    };
+  }
+
   private findRow(createdById: string, idempotencyKey: string) {
     return this.database.prepare(`
       ${selectEvent}
@@ -130,11 +172,30 @@ export class AccessEventService {
     studentId: string,
     request: CreateAccessEventRequest,
     idempotencyKey: string,
+    source: 'ASSISTED_PASSAGE' | 'DEMO_SIMULATION' = 'ASSISTED_PASSAGE',
   ): { event: AccessEventRecord; created: boolean } {
     if (actor.role === 'GUARDIAN') {
       throw forbidden('Eventos de acesso só podem ser registrados por um ator escolar.');
     }
     this.ensureAccessibleStudent(actor, studentId);
+    // Passagem facial só entra pela rota da câmera (token do dispositivo).
+    if (request.method !== 'MANUAL' || request.status !== 'MANUAL_RELEASE' || !request.reason?.trim()) {
+      throw invalidRequest('Pelo painel, registre somente passagem assistida, com motivo.');
+    }
+    const turnstile = this.database.prepare(`
+      SELECT turnstile_id, turnstile_name FROM access_devices
+      WHERE school_id = ? AND turnstile_id = ? AND active = 1
+      LIMIT 1
+    `).get(actor.schoolId, request.turnstileId) as { turnstile_id: string; turnstile_name: string } | undefined;
+    if (!turnstile) throw invalidRequest('Selecione uma catraca cadastrada e ativa.');
+    // Nome da catraca vem do cadastro; o status de entrega nunca vem do cliente.
+    const normalized: CreateAccessEventRequest = {
+      ...request,
+      turnstileName: turnstile.turnstile_name,
+      whatsappStatus: 'PENDING',
+      pushStatus: 'PENDING',
+      reason: request.reason.trim(),
+    };
 
     const requestHash = hashRequest({ studentId, ...request });
     const existing = this.findRow(actor.id, idempotencyKey);
@@ -145,16 +206,48 @@ export class AccessEventService {
       return { event: mapEvent(existing), created: false };
     }
 
-    const event = this.database.transaction(() => this.insertEvent({
-      schoolId: actor.schoolId,
-      studentId,
-      createdById: actor.id,
-      request,
-      idempotencyKey,
-      requestHash,
-      source: 'DEMO_SIMULATION',
-    }))();
+    const event = this.database.transaction(() => {
+      const sequence = this.checkSequence(actor.schoolId, studentId, normalized.direction);
+      if (!sequence.allowed) {
+        throw conflict(
+          'SEQUENCE_CONFLICT',
+          sequence.expectedDirection === 'EXIT'
+            ? 'Este estudante já tem entrada registrada hoje. Registre a saída antes de uma nova entrada.'
+            : 'Este estudante não tem entrada em aberto hoje. Registre a entrada antes da saída.',
+        );
+      }
+      return this.insertEvent({
+        schoolId: actor.schoolId,
+        studentId,
+        createdById: actor.id,
+        request: normalized,
+        idempotencyKey,
+        requestHash,
+        source,
+      });
+    })();
     return { event, created: true };
+  }
+
+  /**
+   * Sequência obrigatória por estudante no dia letivo: a primeira passagem é
+   * entrada e depois alterna (entrada → saída → entrada). Vale para câmera e
+   * para passagem assistida; eventos recebidos por sincronização não passam aqui.
+   */
+  checkSequence(schoolId: string, studentId: string, direction: AccessEventRecord['direction']) {
+    const since = schoolDayStart(this.now());
+    const last = this.database.prepare(`
+      ${selectEvent}
+      WHERE event.school_id = ? AND event.student_id = ? AND event.occurred_at >= ?
+      ORDER BY event.occurred_at DESC, event.id DESC
+      LIMIT 1
+    `).get(schoolId, studentId, since) as AccessEventRow | undefined;
+    const expectedDirection: AccessEventRecord['direction'] = last?.direction === 'ENTRY' ? 'EXIT' : 'ENTRY';
+    return {
+      allowed: direction === expectedDirection,
+      expectedDirection,
+      lastEvent: last ? mapEvent(last) : undefined,
+    };
   }
 
   /** Evento da mesma catraca e do mesmo estudante desde `since`, para ignorar leituras repetidas. */
@@ -193,6 +286,7 @@ export class AccessEventService {
     turnstileName: string;
     matchScore: number;
     inferenceMs: number;
+    source: 'FACE_PROTOTYPE' | 'DEMO_SIMULATION';
   }): AccessEventRecord {
     const request: CreateAccessEventRequest = {
       direction: params.direction,
@@ -210,7 +304,7 @@ export class AccessEventService {
       request,
       idempotencyKey: AccessEventService.deviceIdempotencyKey(params.deviceId, params.captureId),
       requestHash: hashRequest({ studentId: params.studentId, deviceId: params.deviceId, ...request }),
-      source: 'FACE_PROTOTYPE',
+      source: params.source,
       recognition: {
         deviceId: params.deviceId,
         matchScore: params.matchScore,
@@ -308,7 +402,9 @@ export class AccessEventService {
       title: request.direction === 'ENTRY' ? 'Entrada registrada' : 'Saída registrada',
       message: `${student.name} teve ${request.direction === 'ENTRY' ? 'entrada' : 'saída'} registrada em ${turnstileName}.`,
       studentId,
-      contextLabel: turnstileName,
+      contextLabel: params.source === 'DEMO_SIMULATION'
+        ? `${turnstileName} · Dados de demonstração`
+        : turnstileName,
       sourceType: 'ACCESS_EVENT',
       sourceId: id,
       createdAt: timestamp,

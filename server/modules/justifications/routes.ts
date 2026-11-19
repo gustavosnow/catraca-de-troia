@@ -59,14 +59,6 @@ const parseReviewRequest = (body: unknown): ReviewJustificationRequest => {
 export const createJustificationRouter = (service: JustificationService) => {
   const router = Router();
 
-  router.get('/me', (request, response) => {
-    response.json({ actor: actorFrom(request) });
-  });
-
-  router.get('/me/students', (request, response) => {
-    response.json({ data: service.listLinkedStudents(actorFrom(request)) });
-  });
-
   router.get('/students/:studentId/justifications', (request, response) => {
     response.json({
       data: service.listForStudent(actorFrom(request), request.params.studentId),

@@ -1,30 +1,18 @@
 import React, { useState } from 'react';
 import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  BookOpen,
   Hand,
-  Pause,
-  Play,
   QrCode,
-  Smartphone,
   Volume2,
   VolumeX,
 } from 'lucide-react';
 import { soundManager } from '../../utils/sound';
 import type { Student } from '../../types';
-import { Callout, PageHeader } from '../ui';
+import { PageHeader } from '../ui';
 import { FaceRecognitionPanel } from './FaceRecognitionPanel';
 
 interface ToolsPageProps {
-  isSimulating: boolean;
-  onToggleSimulation: () => void;
-  onSimulateEntry: () => void;
-  onSimulateExit: () => void;
   onOpenManualRelease: () => void;
   onOpenPresentationAccess: () => void;
-  onOpenProjectDocs: () => void;
-  onSwitchToParentApp: () => void;
   /** Coordenação ou Direção: configuram câmera e gerenciam cadastros faciais. */
   canManageBiometrics: boolean;
   students: Student[];
@@ -51,14 +39,8 @@ const ToolRow: React.FC<{
 );
 
 export const ToolsPage: React.FC<ToolsPageProps> = ({
-  isSimulating,
-  onToggleSimulation,
-  onSimulateEntry,
-  onSimulateExit,
   onOpenManualRelease,
   onOpenPresentationAccess,
-  onOpenProjectDocs,
-  onSwitchToParentApp,
   canManageBiometrics,
   students,
   isOnline,
@@ -75,62 +57,25 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
   return (
     <>
       <PageHeader
-        eyebrow="Demonstração"
+        eyebrow="Operação"
         title="Ferramentas"
-        description="Recursos para apresentar o piloto. Tudo aqui gera somente eventos fictícios na API local."
+        description="Passagem assistida, apresentação do portal e o protótipo de reconhecimento facial."
       />
 
-      <Callout tone="brand" className="mb-6">
-        A simulação e a apresentação geram somente eventos fictícios, sem acionar catracas ou canais externos.
-        O protótipo facial abaixo comanda câmeras reais no computador da portaria e continua sem homologação.
-      </Callout>
-
       <div className="space-y-6">
-        <section className="card overflow-hidden" aria-labelledby="tools-simulation">
+        <section className="card overflow-hidden" aria-labelledby="tools-gate">
           <div className="card-header">
             <div>
-              <h2 id="tools-simulation" className="card-title">Simulação de passagens</h2>
-              <p className="card-subtitle">Gere eventos para demonstrar o fluxo da portaria até o portal dos responsáveis.</p>
+              <h2 id="tools-gate" className="card-title">Operação da portaria</h2>
+              <p className="card-subtitle">Registro manual quando a câmera não identifica o estudante.</p>
             </div>
-            <span className={`chip ${isSimulating ? 'chip-positive' : 'chip-neutral'}`} role="status">
-              <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${isSimulating ? 'bg-positive' : 'bg-subtle'}`} />
-              {isSimulating ? 'Fluxo automático ativo' : 'Fluxo pausado'}
-            </span>
           </div>
           <ul className="divide-y divide-line border-t border-line">
             <ToolRow
-              icon={isSimulating ? Pause : Play}
-              title="Fluxo automático"
-              description="Registra uma passagem fictícia a cada 9 segundos enquanto estiver ativo."
-              action={
-                <button type="button" className={`btn ${isSimulating ? 'btn-secondary' : 'btn-primary'}`} onClick={onToggleSimulation} aria-pressed={isSimulating}>
-                  {isSimulating ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-                  {isSimulating ? 'Pausar' : 'Iniciar'}
-                </button>
-              }
-            />
-            <ToolRow
-              icon={ArrowDownLeft}
-              title="Passagem pontual"
-              description="Registra uma entrada ou saída imediata para o próximo estudante da lista."
-              action={
-                <>
-                  <button type="button" className="btn btn-secondary" onClick={onSimulateEntry}>
-                    <ArrowDownLeft aria-hidden="true" />
-                    Simular entrada
-                  </button>
-                  <button type="button" className="btn btn-secondary" onClick={onSimulateExit}>
-                    <ArrowUpRight aria-hidden="true" />
-                    Simular saída
-                  </button>
-                </>
-              }
-            />
-            <ToolRow
               icon={Hand}
               title="Passagem assistida"
-              description="Registro alternativo com operador e motivo obrigatório."
-              action={<button type="button" className="btn btn-secondary" onClick={onOpenManualRelease}>Abrir formulário</button>}
+              description="Registra entrada ou saída com operador e motivo obrigatório. Respeita a sequência do dia."
+              action={<button type="button" className="btn btn-primary" onClick={onOpenManualRelease}>Registrar passagem</button>}
             />
             <ToolRow
               icon={soundOn ? Volume2 : VolumeX}
@@ -159,18 +104,6 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
               title="Portal por QR Code"
               description="Gera o link da rede local para abrir o portal no navegador do celular."
               action={<button type="button" className="btn btn-primary" onClick={onOpenPresentationAccess}><QrCode aria-hidden="true" />Gerar QR Code</button>}
-            />
-            <ToolRow
-              icon={Smartphone}
-              title="Portal dos responsáveis"
-              description="Encerra esta sessão e abre o acesso das famílias neste navegador."
-              action={<button type="button" className="btn btn-secondary" onClick={onSwitchToParentApp}>Trocar de acesso</button>}
-            />
-            <ToolRow
-              icon={BookOpen}
-              title="Sobre o projeto"
-              description="Resumo da demonstração e acesso à documentação oficial."
-              action={<button type="button" className="btn btn-secondary" onClick={onOpenProjectDocs}>Abrir documentação</button>}
             />
           </ul>
         </section>

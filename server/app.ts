@@ -3,6 +3,8 @@ import { createSessionAuth } from './auth/sessionAuth';
 import { AppDatabase } from './db';
 import { ApiError } from './errors';
 import { createJustificationRouter } from './modules/justifications/routes';
+import { createStudentRouter } from './modules/students/routes';
+import { StudentService } from './modules/students/service';
 import { JustificationService } from './modules/justifications/service';
 import {
   createAccessDeviceAdminRouter,
@@ -110,6 +112,7 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
     { enabled: false, edgeDir: 'edge', apiUrl: 'http://127.0.0.1:3001' },
     options.now,
   )));
+  app.use('/api/v1', createStudentRouter(new StudentService(database)));
   app.use(
     '/api/v1',
     createJustificationRouter(new JustificationService(database, options.now)),

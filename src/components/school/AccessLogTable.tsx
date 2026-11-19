@@ -12,6 +12,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import type { AccessLog } from '../../types';
+import { DEMO_ACCESS_LABEL } from '../../services/accessHistory';
 import { Avatar, Chip } from '../ui';
 
 export const splitTurnstile = (name: string) => {
@@ -36,11 +37,15 @@ export const DirectionChip: React.FC<{ direction: AccessLog['direction'] }> = ({
  * passagem assistida pela portaria, protótipo facial (MC-036) ou evento simulado.
  */
 export const accessOriginLabel = (log: AccessLog) => {
+  if (log.source === 'simulacao') return DEMO_ACCESS_LABEL;
   if (log.method === 'Manual') return 'Assistida';
   return log.source === 'camera' ? 'Protótipo facial' : 'Simulada';
 };
 
 export const MethodChip: React.FC<{ log: AccessLog }> = ({ log }) => {
+  if (log.source === 'simulacao') {
+    return <Chip tone="neutral" icon={FlaskConical}>{DEMO_ACCESS_LABEL}</Chip>;
+  }
   if (log.method === 'Manual') {
     return <Chip tone="info" icon={Hand} title="Passagem assistida registrada pela portaria">Assistida</Chip>;
   }
@@ -99,6 +104,7 @@ export const AccessLogTable: React.FC<AccessLogTableProps> = ({ logs, onSelectSt
                         {log.matricula}
                         {full && <span className="hidden xl:inline"> · {log.turma.split(' - ')[0]}</span>}
                       </p>
+                      {!full && log.source === 'simulacao' && <p className="cell-secondary">{DEMO_ACCESS_LABEL}</p>}
                     </div>
                   </div>
                 </td>

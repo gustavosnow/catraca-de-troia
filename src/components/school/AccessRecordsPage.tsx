@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Download, Plus, Search, X } from 'lucide-react';
 import type { AccessLog } from '../../types';
-import { TURMAS_LIST } from '../../data/mockData';
 import { EmptySearchIllustration } from '../brand/Illustrations';
 import { Callout, EmptyState, PageHeader, SkeletonRows } from '../ui';
 import { AccessLogTable, accessOriginLabel } from './AccessLogTable';
@@ -47,6 +46,10 @@ export const AccessRecordsPage: React.FC<AccessRecordsPageProps> = ({
         && (turma === 'Todas' || log.turma === turma);
     });
   }, [direction, logs, search, shift, turma]);
+
+  // Turmas presentes nos registros carregados, em ordem natural (1º, 2º, ... 9º).
+  const turmaOptions = useMemo(() => ['Todas', ...Array.from(new Set<string>(logs.map((log) => log.turma)))
+    .sort((left, right) => left.localeCompare(right, 'pt-BR', { numeric: true }))], [logs]);
 
   const hasFilters = Boolean(search) || direction !== 'todos' || shift !== 'Todos' || turma !== 'Todas';
   const clearFilters = () => {
@@ -109,7 +112,7 @@ export const AccessRecordsPage: React.FC<AccessRecordsPageProps> = ({
             <h2 id="records-title" className="card-title">
               Movimentações <span className="font-normal text-muted">/ {filtered.length}</span>
             </h2>
-            <p className="card-subtitle">Eventos demonstrativos persistidos na API local, atualizados a cada 5 segundos.</p>
+            <p className="card-subtitle">Passagens gravadas pelo servidor da escola, atualizadas a cada 5 segundos.</p>
           </div>
         </div>
 
@@ -146,8 +149,8 @@ export const AccessRecordsPage: React.FC<AccessRecordsPageProps> = ({
           <div>
             <label htmlFor="records-turma" className="sr-only">Turma</label>
             <select id="records-turma" className="select" value={turma} onChange={(event) => setTurma(event.target.value)}>
-              {TURMAS_LIST.map((item) => (
-                <option key={item} value={item}>{item === 'Todas' ? 'Todas as turmas' : item.replace(' - ', ' · ')}</option>
+              {turmaOptions.map((item) => (
+                <option key={item} value={item}>{item === 'Todas' ? 'Todas as turmas' : item}</option>
               ))}
             </select>
           </div>
@@ -181,7 +184,7 @@ export const AccessRecordsPage: React.FC<AccessRecordsPageProps> = ({
 
         <div className="table-footer">
           <span>
-            {filtered.length} de {logs.length} registros · Dados fictícios
+            {filtered.length} de {logs.length} registros
             {updatedAt && ` · Atualizado às ${new Date(updatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`}
           </span>
           {hasFilters && (

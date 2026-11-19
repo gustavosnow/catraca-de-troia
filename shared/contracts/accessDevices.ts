@@ -31,10 +31,21 @@ export type DenialReason = (typeof DENIAL_REASONS)[number];
 
 export type RecognitionDecision =
   | { decision: 'AUTHORIZED'; duplicate: boolean; event: AccessEventRecord }
-  | { decision: 'DENIED'; reason: DenialReason; denialId: string };
+  | { decision: 'DENIED'; reason: DenialReason; denialId: string }
+  /**
+   * Estudante reconhecido, mas fora da sequência do dia: já tem entrada sem saída
+   * (ou saída sem nova entrada). Nada é gravado: nem passagem, nem negação.
+   */
+  | {
+    decision: 'SEQUENCE_BLOCKED';
+    studentId: string;
+    expectedDirection: AccessDirectionRecord;
+    lastEvent?: AccessEventRecord;
+  };
 
 export interface AccessDenialRecord {
   id: string;
+  demo: boolean;
   deviceId: string;
   turnstile: { id: string; name: string };
   direction: AccessDirectionRecord;

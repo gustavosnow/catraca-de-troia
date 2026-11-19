@@ -4,7 +4,6 @@ import {
   ArrowRight,
   ChevronRight,
   FileText,
-  FlaskConical,
   Link2,
   LogIn,
   LogOut,
@@ -12,20 +11,25 @@ import {
   Plus,
   School,
   ScanFace,
-  Unplug,
   Users,
 } from 'lucide-react';
 import type { AccessLog, SecurityAlert, Turnstile } from '../../types';
+import type { AccessEventOverview } from '../../../shared/contracts/accessEvents';
 import type { AccessEventSyncStatus } from '../../../shared/contracts/accessEventSync';
+import { DEMO_ACCESS_LABEL } from '../../services/accessHistory';
 import { AllClearIllustration, EmptySearchIllustration } from '../brand/Illustrations';
 import { Callout, Chip, EmptyState, SkeletonRows, StatTile, firstNameOf, greetingForNow } from '../ui';
-import { AccessLogTable, splitTurnstile } from './AccessLogTable';
+
+/** Câmera com leitura nos últimos 2 minutos. */
+const READING_WINDOW_MS = 2 * 60 * 1000;
+import { AccessLogTable } from './AccessLogTable';
 import { SyncQueueCard } from './SyncQueueCard';
 import type { SchoolSection } from './SchoolShell';
 
 interface OverviewPageProps {
   userName: string;
   totalStudents: number;
+  accessOverview: AccessEventOverview | null;
   logs: AccessLog[];
   logsState: 'loading' | 'persistent' | 'unavailable';
   logsError?: string;
@@ -42,17 +46,17 @@ interface OverviewPageProps {
   isRetryingSyncConflicts: boolean;
   onRetrySyncConflicts: () => void;
   onOpenManualRelease: () => void;
-  onOpenProjectDocs: () => void;
   onOpenAlerts: () => void;
   onNavigate: (section: SchoolSection) => void;
   onSelectStudent: (studentId: string) => void;
 }
 
-const pad = (value: number) => String(value).padStart(2, '0');
+const pad = (value?: number) => value === undefined ? '—' : String(value).padStart(2, '0');
 
 export const OverviewPage: React.FC<OverviewPageProps> = ({
   userName,
   totalStudents,
+  accessOverview,
   logs,
   logsState,
   logsError,
@@ -69,19 +73,11 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   isRetryingSyncConflicts,
   onRetrySyncConflicts,
   onOpenManualRelease,
-  onOpenProjectDocs,
   onOpenAlerts,
   onNavigate,
   onSelectStudent,
 }) => {
-  const entries = logs.filter((log) => log.direction === 'entry').length;
-  const exits = logs.length - entries;
-  const latestByStudent = new Map<string, AccessLog['direction']>();
-  [...logs]
-    .sort((left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime())
-    .forEach((log) => latestByStudent.set(log.studentId, log.direction));
-  const onCampus = [...latestByStudent.values()].filter((direction) => direction === 'entry').length;
-  const activeAlerts = alerts.filter((alert) => !alert.resolved);
+  const activeAlerts = alerts;
   const recentLogs = logs.slice(0, 6);
   const firstName = firstNameOf(userName);
 
@@ -105,20 +101,14 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
         </button>
       </header>
 
-      <Callout
-        tone="brand"
-        icon={FlaskConical}
-        title="Ambiente demonstrativo."
-        action={<button type="button" onClick={onOpenProjectDocs} className="btn-link whitespace-nowrap">Entenda o piloto <ArrowRight aria-hidden="true" /></button>}
-      >
-        Dados fictícios e eventos simulados. Nenhuma catraca física conectada.
-      </Callout>
-
       <section aria-label="Indicadores do dia" className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <StatTile label="Estudantes cadastrados" value={pad(totalStudents)} icon={Users} caption="Base fictícia de demonstração" />
-        <StatTile label="Entradas registradas" value={pad(entries)} icon={LogIn} caption="Eventos carregados da API local" emphasis />
-        <StatTile label="Saídas registradas" value={pad(exits)} icon={LogOut} caption="Eventos carregados da API local" />
-        <StatTile label="Na escola" value={pad(onCampus)} icon={School} caption="Conforme último registro" />
+        <StatTile label="Estudantes cadastrados" value={pad(totalStudents)} icon={Users} caption="Cadastro da escola" />
+        <StatTile label="Entradas hoje" value={pad(accessOverview?.entries)} icon={LogIn} caption="Registros do dia" emphasis />
+        <StatTile label="Saídas hoje" value={pad(accessOverview?.exits)} icon={LogOut} caption="Registros do dia" />
+        <StatTile label="Na escola agora" value={pad(accessOverview?.onCampus)} icon={School} caption="Pela última passagem de hoje" />
+        {accessOverview?.hasDemoRecords && (
+          <p className="col-span-full text-xs text-muted">Os indicadores do dia incluem dados de demonstração.</p>
+        )}
       </section>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -126,44 +116,63 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           <section aria-labelledby="turnstiles-title">
             <div className="mb-3 flex items-baseline justify-between gap-3">
               <h2 id="turnstiles-title" className="text-base font-semibold text-ink">Controle de acesso</h2>
-              <span className="text-xs text-muted">{turnstiles.length} unidades no piloto</span>
+              <span className="text-xs text-muted">{turnstiles.length} {turnstiles.length === 1 ? 'catraca cadastrada' : 'catracas cadastradas'}</span>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              {turnstiles.map((turnstile) => {
-                const { code } = splitTurnstile(turnstile.name);
-                const passes = logs.filter((log) => log.turnstileId === turnstile.id || splitTurnstile(log.turnstileName).code === code).length;
-                const place = turnstile.name.includes('Fundamental I)') ? 'Acesso do Fundamental I' : 'Entrada principal';
-                return (
-                  <article key={turnstile.id} className="card p-5">
-                    <div className="flex items-start gap-3">
-                      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-brand-soft text-action">
-                        <ScanFace aria-hidden="true" className="h-5 w-5" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-[15px] font-semibold text-ink">Catraca {code}</h3>
-                        <p className="text-[13px] text-muted">{place}</p>
+            {turnstiles.length === 0 ? (
+              <div className="card px-6 py-5 text-[13px] text-muted">
+                Nenhuma catraca cadastrada. Registre as câmeras com <code className="text-ink">npm run device:register</code>.
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {turnstiles.map((turnstile) => {
+                  const passes = accessOverview
+                    ? accessOverview.turnstiles.find(({ id }) => id === turnstile.id)?.passes ?? 0
+                    : undefined;
+                  return (
+                    <article key={turnstile.id} className="card p-5">
+                      <div className="flex items-start gap-3">
+                        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-brand-soft text-action">
+                          <ScanFace aria-hidden="true" className="h-5 w-5" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-[15px] font-semibold text-ink">{turnstile.name}</h3>
+                          <p className="text-[13px] text-muted">Reconhecimento facial em protótipo</p>
+                        </div>
                       </div>
-                      <Chip tone="brand" icon={FlaskConical}>Simulada</Chip>
-                    </div>
-                    <div className="mt-4 flex items-baseline justify-between border-t border-line pt-4">
-                      <span className="text-[13px] text-ink-2">Passagens registradas</span>
-                      <span className="tabular text-lg font-bold text-ink">{pad(passes)}</span>
-                    </div>
-                    <p className="mt-2 flex items-center gap-1.5 text-xs text-muted">
-                      <Unplug aria-hidden="true" className="h-3.5 w-3.5" />
-                      Sem conexão com hardware
-                    </p>
-                  </article>
-                );
-              })}
-            </div>
+                      <ul className="mt-4 space-y-2 border-t border-line pt-4">
+                        {turnstile.lanes.map((lane) => {
+                          const reading = Boolean(lane.lastSeenAt) && Date.now() - Date.parse(lane.lastSeenAt!) < READING_WINDOW_MS;
+                          return (
+                            <li key={lane.deviceId} className="flex items-center justify-between gap-3 text-[13px]">
+                              <span className="flex items-center gap-2 text-ink-2">
+                                {lane.direction === 'entry' ? <LogIn aria-hidden="true" className="h-4 w-4" /> : <LogOut aria-hidden="true" className="h-4 w-4" />}
+                                {lane.direction === 'entry' ? 'Câmera de entrada' : 'Câmera de saída'}
+                              </span>
+                              {!lane.active
+                                ? <Chip tone="neutral">Desativada</Chip>
+                                : reading
+                                  ? <Chip tone="positive">Lendo</Chip>
+                                  : <Chip tone="neutral">Sem leitura recente</Chip>}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <div className="mt-4 flex items-baseline justify-between border-t border-line pt-4">
+                        <span className="text-[13px] text-ink-2">Passagens hoje</span>
+                        <span className="tabular text-lg font-bold text-ink">{pad(passes)}</span>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
           </section>
 
           <section className="card overflow-hidden" aria-labelledby="recent-title">
             <div className="card-header">
               <div>
                 <h2 id="recent-title" className="card-title">Últimas movimentações</h2>
-                <p className="card-subtitle">Registros demonstrativos persistidos na API local</p>
+                <p className="card-subtitle">Passagens gravadas pelo servidor da escola</p>
               </div>
               <button type="button" className="btn-link mt-1" onClick={() => onNavigate('registros')}>
                 Ver todos <ArrowRight aria-hidden="true" />
@@ -177,7 +186,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
               <EmptyState
                 illustration={<EmptySearchIllustration className="mb-4 h-20" />}
                 title="Nenhuma passagem registrada hoje"
-                description="Use a passagem assistida ou as ferramentas de simulação para gerar um evento."
+                description="As passagens aparecem aqui quando a câmera reconhece um estudante ou a portaria registra uma passagem assistida."
               />
             ) : (
               <>
@@ -198,7 +207,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
               {activeAlerts.length > 0 && <span className="count-badge count-badge-brand">{activeAlerts.length}</span>}
             </div>
             {activeAlerts.length === 0 ? (
-              <EmptyState compact illustration={<AllClearIllustration className="mb-3 h-16" />} title="Nada pendente" description="Nenhuma ocorrência aberta nesta sessão." />
+              <EmptyState compact illustration={<AllClearIllustration className="mb-3 h-16" />} title="Nada pendente" description="Nenhuma leitura negada hoje." />
             ) : (
               <ul className="mt-3 divide-y divide-line">
                 {activeAlerts.slice(0, 2).map((alert) => (
@@ -208,8 +217,8 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                     </span>
                     <div className="min-w-0">
                       <p className="text-[13px] font-semibold text-ink">{alert.title}</p>
-                      <p className="mt-0.5 text-xs text-muted">{alert.turnstile.split(' - ')[0]} · Cenário simulado</p>
-                      <p className="tabular mt-1 text-xs text-subtle">Hoje, {alert.time.slice(0, 5)}</p>
+                      <p className="mt-0.5 text-xs text-muted">{alert.turnstileName} · {alert.direction === 'entry' ? 'entrada' : 'saída'}{alert.demo && ` · ${DEMO_ACCESS_LABEL}`}</p>
+                      <p className="tabular mt-1 text-xs text-subtle">Hoje, {new Date(alert.occurredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                   </li>
                 ))}

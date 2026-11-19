@@ -1,23 +1,36 @@
-import { AbsenceJustification, AccessDirection, AccessLog, DayTimelineEvent, WeeklyAccessDay } from '../types';
+import { AbsenceJustification, AccessLog, DayTimelineEvent, WeeklyAccessDay } from '../types';
+
+export const DEMO_ACCESS_LABEL = 'Dados de demonstração';
+
+const TIMELINE_ORIGINS = {
+  assistida: 'Passagem assistida pela escola',
+  camera: 'Reconhecimento facial',
+  simulacao: DEMO_ACCESS_LABEL,
+};
+
+/** Data local (AAAA-MM-DD) do registro, para agrupar por dia. */
+export const localDateKey = (date: Date) => [
+  date.getFullYear(),
+  String(date.getMonth() + 1).padStart(2, '0'),
+  String(date.getDate()).padStart(2, '0'),
+].join('-');
+
+export const isToday = (timestamp: string, today = new Date()) =>
+  localDateKey(new Date(timestamp)) === localDateKey(today);
 
 export const getStudentAccessLogs = (logs: AccessLog[], studentId: string) =>
   logs
     .filter((log) => log.studentId === studentId)
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-export const getNextAccessDirection = (
-  logs: AccessLog[],
-  studentId: string,
-): AccessDirection => {
-  const studentLogs = getStudentAccessLogs(logs, studentId);
-  return studentLogs.at(-1)?.direction === 'entry' ? 'exit' : 'entry';
-};
-
+/** Movimentações do estudante no dia de hoje (mais recentes por último). */
 export const buildStudentAccessTimeline = (
   logs: AccessLog[],
   studentId: string,
+  today = new Date(),
 ): DayTimelineEvent[] =>
   getStudentAccessLogs(logs, studentId)
+    .filter((log) => isToday(log.timestamp, today))
     .slice(-8)
     .map((log) => ({
       id: `timeline-${log.id}`,
@@ -26,7 +39,7 @@ export const buildStudentAccessTimeline = (
       location: log.turnstileName,
       status: 'completed',
       badgeType: log.direction,
-      detail: `${log.method} • ${log.status}${log.operator ? ` • Operador: ${log.operator}` : ''}`,
+      detail: log.source ? TIMELINE_ORIGINS[log.source] : 'Registro anterior',
     }));
 
 const durationBetween = (entryTime: string, exitTime: string) => {
@@ -41,48 +54,6 @@ const durationBetween = (entryTime: string, exitTime: string) => {
   return `${hours}h ${minutes.toString().padStart(2, '0')}min na escola`;
 };
 
-export const mergeSessionLogsIntoWeeklyAccess = (
-  days: WeeklyAccessDay[],
-  logs: AccessLog[],
-  studentId: string,
-): WeeklyAccessDay[] => {
-  const studentLogs = getStudentAccessLogs(logs, studentId);
-  if (studentLogs.length === 0 || days.length === 0) return days;
-
-  const firstEntry = studentLogs.find((log) => log.direction === 'entry');
-  const lastExit = [...studentLogs].reverse().find((log) => log.direction === 'exit');
-  if (!firstEntry && !lastExit) return days;
-
-  const currentDay = days[0];
-  const entryTime = firstEntry?.exactTime ?? null;
-  const exitTime = lastExit?.exactTime ?? null;
-  const referenceLog = lastExit || firstEntry;
-
-  return [
-    {
-      ...currentDay,
-      entryTime,
-      exitTime,
-      turnstileUsed: referenceLog?.turnstileName ?? currentDay.turnstileUsed,
-      method: referenceLog?.method ?? currentDay.method,
-      status: exitTime ? 'presente' : 'em_andamento',
-      durationHours:
-        entryTime && exitTime
-          ? durationBetween(entryTime, exitTime)
-          : entryTime
-            ? 'Em andamento (eventos da sessão demonstrativa)'
-            : 'Saída sem entrada correspondente na sessão demonstrativa',
-      notificationDelivered: referenceLog?.notification.pushApp === 'Entregue',
-    },
-    ...days.slice(1),
-  ];
-};
-
-const localDateKey = (date: Date) => [
-  date.getFullYear(),
-  String(date.getMonth() + 1).padStart(2, '0'),
-  String(date.getDate()).padStart(2, '0'),
-].join('-');
 
 export const buildWeeklyAccessFromLogs = (
   logs: AccessLog[],
@@ -147,6 +118,7 @@ export const buildWeeklyAccessFromLogs = (
       method: reference?.method || '-',
       status,
       durationHours,
+      hasDemoRecords: dayLogs.some((log) => log.source === 'simulacao'),
       notificationDelivered: reference?.notification.pushApp === 'Entregue',
     };
   });

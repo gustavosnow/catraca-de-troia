@@ -8,9 +8,13 @@ no front**. Regras de negócio e limites: `CONTROLE_DE_MUDANCAS.md` (MC-036 e MC
 > exibido em **Ferramentas** do painel escolar. Origem dos registros: `accessOriginLabel`
 > e `MethodChip` em `src/components/school/AccessLogTable.tsx`.
 
-> Protótipo de laboratório. Cadastre apenas adultos da equipe, com consentimento,
-> ligados a estudantes fictícios. As telas não devem sugerir reconhecimento
-> homologado, catraca física acionada ou uso com estudantes reais.
+> Protótipo de laboratório. Cadastre só o rosto de adultos voluntários da equipe,
+> com consentimento, representando estudantes no teste; nunca o de uma criança.
+> As telas não devem sugerir reconhecimento homologado ou catraca física acionada.
+>
+> **Sequência (MC-039):** a API só grava a direção esperada para o estudante no dia
+> (entrada → saída → entrada). Fora dela, `POST /device/recognitions` responde
+> `{ decision: 'SEQUENCE_BLOCKED', expectedDirection, lastEvent }` sem gravar nada.
 
 ## Onde está cada coisa
 
@@ -160,10 +164,10 @@ await edgeAgentsApi.cancelEnrollment(); // botão "Cancelar" enquanto RUNNING
 
 Tela sugerida:
 
-1. Seletor de estudante (base demonstrativa) e seletor da câmera (catracas com `cameraSource`).
+1. Seletor de estudante e seletor da câmera (catracas com `cameraSource`).
 2. **Caixa de consentimento obrigatória**, desmarcada por padrão, com o texto:
    "Confirmo que a pessoa cadastrada é adulta da equipe, consentiu com o teste e
-   está ligada a um estudante fictício." O botão "Iniciar cadastro" só habilita
+   não é uma criança." O botão "Iniciar cadastro" só habilita
    marcada. Sem ela a API devolve `422`.
 3. Se a câmera escolhida estiver em uso por uma catraca (`recognition.state === 'RUNNING'`),
    avise antes e ofereça "Parar catraca e cadastrar" (parar → aguardar `STOPPED` → iniciar cadastro).

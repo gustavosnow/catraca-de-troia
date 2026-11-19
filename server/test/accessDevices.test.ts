@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { createApp } from '../app';
-import { createDatabase } from '../db';
+import { createTestDatabase } from './fixtures/schoolFixtures';
 import { AccessDeviceService } from '../modules/accessDevices/service';
 import { apiRequest as request } from './authTestUtils';
 
@@ -15,7 +15,7 @@ const startApi = async () => {
     now: () => new Date(current).toISOString(),
     advanceSeconds: (seconds: number) => { current += seconds * 1000; },
   };
-  const database = createDatabase({ filename: ':memory:' });
+  const database = createTestDatabase({ filename: ':memory:' });
   const devices = new AccessDeviceService(database, clock.now);
   const entry = devices.register({
     id: 'cat-01-entrada',
@@ -108,11 +108,18 @@ test('reconhecimento acima do limiar registra entrada facial e notifica respons�
   assert.equal(result.body.data.duplicate, true);
   assert.equal(result.body.data.event.id, event.id);
 
-  // Após o intervalo, gera nova passagem.
+  // Após o intervalo, a mesma câmera de entrada não grava outra entrada: falta a saída.
   api.clock.advanceSeconds(20);
+  const eventsBefore = (api.database.prepare('SELECT COUNT(*) AS total FROM access_events').get() as { total: number }).total;
   result = await api.recognize(match('capture-0003'));
-  assert.equal(result.response.status, 201);
-  assert.notEqual(result.body.data.event.id, event.id);
+  assert.equal(result.response.status, 200);
+  assert.equal(result.body.data.decision, 'SEQUENCE_BLOCKED');
+  assert.equal(result.body.data.expectedDirection, 'EXIT');
+  assert.equal(result.body.data.lastEvent.id, event.id);
+  const eventsAfter = (api.database.prepare('SELECT COUNT(*) AS total FROM access_events').get() as { total: number }).total;
+  assert.equal(eventsAfter, eventsBefore);
+  const blockedDenials = (api.database.prepare('SELECT COUNT(*) AS total FROM access_denials').get() as { total: number }).total;
+  assert.equal(blockedDenials, 0, 'bloqueio de sequência não vira leitura negada');
 
   const history = await request(api.baseUrl, '/api/v1/students/std-1/access-events', 'guardian-1');
   assert.equal(history.response.status, 200);
@@ -171,7 +178,7 @@ test('migração preserva eventos de bases com CHECK antigo de origem', () => {
   const directory = mkdtempSync(path.join(tmpdir(), 'catraca-mc035-'));
   const filename = path.join(directory, 'legacy.sqlite');
   try {
-    let database = createDatabase({ filename });
+    let database = createTestDatabase({ filename });
     database.pragma('foreign_keys = OFF');
     database.exec(`
       DROP TABLE access_events;
@@ -202,7 +209,7 @@ test('migração preserva eventos de bases com CHECK antigo de origem', () => {
     `);
     database.close();
 
-    database = createDatabase({ filename });
+    database = createTestDatabase({ filename });
     const table = database.prepare(`
       SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'access_events'
     `).get() as { sql: string };
@@ -216,4 +223,52 @@ test('migração preserva eventos de bases com CHECK antigo de origem', () => {
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test('câmera intercala entrada e saída do mesmo estudante no dia', async (t) => {
+  const api = await startApi();
+  t.after(api.close);
+  const exit = new AccessDeviceService(api.database, api.clock.now).register({
+    id: 'cat-01-saida',
+    schoolId: 'school-1',
+    name: 'Câmera de saída de teste',
+    turnstileId: 'cat-01',
+    turnstileName: 'Catraca 01 (Portão Principal)',
+    direction: 'EXIT',
+    operatorUserId: 'staff-1',
+    minScore: 0.4,
+  });
+  const decision = async (captureId: string, token: string) => (await api.recognize(match(captureId), token)).body.data;
+
+  // Sem entrada no dia, a saída é bloqueada.
+  let result = await decision('seq-capture-01', exit.token);
+  assert.equal(result.decision, 'SEQUENCE_BLOCKED');
+  assert.equal(result.expectedDirection, 'ENTRY');
+
+  result = await decision('seq-capture-02', api.token);
+  assert.equal(result.decision, 'AUTHORIZED');
+  assert.equal(result.event.direction, 'ENTRY');
+
+  api.clock.advanceSeconds(60);
+  result = await decision('seq-capture-03', api.token);
+  assert.equal(result.decision, 'SEQUENCE_BLOCKED');
+
+  result = await decision('seq-capture-04', exit.token);
+  assert.equal(result.decision, 'AUTHORIZED');
+  assert.equal(result.event.direction, 'EXIT');
+
+  api.clock.advanceSeconds(60);
+  result = await decision('seq-capture-05', exit.token);
+  assert.equal(result.decision, 'SEQUENCE_BLOCKED');
+  assert.equal(result.expectedDirection, 'ENTRY');
+
+  // Depois da saída, uma nova entrada volta a ser aceita.
+  result = await decision('seq-capture-06', api.token);
+  assert.equal(result.decision, 'AUTHORIZED');
+  assert.equal(result.event.direction, 'ENTRY');
+
+  const directions = (api.database.prepare(`
+    SELECT direction FROM access_events WHERE student_id = 'std-1' ORDER BY occurred_at
+  `).all() as Array<{ direction: string }>).map((row) => row.direction);
+  assert.deepEqual(directions, ['ENTRY', 'EXIT', 'ENTRY']);
 });

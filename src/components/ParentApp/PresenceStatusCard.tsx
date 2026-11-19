@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, CheckCircle2, Clock3, LogIn, LogOut, School } from 'lucide-react';
 import type { AccessLog, DayTimelineEvent } from '../../types';
+import { DEMO_ACCESS_LABEL } from '../../services/accessHistory';
 import { firstNameOf } from '../ui';
 
 const turnstileLabel = (name?: string) => name?.split(' (')[0] ?? '';
@@ -20,13 +21,17 @@ interface PresenceStatusCardProps {
 export const PresenceStatusCard: React.FC<PresenceStatusCardProps> = ({ studentName, latestAccess }) => {
   const firstName = firstNameOf(studentName);
   const isAtSchool = latestAccess?.direction === 'entry';
+  const isDemo = latestAccess?.source === 'simulacao';
+  const presence = isAtSchool ? `${firstName} está na escola.` : `${firstName} saiu da escola.`;
+  const simulatedPresence = `${isAtSchool ? 'Entrada' : 'Saída'} de ${firstName} na demonstração.`;
   const meta = latestAccess
     ? [
         `${latestAccess.direction === 'entry' ? 'Entrada' : 'Saída'} às ${latestAccess.exactTime.slice(0, 5)}`,
         turnstileLabel(latestAccess.turnstileName),
         dayLabel(latestAccess.timestamp),
+        isDemo ? DEMO_ACCESS_LABEL : '',
       ].filter(Boolean).join(' · ')
-    : 'Nenhuma passagem registrada nesta base demonstrativa.';
+    : 'Nenhuma passagem registrada hoje.';
 
   return (
     <section
@@ -48,11 +53,11 @@ export const PresenceStatusCard: React.FC<PresenceStatusCardProps> = ({ studentN
         )}
       </div>
       <h2 className={`mt-6 text-[26px] font-bold leading-tight tracking-tight sm:text-[28px] ${isAtSchool ? 'text-[#124d34]' : 'text-ink'}`}>
-        {isAtSchool ? `${firstName} está na escola.` : latestAccess ? `${firstName} saiu da escola.` : `Sem passagens de ${firstName}.`}
+        {latestAccess ? (isDemo ? simulatedPresence : presence) : `Sem passagens de ${firstName}.`}
       </h2>
       <p className={`tabular mt-2 text-sm ${isAtSchool ? 'text-[#2c6b4c]' : 'text-muted'}`}>{meta}</p>
       <p className={`mt-5 border-t pt-4 text-[13px] ${isAtSchool ? 'border-positive-line text-[#2c6b4c]' : 'border-line text-muted'}`}>
-        Conforme o último registro demonstrativo. Não representa rastreamento em tempo real.
+        Conforme a última passagem de hoje. Não é rastreamento em tempo real.
       </p>
     </section>
   );
@@ -70,8 +75,8 @@ export const TodayMovements: React.FC<TodayMovementsProps> = ({ timeline, isAtSc
 
   return (
     <section className="card p-6" aria-labelledby="today-movements-title">
-      <div className="flex items-center justify-between gap-3">
-        <h2 id="today-movements-title" className="card-title">Movimentações registradas</h2>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h2 id="today-movements-title" className="card-title min-w-0 grow basis-44">Movimentações registradas</h2>
         <button type="button" className="btn-link" onClick={onOpenHistory}>
           <ArrowRight aria-hidden="true" />
           Histórico
@@ -80,7 +85,7 @@ export const TodayMovements: React.FC<TodayMovementsProps> = ({ timeline, isAtSc
 
       {items.length === 0 ? (
         <p className="mt-5 rounded-[10px] bg-surface px-4 py-5 text-center text-[13px] text-muted">
-          Nenhuma entrada ou saída registrada nesta base demonstrativa.
+          Nenhuma entrada ou saída registrada hoje.
         </p>
       ) : (
         <ol className="relative mt-5 space-y-5 before:absolute before:bottom-3 before:left-[15px] before:top-3 before:w-px before:bg-line">
@@ -97,7 +102,7 @@ export const TodayMovements: React.FC<TodayMovementsProps> = ({ timeline, isAtSc
                     <p className="text-sm font-semibold text-ink">{event.title}</p>
                     <span className="tabular text-sm font-medium text-ink">{event.time.slice(0, 5)}</span>
                   </div>
-                  <p className="mt-0.5 text-[13px] text-muted">{turnstileLabel(event.location)} · Evento demonstrativo</p>
+                  <p className="mt-0.5 text-[13px] text-muted">{turnstileLabel(event.location)} · {event.detail}</p>
                 </div>
               </li>
             );

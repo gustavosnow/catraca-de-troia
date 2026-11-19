@@ -8,7 +8,7 @@ import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import test from 'node:test';
 import { createApp } from '../app';
-import { createDatabase } from '../db';
+import { createTestDatabase } from './fixtures/schoolFixtures';
 import { AccessDeviceService, hashDeviceToken } from '../modules/accessDevices/service';
 import { EdgeProcessManager } from '../modules/edgeAgents/processManager';
 import { EdgeAgentService } from '../modules/edgeAgents/service';
@@ -40,7 +40,7 @@ const startApi = async (options: { enabled?: boolean; ready?: boolean } = {}) =>
     writeFileSync(path.join(edgeDir, 'models', 'face_detection_yunet_2023mar.onnx'), '');
     writeFileSync(path.join(edgeDir, 'models', 'face_recognition_sface_2021dec.onnx'), '');
   }
-  const database = createDatabase({ filename: ':memory:' });
+  const database = createTestDatabase({ filename: ':memory:' });
   const devices = new AccessDeviceService(database);
   const register = (id: string, direction: 'ENTRY' | 'EXIT', cameraSource?: string) => devices.register({
     id, schoolId: 'school-1', name: `Câmera ${id}`, turnstileId: 'cat-01',

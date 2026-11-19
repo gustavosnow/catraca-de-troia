@@ -130,7 +130,7 @@ export const AuditLogPanel: React.FC<AuditLogPanelProps> = ({ records, state, er
           </div>
         )}
         <div className="table-footer">
-          <span>Registros imutáveis gravados pelo servidor escolar demonstrativo</span>
+          <span>Registros imutáveis gravados pelo servidor da escola</span>
         </div>
       </section>
     </>

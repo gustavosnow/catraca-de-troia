@@ -324,3 +324,55 @@ Origem dos registros: `FACE_PROTOTYPE` aparece como **Protótipo facial**, disti
 Limites: mantém todos os limites de MC-036 e MC-037. Comando das câmeras só com `npm run dev` no computador da portaria; na apresentação por QR, o cartão mostra estado e leituras negadas, com os comandos desligados. Ensaio físico com câmera e adulto voluntário não foi executado nesta integração (ambiente sem `edge/.venv`, OpenCV e modelos). Validação: lint, build, PWA, 39 testes de API, 24 cenários de aceite visual, 26 verificações de regras de negócio em base isolada e 15 verificações da interface com respostas simuladas da API.
 
 Ajuste posterior: o endereço do QR da apresentação deixou de ser calculado só na inicialização da API. Com o servidor ligado em uma rede e o computador movido para outra, o QR continuava apontando para o IP antigo e o celular não abria o portal. A rota `/api/presentation-access` passa a consultar as interfaces a cada pedido; o comportamento de escolha do endereço (prioridade ao Wi-Fi, sem loopback, IPv6 ou autoconfigurados) não mudou. Coberto por teste de API.
+
+## MC-039 — Dados reais, RBAC conferido e sequência de passagens em 19/11/2026
+
+Solicitação: retirar os dados fictícios do frontend, do backend e do banco; trabalhar com os dados cadastrados da escola; conferir rotas e RBAC por perfil; identificar as câmeras de entrada e de saída; impedir que a câmera grave duas entradas (ou duas saídas) seguidas do mesmo estudante; remover duplicidades e funcionalidades que não funcionavam; carregar ao menos 10 estudantes, a Coordenação (Gustavo Coelho), a Portaria (Hanrry Junior) e os responsáveis, com Saylon Batista responsável por mais de um estudante.
+
+Dados: `src/data/mockData.ts` foi removido e o painel passou a ler estudantes (`GET /students`), catracas (câmeras cadastradas) e pontos de atenção (leituras negadas do dia) da API. `createDatabase` cria só o esquema; os registros de exemplo foram para `server/test/fixtures/` (testes de API) e `visual-tests/fixtures.ts` (aceite visual), fora do sistema. `npm run db:seed` carrega a escola com a senha inicial de `SEED_PASSWORD` (nunca no código); com `--reset`, faz backup verificado em `.data/backups/` e preserva as câmeras cadastradas. A ficha do estudante ganhou turma, turno, etapa, regente, nascimento, regra de saída, contato e situação; o vínculo passou a guardar o parentesco aprovado. O portal recebe só o próprio vínculo, sem dados de outros responsáveis.
+
+Sequência: a mesma regra vale para câmera e passagem assistida: a primeira passagem do dia letivo (fuso `SCHOOL_TIME_ZONE`, padrão America/Sao_Paulo) é entrada e depois alterna. Fora dela, a câmera recebe `SEQUENCE_BLOCKED` (sem gravar passagem nem negação; o agente mostra **JA REGISTRADO** em amarelo) e a passagem assistida recebe `409 SEQUENCE_CONFLICT`. A repetição dentro de 15 s continua devolvendo o mesmo evento.
+
+Segurança e RBAC: a rota `POST /students/:id/access-events` passou a aceitar só passagem assistida (método manual, motivo obrigatório, catraca cadastrada e ativa), com nova origem `ASSISTED_PASSAGE`; o cliente não define nome da catraca nem status de entrega. Antes, qualquer conta da equipe podia gravar uma passagem "facial autorizada" pelo painel. `server/test/rbac.test.ts` confere todas as rotas de leitura para seis perfis e as escritas restritas. A rota `/me`, duplicada de `/auth/session` e sem uso, foi removida.
+
+Funcionalidades corrigidas ou retiradas: simulação de passagens removida (a passagem assistida passou a registrar entrada ou saída, com a direção esperada sugerida); cadastro de responsável passou a ser real (`POST /auth/register`, com limite de tentativas, cria a conta e o pedido de vínculo, sem liberar dados antes da aprovação); cadastro de equipe com chave fixa e recuperação de senha com código fixo foram retirados (contas da equipe e redefinição de senha ficam com a escola); "marcar alerta como verificado", que não persistia, foi retirado; contas de demonstração e troca de conta no portal foram retiradas. Indicadores "do dia" e presença do portal passaram a considerar só o dia corrente. O formulário de passagem assistida não é mais reiniciado pela consulta periódica, e o foco do login não é mais roubado a cada atualização.
+
+Duplicidades: `/me/students` era consultado em três lugares a cada 5 s (agora um, a cada 15 s); a função de listar estudantes vinculados existia em dois clientes; o `UPDATE` de origem dos eventos rodava duas vezes na criação do banco; Ferramentas repetia "Sobre o projeto" e "Portal dos responsáveis", já fixos na barra lateral e no topo.
+
+Limites: o reconhecimento facial segue protótipo de laboratório, sem homologação, sem prova de vida e sem catraca física; a entrega externa de notificações continua simulada. Os estudantes da carga são registros de teste: o cadastro facial continua restrito ao rosto de adultos voluntários da equipe, nunca de crianças. Rostos cadastrados antes desta mudança ficaram ligados a estudantes removidos e aparecem como tal no painel até serem removidos. Não há edição de estudantes nem criação de contas da equipe pelo painel. O projeto não declara `@types/react`, então `npm run lint` não confere as props do JSX; esta mudança foi conferida com os tipos instalados temporariamente.
+
+## MC-040 — Movimento de duas semanas letivas para alimentar o sistema em 19/11/2026
+
+Solicitação: alimentar o sistema com mais dados sobre a carga da MC-039.
+
+Decisão: `npm run db:seed:atividade` gera o movimento das dez últimas semanas letivas anteriores e do dia corrente até o horário atual, sempre pelos serviços da API com um relógio controlado, nunca por inserção direta. Assim valem a sequência entrada → saída, a origem das passagens (câmera autenticada ou passagem assistida com motivo), as notificações aos responsáveis, a fila de sincronização, a auditoria e as permissões de cada perfil. A sequência pseudoaleatória é fixa: a mesma carga gera o mesmo movimento. O script recusa um banco que já tenha passagens.
+
+Conteúdo: passagens dos 10 estudantes por turno, com cerca de 1 em 8 assistidas, chegadas atrasadas, uma saída antecipada e cinco faltas; uma ou duas leituras negadas por dia; cinco comunicados da Coordenação; quatro justificativas textuais (duas aprovadas, uma recusada, uma pendente) e uma falta sem justificativa; um pedido de vínculo recusado e o cadastro de uma nova responsável com pedido pendente; leitura das notificações pelos responsáveis, deixando as dos dois últimos dias não lidas.
+
+Limites: as passagens pela câmera são geradas pela rota de reconhecimento, sem câmera física; similaridade e tempo de inferência são valores de carga, não medições do protótipo.
+
+Ajuste da MC-040: o banco (`.data/`) continua fora do Git, porque guarda hashes de senhas e sessões e mudaria a cada uso. Para a equipe ver os mesmos dados, `npm run db:demo` roda a carga da escola e o movimento num clone novo; sem câmeras a preservar, a carga cadastra entrada e saída da catraca 01. O README avisa que os dados precisam ser ativados e não publica a senha.
+
+## MC-041 — Instalação do portal pelo menu da conta em 19/11/2026
+
+O card de instalação foi retirado das abas do portal. O atalho **Adicionar à tela inicial** fica no menu da conta, inclusive enquanto o responsável aguarda a aprovação do vínculo. O navegador abre o convite de instalação quando o oferece. No celular, o atalho também dá acesso às instruções manuais. A instalação permanece opcional e a opção fica oculta no aplicativo nativo ou quando o portal roda em modo instalado.
+
+## MC-042 — Sessões independentes por aba em 19/11/2026
+
+Cada aba do navegador guarda sua própria sessão. É possível manter contas diferentes abertas ao mesmo tempo. Atualizar a página restaura a sessão daquela aba, e sair ou trocar de portal encerra apenas essa sessão. A opção de estender a duração continua aplicando o prazo de 30 dias na API. A sessão compartilhada da versão anterior é descartada na primeira abertura e exige novo login.
+
+Em navegadores com `BroadcastChannel`, uma aba aberta por outra que copie a sessão pede login próprio quando a original ainda está aberta. As abas usam apenas um identificador para detectar a cópia. Ao encerrar ou mudar de sessão, a interface limpa os dados da conta anterior e descarta respostas pendentes dela.
+
+## MC-043 — Meus vínculos e leitura em telas estreitas em 19/11/2026
+
+O formulário e o histórico de solicitações passaram da aba **Avisos** para a área **Meus vínculos**, acessível pelo menu da conta e pelo atalho no Início. Sem estudante vinculado, o formulário continua disponível logo após o login. As observações da escola usam a largura do cartão, e horários, indicadores e ações passam para a linha seguinte quando disputam espaço com o texto. O aceite visual inclui solicitações recusadas com observação e notificações de título longo, a partir de 320 px.
+
+## MC-044 — Vínculos ativos agrupados por responsável em 19/11/2026
+
+No painel escolar, o nome do responsável aparece uma vez acima de seus estudantes. Cada vínculo mantém data, situação e revogação individual. O agrupamento usa a conta do responsável, por isso contas com o mesmo nome continuam separadas e um estudante pode aparecer em mais de um grupo quando há mais de um vínculo aprovado. A lista se ajusta à tela do celular.
+
+## MC-045 — Indicadores do dia e origem da carga em 19/11/2026
+
+A visão geral consulta todas as passagens do dia no fuso da escola para totalizar entradas, saídas e passagens por catraca. A presença é calculada pela última passagem de cada estudante naquele dia. A listagem recente continua limitada aos últimos registros.
+
+A carga de demonstração grava a origem fictícia das passagens de câmera e assistidas. O painel, o CSV e o portal identificam essas passagens, e as leituras negadas da carga recebem a mesma identificação. As cargas locais anteriores são reconhecidas pelo identificador de origem, preservando os registros do banco e da fila. Os valores artificiais de similaridade e inferência são omitidos das passagens no painel.

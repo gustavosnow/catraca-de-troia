@@ -222,13 +222,14 @@ export class LinkRequestService {
       if (request.status === 'APPROVED') {
         this.database.prepare(`
           INSERT INTO guardian_student_links (
-            guardian_user_id, student_id, status, approved_at, approved_by, version
-          ) VALUES (?, ?, 'APPROVED', ?, ?, 1)
+            guardian_user_id, student_id, status, approved_at, approved_by, relationship, version
+          ) VALUES (?, ?, 'APPROVED', ?, ?, ?, 1)
           ON CONFLICT(guardian_user_id, student_id) DO UPDATE SET
             status = 'APPROVED', approved_at = excluded.approved_at, approved_by = excluded.approved_by,
+            relationship = excluded.relationship,
             revoked_at = NULL, revoked_by = NULL, revocation_reason = NULL,
             version = guardian_student_links.version + 1
-        `).run(current.guardian_user_id, current.student_id, reviewedAt, actor.id);
+        `).run(current.guardian_user_id, current.student_id, reviewedAt, actor.id, current.relationship);
 
         this.database.prepare(`
           INSERT INTO audit_log (

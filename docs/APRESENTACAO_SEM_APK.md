@@ -10,7 +10,7 @@ O objetivo do produto continua sendo um aplicativo Android (APK) para responsáv
 
 ## Celulares na mesma rede Wi-Fi
 
-Entre com uma conta escolar demonstrativa e abra **Ferramentas → Apresentar portal por QR Code**. A API identifica as interfaces IPv4 do computador, prioriza a rede Wi-Fi e a central gera diretamente um QR para `http://IP-LOCAL:3000/#/responsaveis`. No celular, aponte a câmera, abra o link e escolha uma conta demonstrativa. Não é preciso instalar nada nem copiar o IP manualmente. O endereço é descoberto cada vez que a central é aberta: se o computador trocar de Wi-Fi, basta fechar e abrir a central de novo, sem reiniciar a API.
+Entre com uma conta da equipe escolar e abra **Ferramentas → Portal por QR Code**. A API identifica as interfaces IPv4 do computador, prioriza a rede Wi-Fi e a central gera diretamente um QR para `http://IP-LOCAL:3000/#/responsaveis`. No celular, aponte a câmera, abra o link e escolha uma conta demonstrativa. Não é preciso instalar nada nem copiar o IP manualmente. O endereço é descoberto cada vez que a central é aberta: se o computador trocar de Wi-Fi, basta fechar e abrir a central de novo, sem reiniciar a API.
 
 Confira o endereço exibido antes da apresentação. Se o computador possuir várias interfaces ou a rede escolhida não alcançar o celular, use **Usar outro endereço** e informe um endereço HTTPS ou o IPv4 correto da rede.
 

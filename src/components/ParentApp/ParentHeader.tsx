@@ -1,28 +1,29 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bell, Building2, Check, FileText, History, House, LogOut, Megaphone } from 'lucide-react';
-import type { ParentAccount } from '../../data/mockData';
+import { Bell, Building2, FileText, History, House, Link2, LogOut, Megaphone, Smartphone } from 'lucide-react';
+import { usePortalInstall } from '../../hooks/usePortalInstall';
+import type { ParentAccount } from '../../types';
 import { BrandLockup } from '../brand/BrandMark';
-import { Avatar, cx, firstNameOf } from '../ui';
+import { Avatar, Modal, cx, firstNameOf } from '../ui';
 
-export type ParentTab = 'home' | 'history' | 'notices';
+export type ParentTab = 'home' | 'history' | 'notices' | 'links';
 
 interface ParentHeaderProps {
   currentGuardian: ParentAccount;
-  allGuardians: ParentAccount[];
-  onSelectGuardian: (guardian: ParentAccount) => void;
   unreadNotificationsCount: number;
   onOpenNotifications: () => void;
   activeTab: ParentTab;
   onSelectTab: (tab: ParentTab) => void;
   hasUnreadNotices: boolean;
   onOpenAbsence: () => void;
+  onOpenLinks?: () => void;
   canSubmitAbsence: boolean;
   onSwitchToManagement?: () => void;
   onLogout?: () => void;
   showNavigation?: boolean;
+  isCompactViewport: boolean;
 }
 
-const TABS: Array<{ id: ParentTab; label: string; icon: typeof House }> = [
+const TABS: Array<{ id: Exclude<ParentTab, 'links'>; label: string; icon: typeof House }> = [
   { id: 'home', label: 'Início', icon: House },
   { id: 'history', label: 'Histórico', icon: History },
   { id: 'notices', label: 'Avisos', icon: Megaphone },
@@ -30,21 +31,30 @@ const TABS: Array<{ id: ParentTab; label: string; icon: typeof House }> = [
 
 export const ParentHeader: React.FC<ParentHeaderProps> = ({
   currentGuardian,
-  allGuardians,
-  onSelectGuardian,
   unreadNotificationsCount,
   onOpenNotifications,
   activeTab,
   onSelectTab,
   hasUnreadNotices,
   onOpenAbsence,
+  onOpenLinks,
   canSubmitAbsence,
   onSwitchToManagement,
   onLogout,
   showNavigation = true,
+  isCompactViewport,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [installHelpOpen, setInstallHelpOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const accountButtonRef = useRef<HTMLButtonElement>(null);
+  const { available, manualInstructions, launchPrompt } = usePortalInstall(isCompactViewport);
+
+  const handleInstall = async () => {
+    accountButtonRef.current?.focus();
+    setMenuOpen(false);
+    if (!(await launchPrompt())) setInstallHelpOpen(true);
+  };
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -60,7 +70,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
     };
   }, [menuOpen]);
 
-  return (
+  return (<>
     <header
       data-testid="parent-header"
       className="sticky z-30 border-b border-line bg-white"
@@ -132,6 +142,7 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
 
           <div ref={menuRef} className="relative">
             <button
+              ref={accountButtonRef}
               type="button"
               className="rounded-full p-0.5 ring-offset-2 transition hover:ring-2 hover:ring-line-strong"
               aria-haspopup="menu"
@@ -142,33 +153,27 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
               <Avatar name={currentGuardian.name} />
             </button>
             {menuOpen && (
-              <div role="menu" className="dialog-panel absolute right-0 top-12 z-40 w-72 overflow-hidden rounded-xl border border-line bg-white shadow-[var(--shadow-pop)]">
+              <div role="menu" className="dialog-panel absolute right-0 top-12 z-40 w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-line bg-white shadow-[var(--shadow-pop)]">
                 <div className="flex items-center gap-3 border-b border-line px-4 py-4">
                   <Avatar name={currentGuardian.name} size="lg" />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-ink">{currentGuardian.name}</p>
+                    <p className="text-sm font-semibold wrap-anywhere text-ink">{currentGuardian.name}</p>
                     <p className="text-xs text-muted">{currentGuardian.relation} · {currentGuardian.childrenIds.length} {currentGuardian.childrenIds.length === 1 ? 'estudante vinculado' : 'estudantes vinculados'}</p>
                   </div>
                 </div>
-                {allGuardians.length > 1 && (
-                  <div className="border-b border-line py-1.5">
-                    <p className="eyebrow-muted px-4 py-1.5">Contas de demonstração</p>
-                    {allGuardians.map((guardian) => (
-                      <button
-                        key={guardian.id}
-                        type="button"
-                        role="menuitemradio"
-                        aria-checked={guardian.id === currentGuardian.id}
-                        className="flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-sm text-ink hover:bg-surface"
-                        onClick={() => { onSelectGuardian(guardian); setMenuOpen(false); }}
-                      >
-                        {guardian.name}
-                        {guardian.id === currentGuardian.id && <Check aria-hidden="true" className="h-4 w-4 text-action" />}
-                      </button>
-                    ))}
-                  </div>
-                )}
                 <div className="py-1.5">
+                  {onOpenLinks && (
+                    <button id="btn-parent-links" type="button" role="menuitem" aria-current={activeTab === 'links' ? 'page' : undefined} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-ink hover:bg-surface" onClick={() => { setMenuOpen(false); onOpenLinks(); }}>
+                      <Link2 aria-hidden="true" className="h-4 w-4 text-muted" />
+                      Meus vínculos
+                    </button>
+                  )}
+                  {available && (
+                    <button id="btn-parent-install" type="button" role="menuitem" className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-ink hover:bg-surface" onClick={() => void handleInstall()}>
+                      <Smartphone aria-hidden="true" className="h-4 w-4 text-muted" />
+                      Adicionar à tela inicial
+                    </button>
+                  )}
                   {onSwitchToManagement && (
                     <button type="button" role="menuitem" className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-ink hover:bg-surface" onClick={() => { setMenuOpen(false); onSwitchToManagement(); }}>
                       <Building2 aria-hidden="true" className="h-4 w-4 text-muted" />
@@ -188,5 +193,15 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
         </div>
       </div>
     </header>
-  );
+    <Modal
+      isOpen={installHelpOpen}
+      onClose={() => setInstallHelpOpen(false)}
+      title="Adicionar à tela inicial"
+      labelledById="parent-install-help-title"
+      icon={Smartphone}
+      size="sm"
+    >
+      <p className="text-sm leading-relaxed text-ink-2">{manualInstructions}</p>
+    </Modal>
+  </>);
 };
