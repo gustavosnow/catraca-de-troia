@@ -12,7 +12,9 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { soundManager } from '../../utils/sound';
+import type { Student } from '../../types';
 import { Callout, PageHeader } from '../ui';
+import { FaceRecognitionPanel } from './FaceRecognitionPanel';
 
 interface ToolsPageProps {
   isSimulating: boolean;
@@ -23,6 +25,10 @@ interface ToolsPageProps {
   onOpenPresentationAccess: () => void;
   onOpenProjectDocs: () => void;
   onSwitchToParentApp: () => void;
+  /** Coordenação ou Direção: configuram câmera e gerenciam cadastros faciais. */
+  canManageBiometrics: boolean;
+  students: Student[];
+  isOnline: boolean;
   delivery: React.ReactNode;
 }
 
@@ -53,6 +59,9 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
   onOpenPresentationAccess,
   onOpenProjectDocs,
   onSwitchToParentApp,
+  canManageBiometrics,
+  students,
+  isOnline,
   delivery,
 }) => {
   const [soundOn, setSoundOn] = useState(soundManager.isEnabled());
@@ -72,7 +81,8 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
       />
 
       <Callout tone="brand" className="mb-6">
-        Nenhuma destas ações aciona catracas, câmeras ou canais externos. A integração física depende da homologação do piloto.
+        A simulação e a apresentação geram somente eventos fictícios, sem acionar catracas ou canais externos.
+        O protótipo facial abaixo comanda câmeras reais no computador da portaria e continua sem homologação.
       </Callout>
 
       <div className="space-y-6">
@@ -164,6 +174,12 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
             />
           </ul>
         </section>
+
+        <FaceRecognitionPanel
+          canManageBiometrics={canManageBiometrics}
+          students={students}
+          isOnline={isOnline}
+        />
 
         {delivery}
       </div>

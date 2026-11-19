@@ -50,6 +50,13 @@ export interface AccessLog {
   reason?: string;
   operator?: string;
   isNew?: boolean;
+  /** Origem do registro: simulação demonstrativa ou câmera do protótipo facial (MC-036). */
+  source?: 'simulacao' | 'camera';
+  recognition?: {
+    deviceId: string;
+    matchScore: number;
+    inferenceMs: number;
+  };
 }
 
 export interface Turnstile {

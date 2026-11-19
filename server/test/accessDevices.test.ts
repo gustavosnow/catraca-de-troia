@@ -1,0 +1,219 @@
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { AddressInfo } from 'node:net';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import test from 'node:test';
+import { createApp } from '../app';
+import { createDatabase } from '../db';
+import { AccessDeviceService } from '../modules/accessDevices/service';
+import { apiRequest as request } from './authTestUtils';
+
+const startApi = async () => {
+  let current = Date.parse('2026-11-17T10:00:00.000Z');
+  const clock = {
+    now: () => new Date(current).toISOString(),
+    advanceSeconds: (seconds: number) => { current += seconds * 1000; },
+  };
+  const database = createDatabase({ filename: ':memory:' });
+  const devices = new AccessDeviceService(database, clock.now);
+  const entry = devices.register({
+    id: 'cat-01-entrada',
+    schoolId: 'school-1',
+    name: 'Câmera de teste',
+    turnstileId: 'cat-01',
+    turnstileName: 'Catraca 01 (Portão Principal)',
+    direction: 'ENTRY',
+    operatorUserId: 'staff-1',
+    minScore: 0.4,
+  });
+  const server = createApp(database, { now: clock.now }).listen(0, '127.0.0.1');
+  await new Promise<void>((resolve) => server.once('listening', resolve));
+  const address = server.address() as AddressInfo;
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+  return {
+    database,
+    baseUrl,
+    clock,
+    token: entry.token,
+    recognize: async (body: Record<string, unknown>, token: string | null = entry.token) => {
+      const response = await fetch(`${baseUrl}/api/v1/device/recognitions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'X-Device-Token': token } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+      return { response, body: await response.json() as Record<string, any> };
+    },
+    close: () => new Promise<void>((resolve, reject) => server.close((error) => {
+      database.close();
+      error ? reject(error) : resolve();
+    })),
+  };
+};
+
+const match = (captureId: string, overrides: Record<string, unknown> = {}) => ({
+  captureId,
+  result: 'MATCH',
+  studentId: 'std-1',
+  matchScore: 0.62,
+  inferenceMs: 48.5,
+  framesConfirmed: 3,
+  ...overrides,
+});
+
+test('catraca precisa de token válido e ativo', async (t) => {
+  const api = await startApi();
+  t.after(api.close);
+  let result = await api.recognize(match('capture-0001'), null);
+  assert.equal(result.response.status, 401);
+
+  result = await api.recognize(match('capture-0001'), 'dev_token-invalido');
+  assert.equal(result.response.status, 401);
+
+  result = await api.recognize({ ...match('curto'), captureId: 'x' });
+  assert.equal(result.response.status, 422);
+
+  api.database.prepare('UPDATE access_devices SET active = 0').run();
+  result = await api.recognize(match('capture-0002'));
+  assert.equal(result.response.status, 401);
+});
+
+test('reconhecimento acima do limiar registra entrada facial e notifica responsável', async (t) => {
+  const api = await startApi();
+  t.after(api.close);
+  let result = await api.recognize(match('capture-0001'));
+  assert.equal(result.response.status, 201);
+  assert.equal(result.body.data.decision, 'AUTHORIZED');
+  assert.equal(result.body.data.duplicate, false);
+  const event = result.body.data.event;
+  assert.equal(event.source, 'FACE_PROTOTYPE');
+  assert.equal(event.method, 'FACIAL');
+  assert.equal(event.direction, 'ENTRY');
+  assert.equal(event.createdById, 'staff-1');
+  assert.deepEqual(event.recognition, { deviceId: 'cat-01-entrada', matchScore: 0.62, inferenceMs: 48.5 });
+  assert.equal(event.notification.whatsapp, 'PENDING');
+
+  // Reenvio da mesma leitura devolve o mesmo evento.
+  result = await api.recognize(match('capture-0001'));
+  assert.equal(result.response.status, 200);
+  assert.equal(result.body.data.duplicate, true);
+  assert.equal(result.body.data.event.id, event.id);
+
+  // Nova leitura do mesmo estudante dentro do intervalo é tratada como repetição.
+  api.clock.advanceSeconds(5);
+  result = await api.recognize(match('capture-0002'));
+  assert.equal(result.body.data.duplicate, true);
+  assert.equal(result.body.data.event.id, event.id);
+
+  // Após o intervalo, gera nova passagem.
+  api.clock.advanceSeconds(20);
+  result = await api.recognize(match('capture-0003'));
+  assert.equal(result.response.status, 201);
+  assert.notEqual(result.body.data.event.id, event.id);
+
+  const history = await request(api.baseUrl, '/api/v1/students/std-1/access-events', 'guardian-1');
+  assert.equal(history.response.status, 200);
+  assert.ok(history.body.data.some((item: { id: string }) => item.id === event.id));
+
+  const notifications = api.database.prepare(`
+    SELECT COUNT(*) AS total FROM in_app_notifications WHERE source_type = 'ACCESS_EVENT' AND source_id = ?
+  `).get(event.id) as { total: number };
+  assert.ok(notifications.total >= 1);
+
+  const queued = api.database.prepare('SELECT state FROM access_event_sync_queue WHERE event_id = ?')
+    .get(event.id) as { state: string };
+  assert.equal(queued.state, 'PENDING');
+});
+
+test('negações ficam registradas sem estudante e sem notificar', async (t) => {
+  const api = await startApi();
+  t.after(api.close);
+  const before = api.database.prepare('SELECT COUNT(*) AS total FROM access_events').get() as { total: number };
+
+  let result = await api.recognize(match('capture-low', { matchScore: 0.31 }));
+  assert.equal(result.response.status, 200);
+  assert.equal(result.body.data.decision, 'DENIED');
+  assert.equal(result.body.data.reason, 'LOW_SCORE');
+
+  result = await api.recognize({
+    captureId: 'capture-unknown', result: 'NO_MATCH', matchScore: 0.12, inferenceMs: 40, framesConfirmed: 3,
+  });
+  assert.equal(result.body.data.reason, 'UNKNOWN_FACE');
+
+  result = await api.recognize(match('capture-ghost', { studentId: 'std-inexistente' }));
+  assert.equal(result.body.data.reason, 'STUDENT_NOT_REGISTERED');
+
+  // Reenvio da mesma leitura negada devolve a mesma decisão.
+  const again = await api.recognize(match('capture-low', { matchScore: 0.31 }));
+  assert.equal(again.body.data.reason, 'LOW_SCORE');
+
+  const after = api.database.prepare('SELECT COUNT(*) AS total FROM access_events').get() as { total: number };
+  assert.equal(after.total, before.total);
+
+  let denials = await request(api.baseUrl, '/api/v1/access-denials', 'staff-1');
+  assert.equal(denials.response.status, 200);
+  assert.equal(denials.body.data.length, 3);
+  assert.ok(denials.body.data.every((item: { studentId?: string }) => item.studentId === undefined));
+
+  denials = await request(api.baseUrl, '/api/v1/access-denials', 'guardian-1');
+  assert.equal(denials.response.status, 403);
+
+  const devices = await request(api.baseUrl, '/api/v1/access-devices', 'staff-2');
+  assert.equal(devices.response.status, 200);
+  assert.equal(devices.body.data[0].id, 'cat-01-entrada');
+  assert.equal(devices.body.data[0].tokenHash, undefined);
+});
+
+test('migração preserva eventos de bases com CHECK antigo de origem', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'catraca-mc035-'));
+  const filename = path.join(directory, 'legacy.sqlite');
+  try {
+    let database = createDatabase({ filename });
+    database.pragma('foreign_keys = OFF');
+    database.exec(`
+      DROP TABLE access_events;
+      CREATE TABLE access_events (
+        id TEXT PRIMARY KEY,
+        school_id TEXT NOT NULL REFERENCES schools(id),
+        student_id TEXT NOT NULL REFERENCES students(id),
+        direction TEXT NOT NULL CHECK (direction IN ('ENTRY', 'EXIT')),
+        occurred_at TEXT NOT NULL,
+        turnstile_id TEXT NOT NULL,
+        turnstile_name TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('AUTHORIZED', 'MANUAL_RELEASE')),
+        method TEXT NOT NULL CHECK (method IN ('FACIAL', 'MANUAL')),
+        created_by TEXT NOT NULL REFERENCES users(id),
+        source TEXT NOT NULL CHECK (source IN ('DEMO_SIMULATION')),
+        whatsapp_status TEXT NOT NULL CHECK (whatsapp_status IN ('DELIVERED', 'PENDING')),
+        push_status TEXT NOT NULL CHECK (push_status IN ('DELIVERED', 'PENDING')),
+        reason TEXT,
+        idempotency_key TEXT NOT NULL,
+        request_hash TEXT NOT NULL,
+        UNIQUE (created_by, idempotency_key)
+      );
+      INSERT INTO access_events VALUES (
+        'legacy-1', 'school-1', 'std-1', 'ENTRY', '2026-10-01T10:00:00.000Z', 'cat-01',
+        'Catraca 01', 'AUTHORIZED', 'FACIAL', 'staff-1', 'DEMO_SIMULATION',
+        'DELIVERED', 'DELIVERED', NULL, 'legacy-key', 'legacy-hash'
+      );
+    `);
+    database.close();
+
+    database = createDatabase({ filename });
+    const table = database.prepare(`
+      SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'access_events'
+    `).get() as { sql: string };
+    assert.match(table.sql, /FACE_PROTOTYPE/);
+    const legacy = database.prepare('SELECT source, origin_event_id FROM access_events WHERE id = ?')
+      .get('legacy-1') as { source: string; origin_event_id: string };
+    assert.equal(legacy.source, 'DEMO_SIMULATION');
+    assert.equal(legacy.origin_event_id, 'legacy-1');
+    assert.equal(database.pragma('foreign_keys', { simple: true }), 1);
+    database.close();
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});

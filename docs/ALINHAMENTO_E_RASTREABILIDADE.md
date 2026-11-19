@@ -15,12 +15,12 @@ Não integram o piloto atestados ou outros anexos, ficha de saúde, carteirinha 
 | 1.1.1–1.1.4 | Planejamento e acompanhamento | Fontes acadêmicas, histórico Git e controle de mudanças | Encerramento e aceite institucionais pendentes |
 | 1.2.1–1.2.3 | Requisitos, jornadas e protótipo | Consolidação, telas React e roteiro de apresentação | Homologação com usuários pendente |
 | 1.3.1 | Backend e banco | API Express/SQLite local | Pilha demonstrativa; arquitetura Python/visão computacional prevista não está integrada |
-| 1.3.2 | Reconhecimento facial | Eventos gerados pela simulação | Sem câmera, modelo ou medição de acurácia |
+| 1.3.2 | Reconhecimento facial | Simulação mantida; protótipo de laboratório em `edge/` (YuNet + SFace/OpenCV, webcam ou celular) com confirmação em quadros consecutivos; API autentica a câmera, aplica limiar mínimo e registra `FACE_PROTOTYPE` ou negação (MC-036); cadastro facial e catracas iniciados/parados pela API local para botões do painel, com Coordenação/Direção, consentimento e auditoria; no painel, cartão **Protótipo de reconhecimento facial** em Ferramentas e origem **Protótipo facial** distinta de **Simulada** e **Assistida** na tabela de registros, na ficha do estudante e no CSV (MC-038) no cadastro (MC-037) | Poucos rostos adultos da equipe; sem prova de vida, sem acurácia/latência homologadas |
 | 1.3.3 | Painel escolar | Eventos, alunos, avisos, análise textual, contas, vínculos e auditoria | Contas e dados fictícios |
 | 1.3.4 | Portal responsivo e Android | Consulta, histórico, avisos, notificações internas e justificativas textuais; PWA, projeto Android e QR direto com descoberta da interface Wi-Fi | Apresentação sem APK; teste em celular real depende da rede e do ensaio |
-| 1.3.5 | Integração de catracas | Duas unidades demonstrativas; passagem assistida de aluno com motivo e operador | Nenhum hardware acionado |
+| 1.3.5 | Integração de catracas | Duas unidades demonstrativas; passagem assistida de aluno com motivo e operador; cadastro de câmera por catraca/sentido com token opaco (`npm run device:register`) | Nenhum hardware acionado; liberação apenas indicada na tela do agente |
 | 1.3.6 | Notificações | Caixa interna e fila PUSH_DEMO | Sem push/WhatsApp externo ou prova da meta temporal |
-| 1.3.7 | Gestão biométrica | Requisito documentado | Módulo real pendente |
+| 1.3.7 | Gestão biométrica | Cadastro/remoção local de vetores do protótipo, com confirmação de consentimento e sem fotos (`edge/enroll.py`) | Vetores sem criptografia institucional; governança LGPD e módulo de produção pendentes |
 | 1.3.8 | Perfis e vínculos | Sessões opacas, aprovação/revogação de vínculo e autorização no backend | Sem identidade institucional ou homologação de segurança |
 | 1.4.1–1.4.3 | Testes e qualidade | TypeScript, build, testes API e validação PWA | Não comprova carga, segurança ou metas da EAP |
 | 1.5.1 | Continuidade e backup | Fila local, idempotência, sincronização e backup testados em ambiente local | Implantação escolar e destino remoto pendentes |

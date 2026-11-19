@@ -25,3 +25,25 @@ test('endereço direto descarta IPv6 e endereços autoconfigurados', () => {
     ],
   }), []);
 });
+
+test('QR acompanha a troca de rede sem reiniciar a API', async () => {
+  const { createApp } = await import('../app');
+  const { createDatabase } = await import('../db');
+  const database = createDatabase({ filename: ':memory:' });
+  let current = ['http://172.29.190.176:3000'];
+  const server = createApp(database, { presentationOrigins: () => current }).listen(0, '127.0.0.1');
+  await new Promise<void>((resolve) => server.once('listening', resolve));
+  const { port } = server.address() as { port: number };
+  const read = async () => {
+    const response = await fetch(`http://127.0.0.1:${port}/api/presentation-access`);
+    return ((await response.json()) as { data: { origins: string[] } }).data.origins;
+  };
+  try {
+    assert.deepEqual(await read(), ['http://172.29.190.176:3000']);
+    current = ['http://192.168.0.6:3000'];
+    assert.deepEqual(await read(), ['http://192.168.0.6:3000']);
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    database.close();
+  }
+});

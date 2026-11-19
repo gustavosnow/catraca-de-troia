@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type {
   AccessEventRecord,
+  AccessEventSource,
   CreateAccessEventRequest,
 } from '../../../shared/contracts/accessEvents';
 import type { AccessEventSyncPayload } from '../../../shared/contracts/accessEventSync';
@@ -30,6 +31,9 @@ interface AccessEventRow {
   origin_node_id: string;
   origin_event_id: string;
   sync_payload_hash: string;
+  device_id: string | null;
+  match_score: number | null;
+  inference_ms: number | null;
 }
 
 export const hashSyncPayload = (payload: AccessEventSyncPayload) => createHash('sha256')
@@ -55,7 +59,20 @@ const mapEvent = (row: AccessEventRow): AccessEventRecord => ({
   source: row.source,
   reason: row.reason ?? undefined,
   notification: { whatsapp: row.whatsapp_status, pushApp: row.push_status },
+  ...(row.device_id && row.match_score !== null && row.inference_ms !== null
+    ? {
+        recognition: {
+          deviceId: row.device_id,
+          matchScore: row.match_score,
+          inferenceMs: row.inference_ms,
+        },
+      }
+    : {}),
 });
+
+const hashRequest = (value: unknown) => createHash('sha256')
+  .update(JSON.stringify(value))
+  .digest('hex');
 
 export class AccessEventService {
   constructor(
@@ -101,6 +118,13 @@ export class AccessEventService {
     return rows.map(mapEvent);
   }
 
+  private findRow(createdById: string, idempotencyKey: string) {
+    return this.database.prepare(`
+      ${selectEvent}
+      WHERE event.created_by = ? AND event.idempotency_key = ?
+    `).get(createdById, idempotencyKey) as AccessEventRow | undefined;
+  }
+
   create(
     actor: DemoActor,
     studentId: string,
@@ -112,13 +136,8 @@ export class AccessEventService {
     }
     this.ensureAccessibleStudent(actor, studentId);
 
-    const requestHash = createHash('sha256')
-      .update(JSON.stringify({ studentId, ...request }))
-      .digest('hex');
-    const existing = this.database.prepare(`
-      ${selectEvent}
-      WHERE event.created_by = ? AND event.idempotency_key = ?
-    `).get(actor.id, idempotencyKey) as AccessEventRow | undefined;
+    const requestHash = hashRequest({ studentId, ...request });
+    const existing = this.findRow(actor.id, idempotencyKey);
     if (existing) {
       if (existing.request_hash !== requestHash) {
         throw conflict('IDEMPOTENCY_CONFLICT', 'A chave de idempotência já foi usada com outro evento.');
@@ -126,81 +145,176 @@ export class AccessEventService {
       return { event: mapEvent(existing), created: false };
     }
 
+    const event = this.database.transaction(() => this.insertEvent({
+      schoolId: actor.schoolId,
+      studentId,
+      createdById: actor.id,
+      request,
+      idempotencyKey,
+      requestHash,
+      source: 'DEMO_SIMULATION',
+    }))();
+    return { event, created: true };
+  }
+
+  /** Evento da mesma catraca e do mesmo estudante desde `since`, para ignorar leituras repetidas. */
+  findRecentDeviceEvent(deviceId: string, studentId: string, since: string) {
+    const row = this.database.prepare(`
+      ${selectEvent}
+      WHERE event.device_id = ? AND event.student_id = ? AND event.occurred_at >= ?
+      ORDER BY event.occurred_at DESC
+      LIMIT 1
+    `).get(deviceId, studentId, since) as AccessEventRow | undefined;
+    return row ? mapEvent(row) : undefined;
+  }
+
+  static deviceIdempotencyKey(deviceId: string, captureId: string) {
+    return `device:${deviceId}:${captureId}`;
+  }
+
+  findDeviceEvent(operatorUserId: string, deviceId: string, captureId: string) {
+    const row = this.findRow(operatorUserId, AccessEventService.deviceIdempotencyKey(deviceId, captureId));
+    return row ? mapEvent(row) : undefined;
+  }
+
+  /**
+   * Registra a passagem identificada pelo protótipo facial (MC-036). Deve ser
+   * chamado dentro da transação do serviço de dispositivos, que já autenticou
+   * a catraca e conferiu o estudante.
+   */
+  recordFromDevice(params: {
+    schoolId: string;
+    studentId: string;
+    operatorUserId: string;
+    deviceId: string;
+    captureId: string;
+    direction: AccessEventRecord['direction'];
+    turnstileId: string;
+    turnstileName: string;
+    matchScore: number;
+    inferenceMs: number;
+  }): AccessEventRecord {
+    const request: CreateAccessEventRequest = {
+      direction: params.direction,
+      turnstileId: params.turnstileId,
+      turnstileName: params.turnstileName,
+      status: 'AUTHORIZED',
+      method: 'FACIAL',
+      whatsappStatus: 'PENDING',
+      pushStatus: 'PENDING',
+    };
+    return this.insertEvent({
+      schoolId: params.schoolId,
+      studentId: params.studentId,
+      createdById: params.operatorUserId,
+      request,
+      idempotencyKey: AccessEventService.deviceIdempotencyKey(params.deviceId, params.captureId),
+      requestHash: hashRequest({ studentId: params.studentId, deviceId: params.deviceId, ...request }),
+      source: 'FACE_PROTOTYPE',
+      recognition: {
+        deviceId: params.deviceId,
+        matchScore: params.matchScore,
+        inferenceMs: params.inferenceMs,
+      },
+    });
+  }
+
+  /** Grava evento, fila de sincronização, auditoria e notificação interna. Requer transação externa. */
+  private insertEvent(params: {
+    schoolId: string;
+    studentId: string;
+    createdById: string;
+    request: CreateAccessEventRequest;
+    idempotencyKey: string;
+    requestHash: string;
+    source: AccessEventSource;
+    recognition?: AccessEventRecord['recognition'];
+  }): AccessEventRecord {
+    const { request, schoolId, studentId, createdById } = params;
     const id = randomUUID();
     const timestamp = this.now();
+    const turnstileName = request.turnstileName.trim();
     const syncPayload: AccessEventSyncPayload = {
       sourceNodeId: this.nodeId,
       sourceEventId: id,
-      schoolId: actor.schoolId,
+      schoolId,
       studentId,
       direction: request.direction,
       occurredAt: timestamp,
       turnstileId: request.turnstileId,
-      turnstileName: request.turnstileName.trim(),
+      turnstileName,
       status: request.status,
       method: request.method,
-      createdById: actor.id,
-      source: 'DEMO_SIMULATION',
+      createdById,
+      source: params.source,
       whatsappStatus: request.whatsappStatus,
       pushStatus: request.pushStatus,
       reason: request.reason?.trim() || undefined,
     };
-    const transaction = this.database.transaction(() => {
-      this.database.prepare(`
-        INSERT INTO access_events (
-          id, school_id, student_id, direction, occurred_at, turnstile_id,
-          turnstile_name, status, method, created_by, source, whatsapp_status,
-          push_status, reason, idempotency_key, request_hash, origin_node_id,
-          origin_event_id, sync_payload_hash
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'DEMO_SIMULATION', ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        id,
-        actor.schoolId,
-        studentId,
-        request.direction,
-        timestamp,
-        request.turnstileId,
-        request.turnstileName.trim(),
-        request.status,
-        request.method,
-        actor.id,
-        request.whatsappStatus,
-        request.pushStatus,
-        request.reason?.trim() || null,
-        idempotencyKey,
-        requestHash,
-        this.nodeId,
-        id,
-        hashSyncPayload(syncPayload),
-      );
-      this.database.prepare(`
-        INSERT INTO access_event_sync_queue (
-          event_id, school_id, state, available_at, created_at, updated_at
-        ) VALUES (?, ?, 'PENDING', ?, ?, ?)
-      `).run(id, actor.schoolId, timestamp, timestamp, timestamp);
-      this.database.prepare(`
-        INSERT INTO audit_log (
-          id, school_id, actor_id, aggregate_type, aggregate_id, action,
-          previous_state, new_state, occurred_at
-        ) VALUES (?, ?, ?, 'ACCESS_EVENT', ?, 'CREATED', NULL, ?, ?)
-      `).run(randomUUID(), actor.schoolId, actor.id, id, request.direction, timestamp);
-      const student = this.database.prepare('SELECT name FROM students WHERE id = ?')
-        .get(studentId) as { name: string };
-      notifyStudentGuardians(this.database, studentId, {
-        schoolId: actor.schoolId,
-        type: request.direction,
-        title: request.direction === 'ENTRY' ? 'Entrada registrada' : 'Saída registrada',
-        message: `${student.name} teve ${request.direction === 'ENTRY' ? 'entrada' : 'saída'} registrada em ${request.turnstileName.trim()}.`,
-        studentId,
-        contextLabel: request.turnstileName.trim(),
-        sourceType: 'ACCESS_EVENT',
-        sourceId: id,
-        createdAt: timestamp,
-      });
+    this.database.prepare(`
+      INSERT INTO access_events (
+        id, school_id, student_id, direction, occurred_at, turnstile_id,
+        turnstile_name, status, method, created_by, source, whatsapp_status,
+        push_status, reason, idempotency_key, request_hash, origin_node_id,
+        origin_event_id, sync_payload_hash, device_id, match_score, inference_ms
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      schoolId,
+      studentId,
+      request.direction,
+      timestamp,
+      request.turnstileId,
+      turnstileName,
+      request.status,
+      request.method,
+      createdById,
+      params.source,
+      request.whatsappStatus,
+      request.pushStatus,
+      request.reason?.trim() || null,
+      params.idempotencyKey,
+      params.requestHash,
+      this.nodeId,
+      id,
+      hashSyncPayload(syncPayload),
+      params.recognition?.deviceId ?? null,
+      params.recognition?.matchScore ?? null,
+      params.recognition?.inferenceMs ?? null,
+    );
+    this.database.prepare(`
+      INSERT INTO access_event_sync_queue (
+        event_id, school_id, state, available_at, created_at, updated_at
+      ) VALUES (?, ?, 'PENDING', ?, ?, ?)
+    `).run(id, schoolId, timestamp, timestamp, timestamp);
+    this.database.prepare(`
+      INSERT INTO audit_log (
+        id, school_id, actor_id, aggregate_type, aggregate_id, action,
+        previous_state, new_state, occurred_at
+      ) VALUES (?, ?, ?, 'ACCESS_EVENT', ?, 'CREATED', NULL, ?, ?)
+    `).run(
+      randomUUID(),
+      schoolId,
+      createdById,
+      id,
+      params.recognition ? `${request.direction}:${params.recognition.deviceId}` : request.direction,
+      timestamp,
+    );
+    const student = this.database.prepare('SELECT name FROM students WHERE id = ?')
+      .get(studentId) as { name: string };
+    notifyStudentGuardians(this.database, studentId, {
+      schoolId,
+      type: request.direction,
+      title: request.direction === 'ENTRY' ? 'Entrada registrada' : 'Saída registrada',
+      message: `${student.name} teve ${request.direction === 'ENTRY' ? 'entrada' : 'saída'} registrada em ${turnstileName}.`,
+      studentId,
+      contextLabel: turnstileName,
+      sourceType: 'ACCESS_EVENT',
+      sourceId: id,
+      createdAt: timestamp,
     });
-    transaction();
 
     const row = this.database.prepare(`${selectEvent} WHERE event.id = ?`).get(id) as AccessEventRow;
-    return { event: mapEvent(row), created: true };
+    return mapEvent(row);
   }
 }

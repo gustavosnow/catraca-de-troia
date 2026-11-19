@@ -99,7 +99,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ student,
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
                       <span>Catraca {turnstile.code} · {turnstile.place}</span>
-                      <MethodChip method={log.method} />
+                      <MethodChip log={log} />
                     </div>
                   </div>
                 </li>

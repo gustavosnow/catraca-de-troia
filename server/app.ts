@@ -4,6 +4,13 @@ import { AppDatabase } from './db';
 import { ApiError } from './errors';
 import { createJustificationRouter } from './modules/justifications/routes';
 import { JustificationService } from './modules/justifications/service';
+import {
+  createAccessDeviceAdminRouter,
+  createDeviceRecognitionRouter,
+} from './modules/accessDevices/routes';
+import { AccessDeviceService } from './modules/accessDevices/service';
+import { createEdgeAgentRouter } from './modules/edgeAgents/routes';
+import { EdgeAgentService } from './modules/edgeAgents/service';
 import { createAccessEventRouter } from './modules/accessEvents/routes';
 import { AccessEventService } from './modules/accessEvents/service';
 import {
@@ -32,7 +39,13 @@ export interface AppOptions {
   syncSharedSecret?: string;
   syncService?: AccessEventSyncService;
   corsOrigins?: string[];
-  presentationOrigins?: string[];
+  /**
+   * Endereços da rede local para o QR da apresentação. Uma função é consultada a
+   * cada pedido, para acompanhar a troca de Wi-Fi sem reiniciar a API.
+   */
+  presentationOrigins?: string[] | (() => string[]);
+  /** Comando dos agentes de borda pelo painel (MC-037); sem isto, as rotas respondem desligado. */
+  edgeAgents?: EdgeAgentService;
 }
 
 export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
@@ -69,7 +82,9 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
   });
 
   app.get('/api/presentation-access', (_request, response) => {
-    response.json({ data: { origins: options.presentationOrigins ?? [] } });
+    const { presentationOrigins } = options;
+    const origins = typeof presentationOrigins === 'function' ? presentationOrigins() : presentationOrigins ?? [];
+    response.json({ data: { origins } });
   });
 
   if (options.syncSharedSecret) {
@@ -82,9 +97,19 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
     );
   }
 
+  const accessDeviceService = new AccessDeviceService(database, options.now);
+  app.use('/api/v1', createDeviceRecognitionRouter(accessDeviceService));
+
   const authService = new AuthService(database, options.now);
   app.use('/api/v1', createAuthRouter(database, authService, options.now));
   app.use('/api/v1', createSessionAuth(database, options.now));
+  app.use('/api/v1', createAccessDeviceAdminRouter(accessDeviceService));
+  app.use('/api/v1', createEdgeAgentRouter(options.edgeAgents ?? new EdgeAgentService(
+    database,
+    accessDeviceService,
+    { enabled: false, edgeDir: 'edge', apiUrl: 'http://127.0.0.1:3001' },
+    options.now,
+  )));
   app.use(
     '/api/v1',
     createJustificationRouter(new JustificationService(database, options.now)),

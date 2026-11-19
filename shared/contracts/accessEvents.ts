@@ -9,6 +9,9 @@ export type AccessMethodRecord = (typeof ACCESS_METHODS)[number];
 export const ACCESS_STATUSES = ['AUTHORIZED', 'MANUAL_RELEASE'] as const;
 export type AccessStatusRecord = (typeof ACCESS_STATUSES)[number];
 
+export const ACCESS_EVENT_SOURCES = ['DEMO_SIMULATION', 'FACE_PROTOTYPE'] as const;
+export type AccessEventSource = (typeof ACCESS_EVENT_SOURCES)[number];
+
 export interface AccessEventRecord {
   id: string;
   schoolId: string;
@@ -22,11 +25,17 @@ export interface AccessEventRecord {
   status: AccessStatusRecord;
   method: AccessMethodRecord;
   createdById: string;
-  source: 'DEMO_SIMULATION';
+  source: AccessEventSource;
   reason?: string;
   notification: {
     whatsapp: 'DELIVERED' | 'PENDING';
     pushApp: 'DELIVERED' | 'PENDING';
+  };
+  /** Presente apenas em eventos do protótipo de reconhecimento facial (MC-036). */
+  recognition?: {
+    deviceId: string;
+    matchScore: number;
+    inferenceMs: number;
   };
 }
 
