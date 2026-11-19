@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import { AddressInfo } from 'node:net';
 import test from 'node:test';
 import { createApp } from '../app';
-import { createDatabase } from '../db';
+import { createTestDatabase } from './fixtures/schoolFixtures';
 import { apiRequest as request } from './authTestUtils';
 
 test('auditoria é restrita e não expõe os estados internos', async () => {
-  const database = createDatabase({ filename: ':memory:' });
+  const database = createTestDatabase({ filename: ':memory:' });
   const server = createApp(database, { now: () => '2026-10-14T19:00:00.000Z' }).listen(0, '127.0.0.1');
   await new Promise<void>((resolve) => server.once('listening', resolve));
   const baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

@@ -3,6 +3,7 @@ import type { AuthenticatedUser, AuthSession, LoginRequest } from '../../../shar
 import type { UserRole } from '../../../shared/contracts/justifications';
 import type { ActorRequest } from '../../auth/sessionAuth';
 import { hashSessionToken } from '../../auth/sessionAuth';
+import { normalizeIdentifier } from '../../auth/credentials';
 import type { AppDatabase } from '../../db';
 import { unauthorized } from '../../errors';
 
@@ -24,11 +25,6 @@ interface UserRow {
   account_status: 'ACTIVE' | 'BLOCKED';
 }
 
-const normalizeIdentifier = (value: string) => {
-  const trimmed = value.trim().toLocaleLowerCase('pt-BR');
-  const digits = trimmed.replace(/\D/g, '');
-  return digits.length >= 10 ? digits : trimmed;
-};
 
 const mapUser = (database: AppDatabase, row: UserRow): AuthenticatedUser => ({
   id: row.id,

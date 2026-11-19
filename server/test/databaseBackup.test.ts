@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { createDatabase } from '../db';
+import { createTestDatabase } from './fixtures/schoolFixtures';
 import { createVerifiedBackup, restoreBackupToNewFile } from '../maintenance/databaseBackup';
 
 test('backup SQLite é verificado e restaurado em novo arquivo sem sobrescrita', async () => {
@@ -13,7 +13,7 @@ test('backup SQLite é verificado e restaurado em novo arquivo sem sobrescrita',
     const source = path.join(directory, 'source.sqlite');
     const backupDirectory = path.join(directory, 'backups');
     const restored = path.join(directory, 'restored', 'database.sqlite');
-    const database = createDatabase({ filename: source });
+    const database = createTestDatabase({ filename: source });
     database.prepare("INSERT INTO schools (id, name) VALUES ('school-backup', 'Escola do backup')").run();
     database.close();
 

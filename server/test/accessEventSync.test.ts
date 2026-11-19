@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { AccessEventSyncPayload } from '../../shared/contracts/accessEventSync';
 import type { DemoActor } from '../../shared/contracts/justifications';
-import { createDatabase } from '../db';
+import { createTestDatabase } from './fixtures/schoolFixtures';
 import { ApiError } from '../errors';
 import { AccessEventService } from '../modules/accessEvents/service';
 import {
@@ -23,13 +23,14 @@ const eventRequest = {
   direction: 'ENTRY',
   turnstileId: 'cat-01',
   turnstileName: 'Catraca 01 (Portão Principal)',
-  status: 'AUTHORIZED',
-  method: 'FACIAL',
+  status: 'MANUAL_RELEASE',
+  method: 'MANUAL',
+  reason: 'Passagem assistida registrada no teste.',
   whatsappStatus: 'PENDING',
   pushStatus: 'PENDING',
 } as const;
 
-const readPayload = (database: ReturnType<typeof createDatabase>, eventId: string) => {
+const readPayload = (database: ReturnType<typeof createTestDatabase>, eventId: string) => {
   const row = database.prepare('SELECT * FROM access_events WHERE id = ?').get(eventId) as Record<string, string>;
   return {
     sourceNodeId: row.origin_node_id,
@@ -51,7 +52,7 @@ const readPayload = (database: ReturnType<typeof createDatabase>, eventId: strin
 };
 
 test('evento e item da fila local são persistidos atomicamente', () => {
-  const database = createDatabase({ filename: ':memory:' });
+  const database = createTestDatabase({ filename: ':memory:' });
   const service = new AccessEventService(database, () => '2026-10-14T16:00:00.000Z', 'gate-node-01');
   const result = service.create(actor, 'std-1', eventRequest, 'offline-001');
 
@@ -64,7 +65,7 @@ test('evento e item da fila local são persistidos atomicamente', () => {
 });
 
 test('fila retenta após indisponibilidade e sincroniza quando a conectividade retorna', async () => {
-  const database = createDatabase({ filename: ':memory:' });
+  const database = createTestDatabase({ filename: ':memory:' });
   let currentTime = '2026-10-14T16:00:00.000Z';
   const event = new AccessEventService(database, () => currentTime, 'gate-node-01')
     .create(actor, 'std-1', eventRequest, 'offline-002').event;
@@ -105,8 +106,8 @@ test('fila retenta após indisponibilidade e sincroniza quando a conectividade r
 });
 
 test('receptor deduplica repetição e isola conteúdo conflitante', () => {
-  const source = createDatabase({ filename: ':memory:' });
-  const destination = createDatabase({ filename: ':memory:' });
+  const source = createTestDatabase({ filename: ':memory:' });
+  const destination = createTestDatabase({ filename: ':memory:' });
   const event = new AccessEventService(source, () => '2026-10-14T16:00:00.000Z', 'gate-node-01')
     .create(actor, 'std-1', eventRequest, 'offline-003').event;
   const payload = readPayload(source, event.id);
@@ -129,7 +130,7 @@ test('receptor deduplica repetição e isola conteúdo conflitante', () => {
 });
 
 test('item abandonado em processamento volta a ser adquirido após expiração do lease', async () => {
-  const database = createDatabase({ filename: ':memory:' });
+  const database = createTestDatabase({ filename: ':memory:' });
   const event = new AccessEventService(database, () => '2026-10-14T16:00:00.000Z', 'gate-node-01')
     .create(actor, 'std-1', eventRequest, 'offline-004').event;
   database.prepare(`

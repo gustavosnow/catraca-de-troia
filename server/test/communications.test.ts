@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import { AddressInfo } from 'node:net';
 import test from 'node:test';
 import { createApp } from '../app';
-import { createDatabase } from '../db';
+import { createTestDatabase } from './fixtures/schoolFixtures';
 import { apiRequest as request } from './authTestUtils';
 
 const startApi = async () => {
-  const database = createDatabase({ filename: ':memory:' });
+  const database = createTestDatabase({ filename: ':memory:' });
   const server = createApp(database, { now: () => '2026-10-14T18:00:00.000Z' })
     .listen(0, '127.0.0.1');
   await new Promise<void>((resolve) => server.once('listening', resolve));
@@ -127,8 +127,9 @@ test('evento de acesso cria notificação somente para responsáveis vinculados'
     direction: 'ENTRY',
     turnstileId: 'cat-01',
     turnstileName: 'Catraca 01 (Portão Principal)',
-    status: 'AUTHORIZED',
-    method: 'FACIAL',
+    status: 'MANUAL_RELEASE',
+    method: 'MANUAL',
+    reason: 'Passagem assistida registrada no teste.',
     whatsappStatus: 'PENDING',
     pushStatus: 'PENDING',
   };

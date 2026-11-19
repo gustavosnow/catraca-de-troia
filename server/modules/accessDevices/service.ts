@@ -243,6 +243,17 @@ export class AccessDeviceService {
       const recent = this.events.findRecentDeviceEvent(device.id, student.id, since);
       if (recent) return { decision: 'AUTHORIZED', duplicate: true, event: recent };
 
+      // Entrada só depois de saída (e vice-versa): a câmera não grava a mesma direção duas vezes.
+      const sequence = this.events.checkSequence(device.school_id, student.id, device.direction);
+      if (!sequence.allowed) {
+        return {
+          decision: 'SEQUENCE_BLOCKED',
+          studentId: student.id,
+          expectedDirection: sequence.expectedDirection,
+          lastEvent: sequence.lastEvent,
+        };
+      }
+
       const event = this.events.recordFromDevice({
         schoolId: device.school_id,
         studentId: student.id,

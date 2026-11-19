@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { AddressInfo } from 'node:net';
 import test from 'node:test';
 import { createApp } from '../app';
-import { createDatabase } from '../db';
+import { createTestDatabase } from './fixtures/schoolFixtures';
 
 test('login cria sessão, restaura identidade e logout revoga o token', async () => {
-  const database = createDatabase({ filename: ':memory:' });
+  const database = createTestDatabase({ filename: ':memory:' });
   let currentTime = '2026-10-14T16:00:00.000Z';
   const app = createApp(database, { now: () => currentTime });
   const server = app.listen(0, '127.0.0.1');
@@ -76,7 +76,7 @@ test('login cria sessão, restaura identidade e logout revoga o token', async ()
 });
 
 test('API aplica cabeçalhos de segurança e limita tentativas repetidas de login', async () => {
-  const database = createDatabase({ filename: ':memory:' });
+  const database = createTestDatabase({ filename: ':memory:' });
   const server = createApp(database).listen(0, '127.0.0.1');
   await new Promise<void>((resolve) => server.once('listening', resolve));
   const { port } = server.address() as AddressInfo;

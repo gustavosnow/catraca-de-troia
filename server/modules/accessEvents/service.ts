@@ -7,7 +7,8 @@ import type {
 import type { AccessEventSyncPayload } from '../../../shared/contracts/accessEventSync';
 import type { DemoActor } from '../../../shared/contracts/justifications';
 import type { AppDatabase } from '../../db';
-import { conflict, forbidden, notFound } from '../../errors';
+import { conflict, forbidden, invalidRequest, notFound } from '../../errors';
+import { schoolDayStart } from '../../schoolDay';
 import { notifyStudentGuardians } from '../communications/notificationWriter';
 
 interface AccessEventRow {
@@ -135,6 +136,24 @@ export class AccessEventService {
       throw forbidden('Eventos de acesso só podem ser registrados por um ator escolar.');
     }
     this.ensureAccessibleStudent(actor, studentId);
+    // Passagem facial só entra pela rota da câmera (token do dispositivo).
+    if (request.method !== 'MANUAL' || request.status !== 'MANUAL_RELEASE' || !request.reason?.trim()) {
+      throw invalidRequest('Pelo painel, registre somente passagem assistida, com motivo.');
+    }
+    const turnstile = this.database.prepare(`
+      SELECT turnstile_id, turnstile_name FROM access_devices
+      WHERE school_id = ? AND turnstile_id = ? AND active = 1
+      LIMIT 1
+    `).get(actor.schoolId, request.turnstileId) as { turnstile_id: string; turnstile_name: string } | undefined;
+    if (!turnstile) throw invalidRequest('Selecione uma catraca cadastrada e ativa.');
+    // Nome da catraca vem do cadastro; o status de entrega nunca vem do cliente.
+    const normalized: CreateAccessEventRequest = {
+      ...request,
+      turnstileName: turnstile.turnstile_name,
+      whatsappStatus: 'PENDING',
+      pushStatus: 'PENDING',
+      reason: request.reason.trim(),
+    };
 
     const requestHash = hashRequest({ studentId, ...request });
     const existing = this.findRow(actor.id, idempotencyKey);
@@ -145,16 +164,48 @@ export class AccessEventService {
       return { event: mapEvent(existing), created: false };
     }
 
-    const event = this.database.transaction(() => this.insertEvent({
-      schoolId: actor.schoolId,
-      studentId,
-      createdById: actor.id,
-      request,
-      idempotencyKey,
-      requestHash,
-      source: 'DEMO_SIMULATION',
-    }))();
+    const event = this.database.transaction(() => {
+      const sequence = this.checkSequence(actor.schoolId, studentId, normalized.direction);
+      if (!sequence.allowed) {
+        throw conflict(
+          'SEQUENCE_CONFLICT',
+          sequence.expectedDirection === 'EXIT'
+            ? 'Este estudante já tem entrada registrada hoje. Registre a saída antes de uma nova entrada.'
+            : 'Este estudante não tem entrada em aberto hoje. Registre a entrada antes da saída.',
+        );
+      }
+      return this.insertEvent({
+        schoolId: actor.schoolId,
+        studentId,
+        createdById: actor.id,
+        request: normalized,
+        idempotencyKey,
+        requestHash,
+        source: 'ASSISTED_PASSAGE',
+      });
+    })();
     return { event, created: true };
+  }
+
+  /**
+   * Sequência obrigatória por estudante no dia letivo: a primeira passagem é
+   * entrada e depois alterna (entrada → saída → entrada). Vale para câmera e
+   * para passagem assistida; eventos recebidos por sincronização não passam aqui.
+   */
+  checkSequence(schoolId: string, studentId: string, direction: AccessEventRecord['direction']) {
+    const since = schoolDayStart(this.now());
+    const last = this.database.prepare(`
+      ${selectEvent}
+      WHERE event.school_id = ? AND event.student_id = ? AND event.occurred_at >= ?
+      ORDER BY event.occurred_at DESC, event.id DESC
+      LIMIT 1
+    `).get(schoolId, studentId, since) as AccessEventRow | undefined;
+    const expectedDirection: AccessEventRecord['direction'] = last?.direction === 'ENTRY' ? 'EXIT' : 'ENTRY';
+    return {
+      allowed: direction === expectedDirection,
+      expectedDirection,
+      lastEvent: last ? mapEvent(last) : undefined,
+    };
   }
 
   /** Evento da mesma catraca e do mesmo estudante desde `since`, para ignorar leituras repetidas. */

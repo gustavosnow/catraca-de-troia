@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { createApp } from '../app';
-import { AppDatabase, createDatabase } from '../db';
+import { AppDatabase } from '../db';
+import { createTestDatabase } from './fixtures/schoolFixtures';
 import { apiRequest as request } from './authTestUtils';
 
 const fixedNow = () => '2026-10-14T15:30:00.000Z';
@@ -29,9 +30,9 @@ const newJustification = {
 };
 
 test('sessão é obrigatória e vínculos são aplicados no backend', async () => {
-  const database = createDatabase({ filename: ':memory:' });
+  const database = createTestDatabase({ filename: ':memory:' });
   const api = await startApi(database);
-  let result = await request(api.baseUrl, '/api/v1/me');
+  let result = await request(api.baseUrl, '/api/v1/me/students');
   assert.equal(result.response.status, 401);
 
   result = await request(api.baseUrl, '/api/v1/me/students', 'guardian-1');
@@ -53,7 +54,7 @@ test('sessão é obrigatória e vínculos são aplicados no backend', async () =
 test('criação é idempotente, auditável e persiste após reabrir o SQLite', async () => {
   const tempDirectory = mkdtempSync(path.join(tmpdir(), 'catraca-api-'));
   const filename = path.join(tempDirectory, 'test.sqlite');
-  let database = createDatabase({ filename });
+  let database = createTestDatabase({ filename });
   let api = await startApi(database);
 
   const createHeaders = { 'Idempotency-Key': 'request-001' };
@@ -92,7 +93,7 @@ test('criação é idempotente, auditável e persiste após reabrir o SQLite', a
   await api.close();
   database.close();
 
-  database = createDatabase({ filename });
+  database = createTestDatabase({ filename });
   api = await startApi(database);
   result = await request(api.baseUrl, '/api/v1/students/std-1/justifications', 'guardian-1');
   assert.equal(result.response.status, 200);
@@ -105,7 +106,7 @@ test('criação é idempotente, auditável e persiste após reabrir o SQLite', a
 });
 
 test('somente Coordenação ou Direção revisa com controle otimista e auditoria', async () => {
-  const database = createDatabase({ filename: ':memory:' });
+  const database = createTestDatabase({ filename: ':memory:' });
   const api = await startApi(database);
 
   let result = await request(api.baseUrl, '/api/v1/students/std-1/justifications', 'guardian-1', {

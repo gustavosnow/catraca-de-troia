@@ -18,8 +18,8 @@ const { values } = parseArgs({
     'turnstile-id': { type: 'string', default: 'cat-01' },
     'turnstile-name': { type: 'string', default: 'Catraca 01 (Portão Principal)' },
     direction: { type: 'string', default: 'ENTRY' },
-    operator: { type: 'string', default: 'staff-1' },
-    school: { type: 'string', default: 'school-1' },
+    operator: { type: 'string' },
+    school: { type: 'string' },
     'min-score': { type: 'string', default: '0.40' },
     camera: { type: 'string' },
     deactivate: { type: 'boolean', default: false },
@@ -41,14 +41,24 @@ try {
   } else {
     const direction = values.direction?.toUpperCase();
     if (direction !== 'ENTRY' && direction !== 'EXIT') fail('--direction deve ser ENTRY ou EXIT.');
+    // Padrões: a escola cadastrada e a primeira conta ativa da Portaria.
+    const schoolId = values.school
+      ?? (database.prepare('SELECT id FROM schools ORDER BY id LIMIT 1').get() as { id: string } | undefined)?.id
+      ?? fail('Nenhuma escola cadastrada. Rode antes: npm run db:seed.');
+    const operatorId = values.operator
+      ?? (database.prepare(`
+        SELECT id FROM users WHERE school_id = ? AND role = 'STAFF_GATE' AND account_status = 'ACTIVE'
+        ORDER BY name LIMIT 1
+      `).get(schoolId) as { id: string } | undefined)?.id
+      ?? fail('Nenhuma conta ativa da Portaria. Informe --operator.');
     const { device, token } = new AccessDeviceService(database).register({
       id: values.id!,
-      schoolId: values.school!,
-      name: values.name || `Câmera ${values.id} (protótipo)`,
+      schoolId,
+      name: values.name || (direction === 'ENTRY' ? 'Câmera de entrada' : 'Câmera de saída'),
       turnstileId: values['turnstile-id']!,
       turnstileName: values['turnstile-name']!,
       direction: direction as 'ENTRY' | 'EXIT',
-      operatorUserId: values.operator!,
+      operatorUserId: operatorId,
       minScore: Number(values['min-score']),
       cameraSource: values.camera,
     });

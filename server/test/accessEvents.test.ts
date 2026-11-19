@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import { AddressInfo } from 'node:net';
 import test from 'node:test';
 import { createApp } from '../app';
-import { createDatabase } from '../db';
+import { createTestDatabase } from './fixtures/schoolFixtures';
 import { apiRequest as request } from './authTestUtils';
 
 const fixedNow = () => '2026-10-14T16:00:00.000Z';
 
 const startApi = async () => {
-  const database = createDatabase({ filename: ':memory:' });
+  const database = createTestDatabase({ filename: ':memory:' });
   const server = createApp(database, { now: fixedNow }).listen(0, '127.0.0.1');
   await new Promise<void>((resolve) => server.once('listening', resolve));
   const address = server.address() as AddressInfo;
@@ -26,8 +26,9 @@ const accessEvent = {
   direction: 'ENTRY',
   turnstileId: 'cat-01',
   turnstileName: 'Catraca 01 (Portão Principal)',
-  status: 'AUTHORIZED',
-  method: 'FACIAL',
+  status: 'MANUAL_RELEASE',
+  method: 'MANUAL',
+  reason: 'Passagem assistida registrada no teste.',
   whatsappStatus: 'DELIVERED',
   pushStatus: 'DELIVERED',
 };
@@ -108,4 +109,45 @@ test('criação de evento é idempotente e auditável', async () => {
   assert.deepEqual(audit, [{ action: 'CREATED', actor_id: 'staff-1', new_state: 'ENTRY' }]);
 
   await api.close();
+});
+
+test('rota manual aceita só passagem assistida em catraca cadastrada e respeita a sequência', async (t) => {
+  const api = await startApi();
+  t.after(api.close);
+  const post = (key: string, body: Record<string, unknown>, studentId = 'std-2') =>
+    request(api.baseUrl, `/api/v1/students/${studentId}/access-events`, 'staff-1', {
+      method: 'POST', headers: { 'Idempotency-Key': key }, body: JSON.stringify(body),
+    });
+
+  // Passagem "facial" pelo painel é recusada: só a câmera autenticada grava facial.
+  let result = await post('manual-facial', { ...accessEvent, status: 'AUTHORIZED', method: 'FACIAL' });
+  assert.equal(result.response.status, 422);
+
+  result = await post('manual-sem-motivo', { ...accessEvent, reason: undefined });
+  assert.equal(result.response.status, 422);
+
+  result = await post('manual-catraca-falsa', { ...accessEvent, turnstileId: 'cat-99' });
+  assert.equal(result.response.status, 422);
+
+  // Saída sem entrada no dia é recusada.
+  result = await post('manual-saida-primeiro', { ...accessEvent, direction: 'EXIT' });
+  assert.equal(result.response.status, 409);
+  assert.equal(result.body.error.code, 'SEQUENCE_CONFLICT');
+
+  // Cliente não define status de entrega nem nome da catraca.
+  result = await post('manual-entrada', {
+    ...accessEvent, whatsappStatus: 'DELIVERED', pushStatus: 'DELIVERED', turnstileName: 'Nome inventado',
+  });
+  assert.equal(result.response.status, 201);
+  assert.equal(result.body.data.source, 'ASSISTED_PASSAGE');
+  assert.equal(result.body.data.notification.whatsapp, 'PENDING');
+  assert.equal(result.body.data.notification.pushApp, 'PENDING');
+  assert.equal(result.body.data.turnstile.name, 'Catraca 01 (Portão Principal)');
+
+  result = await post('manual-entrada-repetida', accessEvent);
+  assert.equal(result.response.status, 409);
+
+  result = await post('manual-saida', { ...accessEvent, direction: 'EXIT' });
+  assert.equal(result.response.status, 201);
+  assert.equal(result.body.data.direction, 'EXIT');
 });

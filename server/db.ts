@@ -1,5 +1,4 @@
 import Database from 'better-sqlite3';
-import { randomBytes, scryptSync } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
@@ -18,7 +17,7 @@ const accessEventsColumns = `
     status TEXT NOT NULL CHECK (status IN ('AUTHORIZED', 'MANUAL_RELEASE')),
     method TEXT NOT NULL CHECK (method IN ('FACIAL', 'MANUAL')),
     created_by TEXT NOT NULL REFERENCES users(id),
-    source TEXT NOT NULL CHECK (source IN ('DEMO_SIMULATION', 'FACE_PROTOTYPE')),
+    source TEXT NOT NULL CHECK (source IN ('DEMO_SIMULATION', 'FACE_PROTOTYPE', 'ASSISTED_PASSAGE')),
     whatsapp_status TEXT NOT NULL CHECK (whatsapp_status IN ('DELIVERED', 'PENDING')),
     push_status TEXT NOT NULL CHECK (push_status IN ('DELIVERED', 'PENDING')),
     reason TEXT,
@@ -44,7 +43,8 @@ const migrateAccessEventsSourceCheck = (database: Database.Database) => {
   const table = database.prepare(`
     SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'access_events'
   `).get() as { sql: string } | undefined;
-  if (!table || table.sql.includes('FACE_PROTOTYPE')) return;
+  // Reconstrói quando o CHECK de origem não conhece a origem mais recente.
+  if (!table || table.sql.includes('ASSISTED_PASSAGE')) return;
 
   const columns = accessEventsColumnNames.join(', ');
   database.pragma('foreign_keys = OFF');
@@ -352,135 +352,9 @@ ${accessEventsColumns}
   );
 `;
 
-const seed = `
-  INSERT OR IGNORE INTO schools (id, name) VALUES
-    ('school-1', 'EMEF Profª. Cecília Meireles');
-
-  INSERT OR IGNORE INTO users
-    (id, school_id, name, role, email, phone, functional_registry) VALUES
-    ('guardian-1', 'school-1', 'Claudia Mendes (Mãe)', 'GUARDIAN', 'claudia.mendes@gmail.com', '(11) 98765-4321', NULL),
-    ('guardian-2', 'school-1', 'Rodrigo Oliveira (Pai)', 'GUARDIAN', 'rodrigo.oliveira@gmail.com', '(11) 97654-1234', NULL),
-    ('guardian-3', 'school-1', 'Silvia Ferreira (Mãe)', 'GUARDIAN', 'silvia.ferreira@gmail.com', '(11) 98234-5566', NULL),
-    ('guardian-4', 'school-1', 'Carlos Costa (Pai)', 'GUARDIAN', 'carlos.costa@gmail.com', '(11) 97111-2233', NULL),
-    ('guardian-5', 'school-1', 'Marilene Cavalcanti (Mãe)', 'GUARDIAN', 'marilene.cavalcanti@gmail.com', '(11) 99123-8899', NULL),
-    ('guardian-empty', 'school-1', 'Responsável sem vínculo', 'GUARDIAN', 'sem.vinculo@gmail.com', '(11) 90000-0000', NULL),
-    ('staff-1', 'school-1', 'Carlos Mendes', 'STAFF_GATE', 'carlos.mendes@emef.educacao.sp.gov.br', '(11) 98111-4455', 'MAT-2026/0481'),
-    ('staff-2', 'school-1', 'Profª. Mariana Costa', 'STAFF_COORDINATION', 'mariana.costa@emef.educacao.sp.gov.br', '(11) 98222-3344', 'MAT-2026/0129'),
-    ('staff-3', 'school-1', 'Diretor Valdemar Ramos', 'STAFF_DIRECTION', 'valdemar.ramos@emef.educacao.sp.gov.br', '(11) 98333-7788', 'MAT-2026/0004');
-
-  UPDATE users SET email = 'claudia.mendes@gmail.com', phone = '(11) 98765-4321' WHERE id = 'guardian-1';
-  UPDATE users SET email = 'rodrigo.oliveira@gmail.com', phone = '(11) 97654-1234' WHERE id = 'guardian-2';
-  UPDATE users SET email = 'silvia.ferreira@gmail.com', phone = '(11) 98234-5566' WHERE id = 'guardian-3';
-  UPDATE users SET email = 'carlos.costa@gmail.com', phone = '(11) 97111-2233' WHERE id = 'guardian-4';
-  UPDATE users SET email = 'marilene.cavalcanti@gmail.com', phone = '(11) 99123-8899' WHERE id = 'guardian-5';
-  UPDATE users SET email = 'sem.vinculo@gmail.com', phone = '(11) 90000-0000' WHERE id = 'guardian-empty';
-  UPDATE users SET email = 'carlos.mendes@emef.educacao.sp.gov.br', phone = '(11) 98111-4455', functional_registry = 'MAT-2026/0481' WHERE id = 'staff-1';
-  UPDATE users SET email = 'mariana.costa@emef.educacao.sp.gov.br', phone = '(11) 98222-3344', functional_registry = 'MAT-2026/0129' WHERE id = 'staff-2';
-  UPDATE users SET email = 'valdemar.ramos@emef.educacao.sp.gov.br', phone = '(11) 98333-7788', functional_registry = 'MAT-2026/0004' WHERE id = 'staff-3';
-
-  INSERT OR IGNORE INTO students (id, school_id, name, enrollment) VALUES
-    ('std-1', 'school-1', 'Ana Clara de Souza Mendes', '2024-0891'),
-    ('std-13', 'school-1', 'Arthur Mendes de Souza', '2024-0318'),
-    ('std-2', 'school-1', 'Gabriel Henrique Oliveira', '2024-0914'),
-    ('std-14', 'school-1', 'Sophia Oliveira', '2024-1102'),
-    ('std-3', 'school-1', 'Beatriz Lima Cavalcanti', '2024-0745'),
-    ('std-4', 'school-1', 'Lucas Ferreira Santos', '2024-1022'),
-    ('std-5', 'school-1', 'Mariana Duarte Costa', '2024-0633'),
-    ('std-6', 'school-1', 'Matheus Vinícius Pereira', '2024-1108'),
-    ('std-7', 'school-1', 'Isabela Rocha Alcantara', '2024-0551'),
-    ('std-8', 'school-1', 'Thiago Nogueira Ramos', '2024-0419'),
-    ('std-9', 'school-1', 'Camila Fernandes Ribeiro', '2024-0320'),
-    ('std-10', 'school-1', 'Felipe Cardoso Martins', '2024-1290'),
-    ('std-11', 'school-1', 'Larissa Vieira de Camargo', '2024-1311'),
-    ('std-12', 'school-1', 'Enzo Gabriel Soares', '2024-0182');
-
-  INSERT OR IGNORE INTO guardian_student_links
-    (guardian_user_id, student_id, status, approved_at, approved_by) VALUES
-    ('guardian-1', 'std-1', 'APPROVED', '2026-10-13T12:00:00.000Z', 'staff-2'),
-    ('guardian-1', 'std-13', 'APPROVED', '2026-10-13T12:00:00.000Z', 'staff-2'),
-    ('guardian-2', 'std-2', 'APPROVED', '2026-10-13T12:00:00.000Z', 'staff-2'),
-    ('guardian-2', 'std-14', 'APPROVED', '2026-10-13T12:00:00.000Z', 'staff-2'),
-    ('guardian-3', 'std-4', 'APPROVED', '2026-10-13T12:00:00.000Z', 'staff-2'),
-    ('guardian-4', 'std-5', 'APPROVED', '2026-10-13T12:00:00.000Z', 'staff-2'),
-    ('guardian-5', 'std-3', 'APPROVED', '2026-10-13T12:00:00.000Z', 'staff-2');
-`;
-
-const demoWorkflowSeed = `
-  INSERT OR IGNORE INTO justifications (
-    id, school_id, student_id, submitted_by, absence_start_date, reason_category,
-    description, attachment_name, status, submitted_at, reviewed_at, reviewed_by,
-    version, idempotency_key, request_hash
-  ) VALUES (
-    'abs-1', 'school-1', 'std-1', 'guardian-1', '2026-08-24', 'MEDICAL',
-    'Consulta pediátrica de rotina na UBS do bairro com atestado médico demonstrativo.',
-    'atestado_pediatria_2408.pdf', 'APPROVED', '2026-08-24T14:20:00.000Z',
-    '2026-08-25T12:00:00.000Z', 'staff-2', 2, 'seed-abs-1', 'seed'
-  );
-
-  INSERT OR IGNORE INTO access_events (
-    id, school_id, student_id, direction, occurred_at, turnstile_id, turnstile_name,
-    status, method, created_by, source, whatsapp_status, push_status, reason,
-    idempotency_key, request_hash
-  ) VALUES
-    ('event-seed-1', 'school-1', 'std-1', 'ENTRY', '2026-10-14T10:10:00.000Z',
-      'cat-01', 'Catraca 01 (Portão Principal)', 'AUTHORIZED', 'FACIAL', 'staff-1',
-      'DEMO_SIMULATION', 'DELIVERED', 'DELIVERED', NULL, 'seed-event-1', 'seed'),
-    ('event-seed-2', 'school-1', 'std-13', 'ENTRY', '2026-10-14T10:15:00.000Z',
-      'cat-02', 'Catraca 02 (Fundamental I)', 'AUTHORIZED', 'FACIAL', 'staff-1',
-      'DEMO_SIMULATION', 'DELIVERED', 'DELIVERED', NULL, 'seed-event-2', 'seed'),
-    ('event-seed-3', 'school-1', 'std-2', 'ENTRY', '2026-10-14T10:20:00.000Z',
-      'cat-01', 'Catraca 01 (Portão Principal)', 'AUTHORIZED', 'FACIAL', 'staff-1',
-      'DEMO_SIMULATION', 'DELIVERED', 'DELIVERED', NULL, 'seed-event-3', 'seed');
-`;
-
-const communicationSeed = `
-  INSERT OR IGNORE INTO school_notices (
-    id, school_id, title, category, priority, author_label, role_label, summary,
-    content, attachment_name, created_by, created_at, updated_at, version
-  ) VALUES
-    ('notice-seed-1', 'school-1', 'Campanha de Vacinação Infantil nas Escolas (PSE / SUS)',
-      'GENERAL', 'URGENT', 'Diretoria Escolar & Secretaria de Saúde', 'Direção Escolar',
-      'Atualização da caderneta de vacinação infantil para alunos do 1º ao 9º Ano.',
-      'Em parceria com a Unidade Básica de Saúde, será realizada a verificação demonstrativa da caderneta de vacinação. Consulte o comunicado acadêmico antes de qualquer uso real.',
-      'autorizacao_vacinacao_escolar.pdf', 'staff-3', '2026-10-14T12:30:00.000Z', '2026-10-14T12:30:00.000Z', 1),
-    ('notice-seed-2', 'school-1', 'Reunião de Pais e Mestres do 3º Bimestre',
-      'PEDAGOGICAL', 'IMPORTANT', 'Coordenação Pedagógica', 'Coordenação Pedagógica',
-      'Entrega dos relatórios de desenvolvimento pedagógico e alinhamento das atividades com a família.',
-      'Comunicado demonstrativo sobre a reunião de responsáveis e equipe pedagógica.',
-      'cronograma_reuniao_3bim.pdf', 'staff-2', '2026-10-13T19:45:00.000Z', '2026-10-13T19:45:00.000Z', 1);
-`;
-
 export interface DatabaseOptions {
   filename?: string;
-  seedDemoData?: boolean;
 }
-
-const demoIdentities = [
-  ['guardian-1', 'claudia.mendes@gmail.com'], ['guardian-1', '11987654321'],
-  ['guardian-2', 'rodrigo.oliveira@gmail.com'], ['guardian-2', '11976541234'],
-  ['guardian-3', 'silvia.ferreira@gmail.com'], ['guardian-4', 'carlos.costa@gmail.com'],
-  ['guardian-5', 'marilene.cavalcanti@gmail.com'], ['guardian-empty', 'sem.vinculo@gmail.com'],
-  ['staff-1', 'carlos.mendes@emef.educacao.sp.gov.br'], ['staff-1', 'mat-2026/0481'],
-  ['staff-2', 'mariana.costa@emef.educacao.sp.gov.br'], ['staff-2', 'mat-2026/0129'],
-  ['staff-3', 'valdemar.ramos@emef.educacao.sp.gov.br'], ['staff-3', 'mat-2026/0004'],
-] as const;
-
-const seedDemoCredentials = (database: Database.Database) => {
-  const insert = database.prepare(`
-    INSERT OR IGNORE INTO auth_identities
-      (normalized_identifier, user_id, password_salt, password_hash)
-    VALUES (?, ?, ?, ?)
-  `);
-  const transaction = database.transaction(() => {
-    for (const [userId, identifier] of demoIdentities) {
-      if (database.prepare('SELECT 1 FROM auth_identities WHERE normalized_identifier = ?').get(identifier)) continue;
-      const salt = randomBytes(16).toString('hex');
-      const passwordHash = scryptSync('Troia@2026', salt, 64).toString('hex');
-      insert.run(identifier, userId, salt, passwordHash);
-    }
-  });
-  transaction();
-};
 
 export const createDatabase = (options: DatabaseOptions = {}) => {
   const filename = options.filename ?? path.resolve('.data/catraca-de-troia.sqlite');
@@ -546,6 +420,27 @@ export const createDatabase = (options: DatabaseOptions = {}) => {
       database.exec(`ALTER TABLE guardian_student_links ADD COLUMN ${column} ${definition}`);
     }
   }
+  // Parentesco informado na solicitação aprovada (exibido na ficha do estudante).
+  if (!linkColumns.some((candidate) => candidate.name === 'relationship')) {
+    database.exec('ALTER TABLE guardian_student_links ADD COLUMN relationship TEXT');
+  }
+  // Ficha escolar do estudante: dados mantidos pela escola, lidos pelo painel e pelo portal.
+  const studentColumns = database.prepare('PRAGMA table_info(students)').all() as Array<{ name: string }>;
+  const studentMigrations = [
+    ['class_name', 'TEXT'],
+    ['shift', "TEXT CHECK (shift IN ('MORNING', 'AFTERNOON', 'FULL_TIME'))"],
+    ['stage', "TEXT CHECK (stage IN ('EARLY_YEARS', 'FINAL_YEARS'))"],
+    ['homeroom_teacher', 'TEXT'],
+    ['birth_date', 'TEXT'],
+    ['exit_authorization', "TEXT CHECK (exit_authorization IN ('GUARDIAN_ONLY', 'SCHOOL_TRANSPORT', 'UNACCOMPANIED'))"],
+    ['emergency_contact', 'TEXT'],
+    ['status', "TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'SUSPENDED', 'ON_LEAVE'))"],
+  ] as const;
+  for (const [column, definition] of studentMigrations) {
+    if (!studentColumns.some((candidate) => candidate.name === column)) {
+      database.exec(`ALTER TABLE students ADD COLUMN ${column} ${definition}`);
+    }
+  }
   database.exec(`
     UPDATE access_events
     SET origin_node_id = COALESCE(origin_node_id, 'legacy-local'),
@@ -554,21 +449,6 @@ export const createDatabase = (options: DatabaseOptions = {}) => {
     WHERE origin_node_id IS NULL OR origin_event_id IS NULL OR sync_payload_hash IS NULL;
     CREATE UNIQUE INDEX IF NOT EXISTS idx_access_events_origin
       ON access_events(origin_node_id, origin_event_id);
-  `);
-  if (options.seedDemoData ?? true) {
-    database.exec(seed);
-    seedDemoCredentials(database);
-    database.exec(communicationSeed);
-  }
-  if ((options.seedDemoData ?? true) && options.filename === undefined) {
-    database.exec(demoWorkflowSeed);
-  }
-  database.exec(`
-    UPDATE access_events
-    SET origin_node_id = COALESCE(origin_node_id, 'legacy-local'),
-        origin_event_id = COALESCE(origin_event_id, id),
-        sync_payload_hash = COALESCE(sync_payload_hash, request_hash)
-    WHERE origin_node_id IS NULL OR origin_event_id IS NULL OR sync_payload_hash IS NULL
   `);
   return database;
 };
