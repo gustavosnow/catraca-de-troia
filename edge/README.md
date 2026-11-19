@@ -13,15 +13,18 @@ Câmera/celular ──► recognize.py (detecta, compara, confirma em 3 quadros)
 
 ## Regras de uso dos dados
 
-- Cadastre **apenas adultos da equipe, com consentimento**, ligados a estudantes
-  **fictícios** da base demonstrativa (`std-1`, `std-2`...). Nunca crianças ou estudantes reais.
+- Cadastre **só o rosto de adultos voluntários da equipe, com consentimento**,
+  representando estudantes do cadastro no teste. Nunca o rosto de uma criança.
+- A API grava só a direção esperada no dia (entrada → saída → entrada). Repetição
+  aparece em amarelo como **JA REGISTRADO** e não grava passagem nem negação.
 - Nenhuma foto é salva. Ficam só vetores em `edge/data/gallery.npz`, fora do Git.
-- Para apagar: `python enroll.py --remove std-1`, ou apague a pasta `edge/data/`.
+- Para apagar: `python enroll.py --remove est-livia-batista`, ou apague a pasta `edge/data/`.
 - Negações não guardam imagem, vetor nem identidade.
 
 ## Preparação (uma vez)
 
-1. **API e painel** (na raiz do projeto): `npm run dev`.
+1. **API e painel** (na raiz do projeto): `npm run dev`. Na primeira vez, carregue a escola
+   com `SEED_PASSWORD='...' npm run db:seed`; a câmera fica ligada à escola e à Portaria cadastradas.
 2. **Cadastrar a catraca** (na raiz, em outro terminal):
    ```bash
    npm run device:register -- --id cat-01-entrada --direction ENTRY
@@ -50,13 +53,13 @@ Celular e PC precisam estar na mesma rede, que deve permitir comunicação entre
 ## Cadastro e reconhecimento
 
 ```bash
-python enroll.py --student std-1 --label "Integrante A" --consenti
+python enroll.py --student est-livia-batista --label "Integrante A" --consenti
 python enroll.py --list
 python recognize.py
 ```
 
 Na tela da catraca: verde **LIBERADO** registra a passagem (aparece no painel e no
-portal do responsável de `std-1`); vermelho **NEGADO** registra só a tentativa.
+portal do responsável do estudante); amarelo **JA REGISTRADO** indica passagem fora da sequência do dia; vermelho **NEGADO** registra só a tentativa.
 Leituras feitas com a API fora do ar ficam pendentes e são reenviadas com o mesmo
 identificador, sem duplicar.
 

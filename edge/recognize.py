@@ -163,6 +163,16 @@ def decide(api: ApiClient, streak: Streak, settings: Settings) -> Banner:
         title = "LIBERADO" + (" (ja registrado)" if data["duplicate"] else "")
         return Banner(title, detail, GREEN, now + RESULT_HOLD_SECONDS)
 
+    if data["decision"] == "SEQUENCE_BLOCKED":
+        # Fora da sequência do dia: nada foi gravado na API.
+        expected = "SAIDA" if data["expectedDirection"] == "EXIT" else "ENTRADA"
+        last = data.get("lastEvent") or {}
+        name = (last.get("student") or {}).get("name", "")
+        record_metric("BLOQUEADO", f"AGUARDA_{expected}", score, inference_ms, len(streak.scores))
+        title = "JA REGISTRADO - " + ("entrada em aberto" if expected == "SAIDA" else "sem entrada hoje")
+        return Banner(title, f"{name} | proxima passagem: {expected}".strip(" |"), YELLOW,
+                      now + max(RESULT_HOLD_SECONDS, UNKNOWN_PAUSE_SECONDS))
+
     reason = data["reason"]
     record_metric("NEGADO", reason, score, inference_ms, len(streak.scores))
     return Banner(f"NEGADO - {DENIAL_TEXT.get(reason, reason)}", "Procure a portaria",
