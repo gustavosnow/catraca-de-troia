@@ -14,7 +14,8 @@ Requisito: Node.js com npm. A demonstração atual não exige chave Gemini.
 
 ```bash
 npm ci
-SEED_PASSWORD='senha-inicial' npm run db:seed   # só na primeira vez: carga da escola
+SEED_PASSWORD='senha-inicial' npm run db:seed             # só na primeira vez: carga da escola
+SEED_PASSWORD='senha-inicial' npm run db:seed:atividade   # opcional: duas semanas de movimento
 npm run dev
 ```
 
@@ -53,7 +54,7 @@ A API inicia em `http://127.0.0.1:3001`. O banco nasce vazio; `npm run db:seed` 
 | Responsável | `saylon.batista@catracadetroia.edu.br` | portal com Lívia, Davi e Helena Batista |
 | Responsável | `fernanda.ribeiro@`, `marcos.almeida@`, `patricia.nunes@`, `roberto.teixeira@`, `juliana.moraes@catracadetroia.edu.br` | portal com os próprios filhos |
 
-Os 10 estudantes têm matrículas `2026-0001` a `2026-0010`. Novos responsáveis se cadastram pelo portal: a conta e o pedido de vínculo são criados juntos, e nenhum dado aparece antes da aprovação da Coordenação ou Direção. Contas da equipe não são criadas pela própria pessoa; a redefinição de senha é feita pela escola.
+Os 10 estudantes têm matrículas `2026-0001` a `2026-0010`. `npm run db:seed:atividade` alimenta as duas últimas semanas letivas (passagens pela câmera e assistidas, leituras negadas, faltas, justificativas, comunicados, pedidos de vínculo e leitura de notificações) pelos próprios serviços da API, respeitando sequência, permissões, notificações e auditoria; recusa um banco que já tenha passagens. Novos responsáveis se cadastram pelo portal: a conta e o pedido de vínculo são criados juntos, e nenhum dado aparece antes da aprovação da Coordenação ou Direção. Contas da equipe não são criadas pela própria pessoa; a redefinição de senha é feita pela escola.
 
 As senhas são derivadas com scrypt e salt; a API armazena somente o hash dos tokens opacos. Sessões expiram em 12 horas ou 30 dias quando “lembrar dispositivo” está ativo, podem ser restauradas e são revogadas no logout. A API aplica cabeçalhos básicos de segurança, impede cache das respostas e limita em memória tentativas repetidas de login e solicitações de vínculo. Este é um corte funcional local: ainda faltam provedor institucional, HTTPS, proteção/armazenamento nativo dos tokens, política de senha, MFA, redefinição de senha pela Coordenação no painel, limitação distribuída/persistente e testes formais de segurança.
 

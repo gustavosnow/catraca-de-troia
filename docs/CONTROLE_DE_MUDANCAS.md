@@ -340,3 +340,13 @@ Funcionalidades corrigidas ou retiradas: simulação de passagens removida (a pa
 Duplicidades: `/me/students` era consultado em três lugares a cada 5 s (agora um, a cada 15 s); a função de listar estudantes vinculados existia em dois clientes; o `UPDATE` de origem dos eventos rodava duas vezes na criação do banco; Ferramentas repetia "Sobre o projeto" e "Portal dos responsáveis", já fixos na barra lateral e no topo.
 
 Limites: o reconhecimento facial segue protótipo de laboratório, sem homologação, sem prova de vida e sem catraca física; a entrega externa de notificações continua simulada. Os estudantes da carga são registros de teste: o cadastro facial continua restrito ao rosto de adultos voluntários da equipe, nunca de crianças. Rostos cadastrados antes desta mudança ficaram ligados a estudantes removidos e aparecem como tal no painel até serem removidos. Não há edição de estudantes nem criação de contas da equipe pelo painel. O projeto não declara `@types/react`, então `npm run lint` não confere as props do JSX; esta mudança foi conferida com os tipos instalados temporariamente.
+
+## MC-040 — Movimento de duas semanas letivas para alimentar o sistema em 19/11/2026
+
+Solicitação: alimentar o sistema com mais dados sobre a carga da MC-039.
+
+Decisão: `npm run db:seed:atividade` gera o movimento das dez últimas semanas letivas anteriores e do dia corrente até o horário atual, sempre pelos serviços da API com um relógio controlado, nunca por inserção direta. Assim valem a sequência entrada → saída, a origem das passagens (câmera autenticada ou passagem assistida com motivo), as notificações aos responsáveis, a fila de sincronização, a auditoria e as permissões de cada perfil. A sequência pseudoaleatória é fixa: a mesma carga gera o mesmo movimento. O script recusa um banco que já tenha passagens.
+
+Conteúdo: passagens dos 10 estudantes por turno, com cerca de 1 em 8 assistidas, chegadas atrasadas, uma saída antecipada e cinco faltas; uma ou duas leituras negadas por dia; cinco comunicados da Coordenação; quatro justificativas textuais (duas aprovadas, uma recusada, uma pendente) e uma falta sem justificativa; um pedido de vínculo recusado e o cadastro de uma nova responsável com pedido pendente; leitura das notificações pelos responsáveis, deixando as dos dois últimos dias não lidas.
+
+Limites: as passagens pela câmera são geradas pela rota de reconhecimento, sem câmera física; similaridade e tempo de inferência são valores de carga, não medições do protótipo.
