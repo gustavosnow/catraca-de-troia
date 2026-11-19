@@ -15,7 +15,7 @@ import {
   Wifi,
   X,
 } from 'lucide-react';
-import { BrandLockup } from './brand/BrandMark';
+import { BrandArtwork, BrandLockup } from './brand/BrandMark';
 import { FamilyIllustration, IdentifyIllustration, RecordIllustration } from './brand/Illustrations';
 import { Avatar } from './ui';
 
@@ -324,17 +324,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onParentLogin, onParen
               <p className="mt-5 text-xs text-muted">Metas de homologação do piloto, não resultados medidos.</p>
             </div>
             <figure className="card overflow-hidden p-6">
-              <img
-                src="/logo-catraca-troia.png"
-                width={1470}
-                height={1070}
-                alt="Ilustração da identidade visual: uma catraca tripé ao lado de um rosto em traço fino, ligados por uma malha laranja de pontos de leitura."
-                className="h-auto w-full"
-                loading="lazy"
-              />
-              <figcaption className="mt-4 border-t border-line pt-4 text-xs text-muted">
-                Identidade visual do projeto: a catraca e a pessoa, conectadas por pontos de leitura.
-              </figcaption>
+              <BrandArtwork className="h-auto w-full" loading="lazy" />
             </figure>
           </div>
         </section>

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, LayoutGrid, Maximize2, Minimize2, X } from 'lucide-react';
+import { BrandLockup } from '../brand/BrandMark';
 import { SLIDES } from './slides';
 
 interface ProjectPresentationProps {
@@ -114,7 +115,7 @@ export const ProjectPresentation: React.FC<ProjectPresentationProps> = ({ onExit
       {/* Barra superior */}
       <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 px-4 pt-4 sm:px-8">
         {/* Variante escura da marca (como na arte), legível sobre fundo claro ou escuro. */}
-        <img src="/apresentacao/selo-escuro.webp" alt="Catraca de Troia" className="h-10 w-auto rounded-xl sm:h-11" />
+        <BrandLockup size={40} className="sm:w-[134px]" />
         <div className="flex items-center gap-2">
           <button type="button" className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-colors ${control}`} onClick={() => setOverview(true)} aria-label="Ver todos os slides (G)" title="Todos os slides (G)">
             <LayoutGrid className="h-4 w-4" aria-hidden="true" />

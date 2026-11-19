@@ -39,6 +39,7 @@ import {
   Wifi,
   XCircle,
 } from 'lucide-react';
+import { BRAND_SEAL_SRC, BrandArtwork } from '../brand/BrandMark';
 
 /** Pasta oficial da documentação no Drive (TAP, Ciclo de Vida, EAP e Plano de Riscos). */
 const OFFICIAL_DOCS_URL = 'https://drive.google.com/drive/folders/163EOyyzGW-VMIH2zs_PGTHZEVyHRfeJ9';
@@ -128,7 +129,7 @@ const Cover: React.FC = () => (
       </div>
       <div className="deck-pop relative mx-auto w-full max-w-md" style={d(2)}>
         <div className="rounded-[28px] bg-white p-8 shadow-2xl shadow-black/40">
-          <img src="/apresentacao/logo-catraca-troia.webp" alt="Logo Catraca de Troia — controle de acesso escolar" className="w-full" />
+          <BrandArtwork className="h-auto w-full" />
         </div>
       </div>
     </div>
@@ -913,7 +914,7 @@ const Closing: React.FC = () => (
     <Swoosh className="-right-24 -top-24 w-[46rem] max-w-[90vw] opacity-90" />
     <Swoosh className="-bottom-56 -left-56 w-[34rem] max-w-[70vw] rotate-180 opacity-40" />
     <div className="deck-inner text-center">
-      <img src="/apresentacao/selo-escuro.webp" alt="" className="deck-pop mx-auto h-16 w-auto sm:h-20" style={d(0)} />
+      <img src={BRAND_SEAL_SRC} alt="" className="deck-pop mx-auto h-16 w-auto sm:h-20" style={d(0)} />
       <h2 className="deck-reveal mt-8 text-[clamp(2.6rem,6vw,5.4rem)] font-extrabold leading-none tracking-tight" style={d(1)}>
         Obrigado<span className="deck-accent">!</span>
       </h2>
