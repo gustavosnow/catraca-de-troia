@@ -391,7 +391,9 @@ export const FaceRecognitionPanel: React.FC<FaceRecognitionPanelProps> = ({
                   <Field
                     label="Câmera da captura"
                     htmlFor="enroll-device"
-                    hint="Uma câmera atende um processo por vez: pare a catraca antes de cadastrar com ela."
+                    hint={camerasWithSource.length === 0
+                      ? 'Nenhuma câmera com fonte de vídeo. Defina a fonte em uma das câmeras acima para cadastrar rostos.'
+                      : 'Uma câmera atende um processo por vez: pare a catraca antes de cadastrar com ela.'}
                   >
                     <select
                       id="enroll-device"
