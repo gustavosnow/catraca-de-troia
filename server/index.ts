@@ -19,12 +19,16 @@ const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost,https://local
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
-let presentationOrigins: string[] = [];
-try {
-  presentationOrigins = listPresentationOrigins(Number(process.env.PRESENTATION_WEB_PORT ?? 3000));
-} catch (error) {
-  console.warn('Não foi possível descobrir automaticamente o endereço da apresentação.', error);
-}
+// Descoberto a cada pedido do QR: se o computador trocar de rede, o QR acompanha.
+const presentationWebPort = Number(process.env.PRESENTATION_WEB_PORT ?? 3000);
+const presentationOrigins = () => {
+  try {
+    return listPresentationOrigins(presentationWebPort);
+  } catch (error) {
+    console.warn('Não foi possível descobrir automaticamente o endereço da apresentação.', error);
+    return [];
+  }
+};
 const syncService = syncRemoteUrl && syncSharedSecret
   ? new AccessEventSyncService(
       database,
@@ -65,7 +69,8 @@ const server = app.listen(port, host, () => {
   console.log(syncService
     ? `Sincronização de eventos ativa para ${syncRemoteUrl}.`
     : 'Eventos permanecem na fila local: SYNC_REMOTE_URL/SYNC_SHARED_SECRET não configurados.');
-  if (presentationOrigins[0]) console.log(`Apresentação por QR disponível em ${presentationOrigins[0]}/#/responsaveis`);
+  const [presentationOrigin] = presentationOrigins();
+  if (presentationOrigin) console.log(`Apresentação por QR disponível em ${presentationOrigin}/#/responsaveis`);
   console.log(process.env.EDGE_CONTROL_ENABLED === 'true'
     ? 'Comando das câmeras pelo painel ativo (EDGE_CONTROL_ENABLED=true).'
     : 'Comando das câmeras pelo painel desligado.');

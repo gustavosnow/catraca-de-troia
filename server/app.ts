@@ -39,7 +39,11 @@ export interface AppOptions {
   syncSharedSecret?: string;
   syncService?: AccessEventSyncService;
   corsOrigins?: string[];
-  presentationOrigins?: string[];
+  /**
+   * Endereços da rede local para o QR da apresentação. Uma função é consultada a
+   * cada pedido, para acompanhar a troca de Wi-Fi sem reiniciar a API.
+   */
+  presentationOrigins?: string[] | (() => string[]);
   /** Comando dos agentes de borda pelo painel (MC-037); sem isto, as rotas respondem desligado. */
   edgeAgents?: EdgeAgentService;
 }
@@ -78,7 +82,9 @@ export const createApp = (database: AppDatabase, options: AppOptions = {}) => {
   });
 
   app.get('/api/presentation-access', (_request, response) => {
-    response.json({ data: { origins: options.presentationOrigins ?? [] } });
+    const { presentationOrigins } = options;
+    const origins = typeof presentationOrigins === 'function' ? presentationOrigins() : presentationOrigins ?? [];
+    response.json({ data: { origins } });
   });
 
   if (options.syncSharedSecret) {
