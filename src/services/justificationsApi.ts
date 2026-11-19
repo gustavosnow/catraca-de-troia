@@ -3,7 +3,6 @@ import type {
   JustificationReason,
   JustificationRecord,
   JustificationStatus,
-  LinkedStudent,
   ReviewStatus,
 } from '../../shared/contracts/justifications';
 import type { AbsenceJustification } from '../types';
@@ -62,14 +61,11 @@ export const mapJustification = (record: JustificationRecord): AbsenceJustificat
 });
 
 export const justificationsApi = {
-  listLinkedStudents: () =>
-    authenticatedRequest<LinkedStudent[]>('/api/v1/me/students'),
-
   listForStudent: (studentId: string) =>
     authenticatedRequest<JustificationRecord[]>(`/api/v1/students/${studentId}/justifications`),
 
-  listForGuardian: async () => {
-    const students = await justificationsApi.listLinkedStudents();
+  /** Portal: justificativas dos estudantes já carregados para o responsável da sessão. */
+  listForGuardian: async (students: Array<{ id: string }>) => {
     const records = await Promise.all(
       students.map((student) => justificationsApi.listForStudent(student.id)),
     );

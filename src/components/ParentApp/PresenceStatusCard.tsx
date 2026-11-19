@@ -26,7 +26,7 @@ export const PresenceStatusCard: React.FC<PresenceStatusCardProps> = ({ studentN
         turnstileLabel(latestAccess.turnstileName),
         dayLabel(latestAccess.timestamp),
       ].filter(Boolean).join(' · ')
-    : 'Nenhuma passagem registrada nesta base demonstrativa.';
+    : 'Nenhuma passagem registrada hoje.';
 
   return (
     <section
@@ -52,7 +52,7 @@ export const PresenceStatusCard: React.FC<PresenceStatusCardProps> = ({ studentN
       </h2>
       <p className={`tabular mt-2 text-sm ${isAtSchool ? 'text-[#2c6b4c]' : 'text-muted'}`}>{meta}</p>
       <p className={`mt-5 border-t pt-4 text-[13px] ${isAtSchool ? 'border-positive-line text-[#2c6b4c]' : 'border-line text-muted'}`}>
-        Conforme o último registro demonstrativo. Não representa rastreamento em tempo real.
+        Conforme a última passagem de hoje. Não é rastreamento em tempo real.
       </p>
     </section>
   );
@@ -80,7 +80,7 @@ export const TodayMovements: React.FC<TodayMovementsProps> = ({ timeline, isAtSc
 
       {items.length === 0 ? (
         <p className="mt-5 rounded-[10px] bg-surface px-4 py-5 text-center text-[13px] text-muted">
-          Nenhuma entrada ou saída registrada nesta base demonstrativa.
+          Nenhuma entrada ou saída registrada hoje.
         </p>
       ) : (
         <ol className="relative mt-5 space-y-5 before:absolute before:bottom-3 before:left-[15px] before:top-3 before:w-px before:bg-line">
@@ -97,7 +97,7 @@ export const TodayMovements: React.FC<TodayMovementsProps> = ({ timeline, isAtSc
                     <p className="text-sm font-semibold text-ink">{event.title}</p>
                     <span className="tabular text-sm font-medium text-ink">{event.time.slice(0, 5)}</span>
                   </div>
-                  <p className="mt-0.5 text-[13px] text-muted">{turnstileLabel(event.location)} · Evento demonstrativo</p>
+                  <p className="mt-0.5 text-[13px] text-muted">{turnstileLabel(event.location)} · {event.detail}</p>
                 </div>
               </li>
             );

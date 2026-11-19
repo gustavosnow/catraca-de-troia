@@ -17,20 +17,17 @@ import { AuditLogPanel } from './components/AuditLogPanel';
 import { AccountsAdministrationPanel } from './components/AccountsAdministrationPanel';
 import { NotificationDeliveryPanel } from './components/NotificationDeliveryPanel';
 import { LandingPage } from './components/LandingPage';
-import { 
-  STUDENTS_DATABASE, 
-  INITIAL_TURNSTILES, 
-  INITIAL_ALERTS,
-  PARENT_ACCOUNTS,
-  ParentAccount,
-  STAFF_ACCOUNTS,
-  StaffAccount
-} from './data/mockData';
-import { AccessDirection, AccessLog, Student, Turnstile, SecurityAlert, SchoolNotice, ParentNotification, AuthUser, AbsenceJustification } from './types';
+import type {
+  AccessDirection, AccessLog, Student, Turnstile, SecurityAlert, SchoolNotice,
+  ParentNotification, AuthUser, AbsenceJustification, ParentAccount,
+} from './types';
 import { soundManager } from './utils/sound';
 import { isParentOnlyBuild } from './config/runtime';
 import { justificationsApi } from './services/justificationsApi';
 import { accessEventsApi } from './services/accessEventsApi';
+import { accessDevicesApi } from './services/accessDevicesApi';
+import { studentsApi } from './services/studentsApi';
+import { isToday } from './services/accessHistory';
 import { authApi } from './services/authApi';
 import { toAuthUser } from './services/authUserMapper';
 import { communicationsApi } from './services/communicationsApi';
@@ -40,6 +37,7 @@ import { auditApi } from './services/auditApi';
 import { accountsApi } from './services/accountsApi';
 import { notificationDeliveryApi } from './services/notificationDeliveryApi';
 import type { AuditLogRecord } from '../shared/contracts/audit';
+import type { AccessDeviceRecord, DenialReason } from '../shared/contracts/accessDevices';
 import type { ManagedAccount } from '../shared/contracts/accountAdministration';
 import type { NotificationDeliverySnapshot } from '../shared/contracts/notificationDelivery';
 import type { AccessEventSyncStatus } from '../shared/contracts/accessEventSync';
@@ -74,6 +72,33 @@ const getSectionFromHash = (): SchoolSection => {
 
 const getAccessModeFromHash = (): AccessMode =>
   window.location.hash.includes('/cadastro') ? 'register' : 'login';
+
+/** Estado antes do login: nenhuma conta ou estudante pré-carregado. */
+const EMPTY_GUARDIAN: ParentAccount = { id: '', name: '', phone: '', relation: 'Responsável', childrenIds: [] };
+const EMPTY_STAFF: AuthUser = { id: '', name: '', email: '', phone: '', role: 'staff', schoolUnit: '' };
+
+const DENIAL_TITLES: Record<DenialReason, string> = {
+  UNKNOWN_FACE: 'Rosto não cadastrado',
+  LOW_SCORE: 'Similaridade abaixo do limiar',
+  STUDENT_NOT_REGISTERED: 'Estudante fora do cadastro',
+};
+
+/** Agrupa as câmeras cadastradas por catraca (entrada e saída). */
+const toTurnstiles = (devices: AccessDeviceRecord[]): Turnstile[] => {
+  const byId = new Map<string, Turnstile>();
+  for (const device of devices) {
+    const turnstile = byId.get(device.turnstile.id)
+      ?? { id: device.turnstile.id, name: device.turnstile.name, lanes: [] };
+    turnstile.lanes.push({
+      deviceId: device.id,
+      direction: device.direction === 'ENTRY' ? 'entry' : 'exit',
+      active: device.active,
+      lastSeenAt: device.lastSeenAt,
+    });
+    byId.set(turnstile.id, turnstile);
+  }
+  return [...byId.values()];
+};
 
 export default function App() {
   const isOnline = useConnectivity();
@@ -154,20 +179,9 @@ export default function App() {
     setIsAuthModalOpen(false);
   };
 
-  // Auth & Accounts State
-  const [guardiansList, setGuardiansList] = useState<ParentAccount[]>(PARENT_ACCOUNTS);
-  const [currentGuardian, setCurrentGuardian] = useState<ParentAccount>(PARENT_ACCOUNTS[0]);
-  const [currentStaffUser, setCurrentStaffUser] = useState<AuthUser>({
-    id: STAFF_ACCOUNTS[0].id,
-    name: STAFF_ACCOUNTS[0].name,
-    email: STAFF_ACCOUNTS[0].email,
-    phone: STAFF_ACCOUNTS[0].phone,
-    role: 'staff',
-    staffRole: STAFF_ACCOUNTS[0].role,
-    functionalRegistry: STAFF_ACCOUNTS[0].functionalRegistry,
-    schoolUnit: STAFF_ACCOUNTS[0].schoolUnit,
-    avatar: STAFF_ACCOUNTS[0].avatar,
-  });
+  // Usuário da sessão: tudo vem da API, nenhum dado de conta é local.
+  const [currentGuardian, setCurrentGuardian] = useState<ParentAccount>(EMPTY_GUARDIAN);
+  const [currentStaffUser, setCurrentStaffUser] = useState<AuthUser>(EMPTY_STAFF);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<AccessMode>(getAccessModeFromHash);
@@ -182,7 +196,11 @@ export default function App() {
     setIsAuthModalOpen(true);
   };
 
-  const [students, setStudents] = useState<Student[]>(STUDENTS_DATABASE);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [studentsState, setStudentsState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
+  const [studentsError, setStudentsError] = useState<string>();
+  // Recarrega eventos e justificativas só quando o conjunto de estudantes muda, não a cada consulta.
+  const studentIdsKey = students.map((student) => student.id).join(',');
   const [logs, setLogs] = useState<AccessLog[]>([]);
   const [accessEventsState, setAccessEventsState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
   const [accessEventsError, setAccessEventsError] = useState<string>();
@@ -191,8 +209,8 @@ export default function App() {
   const [syncStatusState, setSyncStatusState] = useState<'loading' | 'available' | 'unavailable'>('loading');
   const [syncStatusError, setSyncStatusError] = useState<string>();
   const [isRetryingSyncConflicts, setIsRetryingSyncConflicts] = useState(false);
-  const [turnstiles, setTurnstiles] = useState<Turnstile[]>(INITIAL_TURNSTILES);
-  const [alerts, setAlerts] = useState<SecurityAlert[]>(INITIAL_ALERTS);
+  const [turnstiles, setTurnstiles] = useState<Turnstile[]>([]);
+  const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
 
   // Handle successful login
   const handleLoginSuccess = (user: AuthUser) => {
@@ -207,18 +225,13 @@ export default function App() {
     setIsAuthModalOpen(false);
     setAuthModalMode('login');
     if (user.role === 'parent') {
-      let matchedGuardian = guardiansList.find(g => g.id === user.id);
-      if (!matchedGuardian) {
-        matchedGuardian = {
-          id: user.id,
-          name: user.name,
-          phone: user.phone || '(11) 98765-4321',
-          relation: user.guardianRelation || 'Responsável',
-          childrenIds: user.childrenIds || [],
-        };
-        setGuardiansList(prev => [matchedGuardian!, ...prev]);
-      }
-      setCurrentGuardian(matchedGuardian);
+      setCurrentGuardian({
+        id: user.id,
+        name: user.name,
+        phone: user.phone,
+        relation: 'Responsável',
+        childrenIds: user.childrenIds || [],
+      });
       navigateToView('parent_app');
     } else {
       setCurrentStaffUser(user);
@@ -229,6 +242,7 @@ export default function App() {
   const handleLogout = async () => {
     await authApi.logout().catch(() => authApi.clear());
     setAuthenticatedUser(null);
+    resetSessionData();
     setAuthModalRole(viewMode === 'parent_app' ? 'parent' : 'staff');
     setAuthModalMode('login');
     setIsAuthModalOpen(true);
@@ -237,6 +251,7 @@ export default function App() {
   const handleSwitchAccess = async (target: Exclude<ViewMode, 'landing'>) => {
     await authApi.logout().catch(() => authApi.clear());
     setAuthenticatedUser(null);
+    resetSessionData();
     setAuthModalMode('login');
     setAuthModalRole(target === 'parent_app' ? 'parent' : 'staff');
     navigateToView(target);
@@ -291,11 +306,8 @@ export default function App() {
     setLinkRequestsState('loading');
     const load = async () => {
       try {
-        const [requests, linkedStudents, managedLinks] = await Promise.all([
+        const [requests, managedLinks] = await Promise.all([
           linkRequestsApi.list(),
-          authenticatedUser.role === 'parent'
-            ? justificationsApi.listLinkedStudents()
-            : Promise.resolve(undefined),
           authenticatedUser.role === 'staff' && canReviewLinks
             ? linkRequestsApi.listLinks()
             : Promise.resolve(undefined),
@@ -303,10 +315,6 @@ export default function App() {
         if (!active) return;
         setLinkRequests(requests);
         if (managedLinks) setGuardianLinks(managedLinks);
-        if (linkedStudents) {
-          const childrenIds = linkedStudents.map((student) => student.id);
-          setCurrentGuardian((current) => ({ ...current, childrenIds }));
-        }
         setLinkRequestsState('persistent');
         setLinkRequestsError(undefined);
       } catch (error) {
@@ -324,6 +332,81 @@ export default function App() {
   }, [authenticatedUser, canReviewLinks, isOnline, portalRefreshKey]);
 
   const needsAdministrationData = ['contas', 'auditoria', 'ferramentas'].includes(section);
+
+  // Estudantes da sessão: unidade inteira para a equipe, só vínculos aprovados no portal.
+  useEffect(() => {
+    if (!authenticatedUser) return;
+    if (viewMode === 'parent_app' && authenticatedUser.role !== 'parent') return;
+    if (viewMode === 'management_dashboard' && authenticatedUser.role !== 'staff') return;
+    if (!isOnline) {
+      setStudentsState('unavailable');
+      setStudentsError('Dispositivo sem conexão.');
+      return;
+    }
+    let active = true;
+    const load = async () => {
+      try {
+        const loaded = authenticatedUser.role === 'parent'
+          ? await studentsApi.listMine()
+          : await studentsApi.listForSchool();
+        if (!active) return;
+        setStudents(loaded);
+        setStudentsState('persistent');
+        setStudentsError(undefined);
+        if (authenticatedUser.role === 'parent') {
+          setCurrentGuardian((current) => ({
+            ...current,
+            childrenIds: loaded.map((student) => student.id),
+            relation: loaded[0]?.guardianRelation || 'Responsável',
+          }));
+        }
+      } catch (error) {
+        if (!active) return;
+        setStudentsState('unavailable');
+        setStudentsError(error instanceof Error ? error.message : 'Estudantes indisponíveis.');
+      }
+    };
+    void load();
+    // Vínculo aprovado pela escola aparece no portal sem recarregar a página.
+    const interval = window.setInterval(() => void load(), 15000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [authenticatedUser, isOnline, portalRefreshKey, viewMode]);
+
+  // Catracas (câmeras cadastradas) e pontos de atenção (leituras negadas de hoje).
+  useEffect(() => {
+    if (!authenticatedUser || authenticatedUser.role !== 'staff' || viewMode !== 'management_dashboard' || !isOnline) return;
+    let active = true;
+    const load = async () => {
+      try {
+        const [devices, denials] = await Promise.all([
+          accessDevicesApi.listDevices(),
+          accessDevicesApi.listDenials(50),
+        ]);
+        if (!active) return;
+        setTurnstiles(toTurnstiles(devices));
+        setAlerts(denials
+          .filter((denial) => isToday(denial.occurredAt))
+          .map((denial) => ({
+            id: denial.id,
+            title: DENIAL_TITLES[denial.reason],
+            turnstileName: denial.turnstile.name,
+            direction: denial.direction === 'ENTRY' ? 'entry' : 'exit',
+            occurredAt: denial.occurredAt,
+          })));
+      } catch {
+        // Mantém o último estado; o indicador de conexão já mostra a falha da API.
+      }
+    };
+    void load();
+    const interval = window.setInterval(() => void load(), 10000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [authenticatedUser, isOnline, viewMode]);
 
   useEffect(() => {
     if (!authenticatedUser || !canReviewLinks || !needsAdministrationData) return;
@@ -431,7 +514,7 @@ export default function App() {
     setJustificationsError(undefined);
 
     const load = viewMode === 'parent_app'
-      ? justificationsApi.listForGuardian()
+      ? justificationsApi.listForGuardian(students)
       : justificationsApi.listForSchool();
 
     load.then((records) => {
@@ -446,7 +529,7 @@ export default function App() {
     });
 
     return () => { active = false; };
-  }, [authenticatedUser, currentGuardian.id, currentStaffUser.id, isOnline, portalRefreshKey, viewMode]);
+  }, [authenticatedUser, isOnline, portalRefreshKey, studentIdsKey, viewMode]);
 
   useEffect(() => {
     if (!authenticatedUser) return;
@@ -483,7 +566,7 @@ export default function App() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [authenticatedUser, currentGuardian.id, currentStaffUser.id, isOnline, portalRefreshKey, viewMode]);
+  }, [authenticatedUser, isOnline, portalRefreshKey, viewMode]);
 
   useEffect(() => {
     if (!authenticatedUser) return;
@@ -521,7 +604,7 @@ export default function App() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [authenticatedUser, currentGuardian.id, currentStaffUser.id, isOnline, portalRefreshKey, students, viewMode]);
+  }, [authenticatedUser, isOnline, portalRefreshKey, studentIdsKey, viewMode]);
 
   useEffect(() => {
     if (!authenticatedUser || authenticatedUser.role !== 'staff' || viewMode !== 'management_dashboard') {
@@ -554,7 +637,7 @@ export default function App() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [authenticatedUser, currentStaffUser.id, isOnline, portalRefreshKey, viewMode]);
+  }, [authenticatedUser, isOnline, portalRefreshKey, viewMode]);
 
   const handleRetrySyncConflicts = async () => {
     setIsRetryingSyncConflicts(true);
@@ -593,9 +676,6 @@ export default function App() {
     }, 4500);
   }
 
-  // Real-time live simulation state
-  const [isSimulating, setIsSimulating] = useState<boolean>(false);
-
   // Modals state
   const [isManualReleaseOpen, setIsManualReleaseOpen] = useState<boolean>(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState<boolean>(false);
@@ -611,90 +691,19 @@ export default function App() {
     phone: string;
   } | null>(null);
 
-  const studentPoolIndex = useRef(0);
-
-  // Helper to trigger a new student access
-  const triggerStudentAccess = async (customStudent?: Student, direction: AccessDirection = 'entry') => {
-    const student = customStudent || students[studentPoolIndex.current % students.length];
-    studentPoolIndex.current += 1;
-
-    const turnstile = turnstiles[Math.floor(Math.random() * turnstiles.length)];
-    let newLog: AccessLog;
-    try {
-      newLog = await accessEventsApi.create(
-        student,
-        direction,
-        turnstile,
-        students,
-      );
-      newLog = { ...newLog, relativeTime: 'Agora', isNew: true };
-      setAccessEventsState('persistent');
-      setAccessEventsError(undefined);
-      setAccessEventsUpdatedAt(new Date().toISOString());
-    } catch (error) {
-      setAccessEventsState('unavailable');
-      setAccessEventsError(error instanceof Error ? error.message : 'Não foi possível registrar o evento.');
-      return;
-    }
-
-    const exactTime = newLog.exactTime;
-    // Play pleasant chime
-    soundManager.playAccessGranted();
-
-    // Update Logs
-    setLogs((prev) => [newLog, ...prev.slice(0, 49)]);
-
-    // Update turnstiles count
-    setTurnstiles((prev) => 
-      prev.map(t => t.id === turnstile.id ? { ...t, passesToday: t.passesToday + 1 } : t)
-    );
-
-    // Show temporary live toast in dashboard
-    setToastMessage({
-      id: newLog.id,
-      title: direction === 'entry' ? 'Entrada Registrada' : 'Saída Registrada',
-      studentName: student.name,
-      time: exactTime,
-      phone: student.guardianPhone,
-    });
-
-    setTimeout(() => {
-      setToastMessage((current) => current?.id === newLog.id ? null : current);
-    }, 4500);
-  };
-
-  // Automatic Simulation Loop
-  useEffect(() => {
-    if (!isSimulating) return;
-
-    const interval = setInterval(() => {
-      triggerStudentAccess();
-    }, 9000); // Trigger a new student entrance every 9 seconds
-
-    return () => clearInterval(interval);
-  }, [currentStaffUser.id, isSimulating, students, turnstiles, viewMode]);
-
-  // O piloto registra passagem assistida somente para estudante cadastrado.
+  // Passagem assistida: entrada ou saída registrada pela equipe, com motivo e sequência conferidos pela API.
   const handleConfirmManualRelease = async (data: {
-    turnstileId: string; studentId: string; reason: string; sendWhatsapp: boolean;
+    turnstileId: string; studentId: string; direction: AccessDirection; reason: string;
   }) => {
     const student = students.find(item => item.id === data.studentId);
     const turnstile = turnstiles.find(item => item.id === data.turnstileId);
     if (!student || !turnstile) throw new Error('Selecione um estudante e uma catraca válidos.');
-    try {
-      const persisted = await accessEventsApi.create(student, 'entry', turnstile, students, {
-        status: 'MANUAL_RELEASE', method: 'MANUAL',
-        whatsappStatus: 'PENDING', pushStatus: 'PENDING', reason: data.reason,
-      });
-      setLogs(current => [{ ...persisted, operator: currentStaffUser.name, isNew: true }, ...current]);
-      setTurnstiles(current => current.map(item => item.id === turnstile.id ? { ...item, passesToday: item.passesToday + 1 } : item));
-      setAccessEventsState('persistent'); setAccessEventsError(undefined);
-      setAccessEventsUpdatedAt(new Date().toISOString());
-    } catch (error) {
-      setAccessEventsState('unavailable');
-      setAccessEventsError(error instanceof Error ? error.message : 'Não foi possível registrar a passagem.');
-      throw error;
-    }
+    const persisted = await accessEventsApi.createAssisted(student, data.direction, turnstile, data.reason, students);
+    setLogs(current => [{ ...persisted, operator: currentStaffUser.name, isNew: true }, ...current]);
+    setAccessEventsState('persistent');
+    setAccessEventsError(undefined);
+    setAccessEventsUpdatedAt(new Date().toISOString());
+    soundManager.playAccessGranted();
   };
 
   const handleSelectStudent = (studentId: string) => {
@@ -704,8 +713,20 @@ export default function App() {
     }
   };
 
-  const handleResolveAlert = (alertId: string) => {
-    setAlerts((prev) => prev.map(a => a.id === alertId ? { ...a, resolved: true } : a));
+  /** Ao sair, nada da sessão anterior permanece na tela da próxima conta. */
+  const resetSessionData = () => {
+    setCurrentGuardian(EMPTY_GUARDIAN);
+    setCurrentStaffUser(EMPTY_STAFF);
+    setStudents([]);
+    setLogs([]);
+    setJustifications([]);
+    setNotices([]);
+    setNotifications([]);
+    setLinkRequests([]);
+    setGuardianLinks([]);
+    setTurnstiles([]);
+    setAlerts([]);
+    setSelectedStudent(null);
   };
 
 
@@ -834,7 +855,7 @@ export default function App() {
     communicationsUpdatedAt,
   ].filter((value): value is string => Boolean(value)).sort().at(-1);
 
-  const activeAlertsCount = alerts.filter((alert) => !alert.resolved).length;
+  const activeAlertsCount = alerts.length;
   const pendingJustificationsCount = justifications.filter((item) => item.status === 'Em Análise').length;
   const pendingLinksCount = linkRequests.filter((request) => request.status === 'PENDING').length;
   const canManageSchool = ['Coordenação Pedagógica', 'Direção Escolar'].includes(currentStaffUser.staffRole || '');
@@ -876,7 +897,6 @@ export default function App() {
         dismissible={!isParentOnlyBuild}
         onSwitchAccess={isParentOnlyBuild ? undefined : () => openAccess(viewMode === 'parent_app' ? 'staff' : 'parent')}
         onLoginSuccess={handleLoginSuccess}
-        studentsDatabase={students}
       />
     </div>;
   }
@@ -893,7 +913,6 @@ export default function App() {
         dismissible
         onSwitchAccess={() => navigateToView(authenticatedUser.role === 'parent' ? 'parent_app' : 'management_dashboard')}
         onLoginSuccess={handleLoginSuccess}
-        studentsDatabase={students}
       />
     </div>;
   }
@@ -901,18 +920,15 @@ export default function App() {
   if (viewMode === 'parent_app') {
     return (
       <>
-        <ParentAppView 
+        <ParentAppView
+          guardian={currentGuardian}
+          schoolName={authenticatedUser.schoolUnit}
+          students={students}
           onSwitchToManagement={isParentOnlyBuild ? undefined : () => void handleSwitchAccess('management_dashboard')}
-          sharedNotices={notices}
-          onUpdateSharedNotices={setNotices}
-          sharedNotifications={notifications}
-          onUpdateSharedNotifications={setNotifications}
+          notices={notices}
+          notifications={notifications}
           onMarkNoticeRead={handleMarkNoticeRead}
           onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
-          guardiansList={[currentGuardian]}
-          currentGuardianExternal={currentGuardian}
-          onSelectGuardianExternal={setCurrentGuardian}
-          studentsList={students}
           sharedAccessLogs={logs}
           sharedJustifications={justifications}
           onSubmitJustification={handleAddJustification}
@@ -939,7 +955,6 @@ export default function App() {
           initialRole={authModalRole}
           allowedRole="parent"
           onLoginSuccess={handleLoginSuccess}
-          studentsDatabase={students}
         />
       </>
     );
@@ -984,7 +999,6 @@ export default function App() {
             isRetryingSyncConflicts={isRetryingSyncConflicts}
             onRetrySyncConflicts={handleRetrySyncConflicts}
             onOpenManualRelease={() => setIsManualReleaseOpen(true)}
-            onOpenProjectDocs={() => setIsProjectDocsOpen(true)}
             onOpenAlerts={() => setIsAlertsOpen(true)}
             onNavigate={navigateSection}
             onSelectStudent={handleSelectStudent}
@@ -1003,7 +1017,7 @@ export default function App() {
         )}
 
         {activeSection === 'estudantes' && (
-          <StudentsManagementList students={students} onSelectStudent={handleSelectStudent} />
+          <StudentsManagementList students={students} state={studentsState} error={studentsError} onSelectStudent={handleSelectStudent} />
         )}
 
         {activeSection === 'comunicados' && (
@@ -1064,14 +1078,8 @@ export default function App() {
 
         {activeSection === 'ferramentas' && (
           <ToolsPage
-            isSimulating={isSimulating}
-            onToggleSimulation={() => setIsSimulating((current) => !current)}
-            onSimulateEntry={() => void triggerStudentAccess(undefined, 'entry')}
-            onSimulateExit={() => void triggerStudentAccess(undefined, 'exit')}
             onOpenManualRelease={() => setIsManualReleaseOpen(true)}
             onOpenPresentationAccess={() => setIsPresentationAccessOpen(true)}
-            onOpenProjectDocs={() => setIsProjectDocsOpen(true)}
-            onSwitchToParentApp={() => void handleSwitchAccess('parent_app')}
             canManageBiometrics={canManageSchool}
             students={students}
             isOnline={isOnline}
@@ -1114,6 +1122,7 @@ export default function App() {
         onClose={() => setIsManualReleaseOpen(false)}
         turnstiles={turnstiles}
         students={students}
+        logs={logs}
         onConfirmRelease={handleConfirmManualRelease}
       />
 
@@ -1128,7 +1137,6 @@ export default function App() {
         alerts={alerts}
         isOpen={isAlertsOpen}
         onClose={() => setIsAlertsOpen(false)}
-        onResolveAlert={handleResolveAlert}
       />
 
       <ProjectDocsModal
@@ -1153,7 +1161,6 @@ export default function App() {
         initialRole={authModalRole}
         allowedRole="staff"
         onLoginSuccess={handleLoginSuccess}
-        studentsDatabase={students}
       />
     </>
   );

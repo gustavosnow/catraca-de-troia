@@ -2,16 +2,15 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ParentAppView } from '../src/components/ParentApp/ParentAppView';
 import {
-  INITIAL_ABSENCE_JUSTIFICATIONS,
-  INITIAL_ACCESS_LOGS,
-  INITIAL_PARENT_NOTIFICATIONS,
-  INITIAL_SCHOOL_NOTICES,
-  PARENT_ACCOUNTS,
-  STUDENTS_DATABASE,
-} from '../src/data/mockData';
+  VISUAL_SCHOOL_NAME,
+  visualGuardian,
+  visualJustifications,
+  visualLogs,
+  visualNotices,
+  visualNotifications,
+  visualStudents,
+} from './fixtures';
 import '../src/index.css';
-
-const guardian = PARENT_ACCOUNTS.find((account) => account.id === 'guardian-2') ?? PARENT_ACCOUNTS[0];
 
 const VisualParentPortal = () => {
   const [isOnline, setIsOnline] = useState(true);
@@ -27,14 +26,13 @@ const VisualParentPortal = () => {
       Alternar conectividade do aceite visual
     </button>
     <ParentAppView
-      sharedNotices={INITIAL_SCHOOL_NOTICES}
-      sharedNotifications={INITIAL_PARENT_NOTIFICATIONS}
-      guardiansList={[guardian]}
-      currentGuardianExternal={guardian}
-      onSelectGuardianExternal={() => undefined}
-      studentsList={STUDENTS_DATABASE}
-      sharedAccessLogs={INITIAL_ACCESS_LOGS}
-      sharedJustifications={INITIAL_ABSENCE_JUSTIFICATIONS}
+      guardian={visualGuardian}
+      schoolName={VISUAL_SCHOOL_NAME}
+      students={visualStudents}
+      notices={visualNotices}
+      notifications={visualNotifications}
+      sharedAccessLogs={visualLogs}
+      sharedJustifications={visualJustifications}
       onSubmitJustification={async () => undefined}
       justificationsState={dataState}
       justificationsError={isOnline ? undefined : 'API local indisponível no cenário visual.'}

@@ -1,4 +1,6 @@
-import type { AuthenticatedUser, AuthSession, LoginRequest } from '../../shared/contracts/auth';
+import type {
+  AuthenticatedUser, AuthSession, LoginRequest, RegisterGuardianRequest,
+} from '../../shared/contracts/auth';
 import { apiBaseUrl } from '../config/runtime';
 import { ApiClientError } from './apiError';
 
@@ -90,6 +92,24 @@ export const authApi = {
       input.rememberMe ? persistentTokenKey : temporaryTokenKey,
       session.token,
     );
+    return session;
+  },
+
+  /** Cadastro do responsável: cria a conta e o pedido de vínculo, e já inicia a sessão. */
+  registerGuardian: async (input: RegisterGuardianRequest) => {
+    let response: Response;
+    try {
+      response = await fetch(`${apiBaseUrl}/api/v1/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+    } catch {
+      throw new ApiClientError('API_UNAVAILABLE', 'A API de autenticação não está acessível.', 0);
+    }
+    const session = await parseResponse<AuthSession>(response);
+    clearToken();
+    sessionStorage.setItem(temporaryTokenKey, session.token);
     return session;
   },
 

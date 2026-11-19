@@ -30,7 +30,7 @@ export const ParentDataStatus: React.FC<ParentDataStatusProps> = ({ isOnline, st
       ? `Atualização parcial. ${errorSummary || 'Um dos serviços locais não respondeu.'}`
       : isLoading
         ? 'Atualizando os dados do portal…'
-        : `Dados da API local demonstrativa · atualizados às ${formatUpdatedAt(updatedAt)}`;
+        : `Dados do servidor da escola · atualizados às ${formatUpdatedAt(updatedAt)}`;
 
   return (
     <div

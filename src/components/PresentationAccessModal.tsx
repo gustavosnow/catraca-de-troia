@@ -154,7 +154,7 @@ export const PresentationAccessModal: React.FC<PresentationAccessModalProps> = (
           </p>
         )}
         <p className="text-xs leading-relaxed text-muted">
-          O QR Code não carrega sessão nem senha: a autenticação demonstrativa continua na tela seguinte. O computador e a API precisam permanecer ligados.
+          O QR Code não carrega sessão nem senha: o login continua na tela seguinte. O computador e a API precisam permanecer ligados.
         </p>
         {actionError && <Callout tone="warning" role="status">{actionError}</Callout>}
       </div>

@@ -9,25 +9,20 @@ import { InAppNotificationDrawer } from './InAppNotificationDrawer';
 import { InstallAppBanner } from './InstallAppBanner';
 import { ParentDataStatus } from './ParentDataStatus';
 import { GuardianLinkRequests } from './GuardianLinkRequests';
-import {
+import type {
   Student,
   SchoolNotice,
   ParentNotification,
   AbsenceJustification,
   AccessLog,
-} from '../../types';
-import {
-  STUDENTS_DATABASE,
-  PARENT_ACCOUNTS,
   ParentAccount,
-  INITIAL_SCHOOL_NOTICES,
-  INITIAL_PARENT_NOTIFICATIONS,
-} from '../../data/mockData';
+} from '../../types';
 import {
   buildStudentAccessTimeline,
   buildWeeklyAccessFromLogs,
   getStudentAccessLogs,
-} from '../../services/demoAccessService';
+  isToday,
+} from '../../services/accessHistory';
 import type {
   GuardianLinkRequestRecord,
   GuardianRelationship,
@@ -35,20 +30,17 @@ import type {
 import { isNativeApp } from '../../config/runtime';
 import { Avatar, cx, firstNameOf, focusMainContent, greetingForNow } from '../ui';
 
-const SCHOOL_NAME = 'EMEF Profª. Cecília Meireles';
-
 interface ParentAppViewProps {
+  /** Responsável da sessão. */
+  guardian: ParentAccount;
+  schoolName: string;
+  /** Estudantes com vínculo aprovado, vindos de /me/students. */
+  students: Student[];
   onSwitchToManagement?: () => void;
-  sharedNotices?: SchoolNotice[];
-  onUpdateSharedNotices?: (notices: SchoolNotice[]) => void;
-  sharedNotifications?: ParentNotification[];
-  onUpdateSharedNotifications?: (notifications: ParentNotification[]) => void;
-  onMarkNoticeRead?: (id: string) => Promise<void>;
-  onMarkAllNotificationsRead?: () => Promise<void>;
-  guardiansList?: ParentAccount[];
-  currentGuardianExternal?: ParentAccount;
-  onSelectGuardianExternal?: (guardian: ParentAccount) => void;
-  studentsList?: Student[];
+  notices: SchoolNotice[];
+  notifications: ParentNotification[];
+  onMarkNoticeRead: (id: string) => Promise<void>;
+  onMarkAllNotificationsRead: () => Promise<void>;
   sharedAccessLogs: AccessLog[];
   sharedJustifications: AbsenceJustification[];
   onSubmitJustification: (
@@ -71,17 +63,14 @@ interface ParentAppViewProps {
 }
 
 export const ParentAppView: React.FC<ParentAppViewProps> = ({
+  guardian: currentGuardian,
+  schoolName,
+  students: myChildren,
   onSwitchToManagement,
-  sharedNotices,
-  onUpdateSharedNotices,
-  sharedNotifications,
-  onUpdateSharedNotifications,
+  notices,
+  notifications,
   onMarkNoticeRead,
   onMarkAllNotificationsRead,
-  guardiansList = PARENT_ACCOUNTS,
-  currentGuardianExternal,
-  onSelectGuardianExternal,
-  studentsList = STUDENTS_DATABASE,
   sharedAccessLogs,
   sharedJustifications,
   onSubmitJustification,
@@ -100,71 +89,39 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
   onCreateLinkRequest,
   onLogout,
 }) => {
-  // Current logged in guardian (Default: Claudia Mendes or external)
-  const [internalGuardian, setInternalGuardian] = useState<ParentAccount>(guardiansList[0] || PARENT_ACCOUNTS[0]);
-  
-  const currentGuardian = currentGuardianExternal || internalGuardian;
-  const setCurrentGuardian = onSelectGuardianExternal || setInternalGuardian;
-
-  // Derived: Only the children of the current guardian (Strict Parent Scope)
-  const myChildren = useMemo(() => {
-    return studentsList.filter(s => currentGuardian.childrenIds.includes(s.id));
-  }, [currentGuardian, studentsList]);
-
-  // Active selected child among myChildren
-  const [selectedStudent, setSelectedStudent] = useState<Student>(myChildren[0] || studentsList[0]);
-
+  // Estudante selecionado entre os vinculados; a escolha sobrevive à troca de aba.
+  const [selectedStudentId, setSelectedStudentId] = useState<string | undefined>(myChildren[0]?.id);
   useEffect(() => {
-    if (myChildren.length > 0 && !myChildren.some(c => c.id === selectedStudent.id)) {
-      setSelectedStudent(myChildren[0]);
+    if (myChildren.length > 0 && !myChildren.some((child) => child.id === selectedStudentId)) {
+      setSelectedStudentId(myChildren[0].id);
     }
-  }, [myChildren, selectedStudent]);
+  }, [myChildren, selectedStudentId]);
+  const selectedStudent = myChildren.find((child) => child.id === selectedStudentId) ?? myChildren[0];
+  const setSelectedStudent = (child: Student) => setSelectedStudentId(child.id);
 
-  // When guardian changes, update selectedStudent to their first child
-  const handleSelectGuardian = (guardian: ParentAccount) => {
-    setCurrentGuardian(guardian);
-    const guardianChildren = studentsList.filter(s => guardian.childrenIds.includes(s.id));
-    if (guardianChildren.length > 0) {
-      setSelectedStudent(guardianChildren[0]);
-    }
-  };
-
-
-  // Dynamic Timeline and Weekly Access tailored to the selected student
-  const timeline = useMemo(() => {
-    return buildStudentAccessTimeline(sharedAccessLogs, selectedStudent.id);
-  }, [selectedStudent, sharedAccessLogs]);
-
-  const weeklyAccess = useMemo(() => {
-    return buildWeeklyAccessFromLogs(
-      sharedAccessLogs,
-      selectedStudent.id,
-      sharedJustifications,
-    );
-  }, [selectedStudent, sharedAccessLogs, sharedJustifications]);
-
-  const selectedStudentLogs = useMemo(
-    () => getStudentAccessLogs(sharedAccessLogs, selectedStudent.id),
+  // Movimentações de hoje e semana do estudante selecionado.
+  const timeline = useMemo(
+    () => (selectedStudent ? buildStudentAccessTimeline(sharedAccessLogs, selectedStudent.id) : []),
     [selectedStudent, sharedAccessLogs],
   );
-  const latestAccess = selectedStudentLogs.at(-1);
-  const latestEntry = [...selectedStudentLogs].reverse().find((log) => log.direction === 'entry');
+  const weeklyAccess = useMemo(
+    () => (selectedStudent
+      ? buildWeeklyAccessFromLogs(sharedAccessLogs, selectedStudent.id, sharedJustifications)
+      : []),
+    [selectedStudent, sharedAccessLogs, sharedJustifications],
+  );
+  // Presença considera só o dia de hoje: entrada de ontem sem saída não conta como presente.
+  const todayLogs = useMemo(
+    () => (selectedStudent
+      ? getStudentAccessLogs(sharedAccessLogs, selectedStudent.id).filter((log) => isToday(log.timestamp))
+      : []),
+    [selectedStudent, sharedAccessLogs],
+  );
+  const latestAccess = todayLogs.at(-1);
   const isAtSchool = latestAccess?.direction === 'entry';
 
-  const [internalNotices, setInternalNotices] = useState<SchoolNotice[]>(INITIAL_SCHOOL_NOTICES);
-  const [internalNotifications, setInternalNotifications] = useState<ParentNotification[]>(INITIAL_PARENT_NOTIFICATIONS);
-
-  const notices = sharedNotices || internalNotices;
-  const setNotices = onUpdateSharedNotices || setInternalNotices;
-
-  const allNotifications = sharedNotifications || internalNotifications;
-  const setAllNotifications = onUpdateSharedNotifications || setInternalNotifications;
-
-  // STRICT PRIVACY RULE: The guardian ONLY sees notifications of their own children or general school notices!
-  const parentNotifications = useMemo(() => {
-    const childrenNames = myChildren.map(c => c.name);
-    return allNotifications.filter(n => n.studentName === 'Geral' || (n.studentName && childrenNames.includes(n.studentName)));
-  }, [allNotifications, myChildren]);
+  // A API já entrega só as notificações desta conta; nenhum filtro adicional no navegador.
+  const parentNotifications = notifications;
 
   const [activeTab, setActiveTab] = useState<ParentTab>('home');
   const [absenceModal, setAbsenceModal] = useState<'nova' | 'historico' | null>(null);
@@ -201,31 +158,12 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
     newJust: Omit<AbsenceJustification, 'id' | 'submittedAt' | 'status'>,
   ) => onSubmitJustification(newJust);
 
-  const handleMarkNoticeAsRead = async (id: string) => {
-    if (onMarkNoticeRead) {
-      await onMarkNoticeRead(id);
-      return;
-    }
-    setNotices(notices.map(n => n.id === id ? { ...n, isUnread: false } : n));
-  };
-
-  const handleMarkAllNotificationsAsRead = async () => {
-    if (onMarkAllNotificationsRead) {
-      await onMarkAllNotificationsRead();
-      return;
-    }
-    const childrenNames = myChildren.map(c => c.name);
-    setAllNotifications(allNotifications.map(n => {
-      if (n.studentName === 'Geral' || (n.studentName && childrenNames.includes(n.studentName))) {
-        return { ...n, isRead: true };
-      }
-      return n;
-    }));
-  };
+  const handleMarkNoticeAsRead = (id: string) => onMarkNoticeRead(id);
+  const handleMarkAllNotificationsAsRead = () => onMarkAllNotificationsRead();
 
   const hasUnreadNotices = notices.some((notice) => notice.isUnread);
   const guardianFirstName = firstNameOf(currentGuardian.name);
-  const hasLinkedStudent = myChildren.length > 0 && myChildren.some((child) => child.id === selectedStudent.id);
+  const hasLinkedStudent = Boolean(selectedStudent);
 
   const shell = (content: React.ReactNode, showNavigation = true) => (
     <div className={cx('min-h-dvh bg-surface', isNativeApp && 'native-app-shell')}>
@@ -234,8 +172,6 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
       </a>
       <ParentHeader
         currentGuardian={currentGuardian}
-        allGuardians={guardiansList}
-        onSelectGuardian={handleSelectGuardian}
         unreadNotificationsCount={unreadCount}
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         activeTab={activeTab}
@@ -250,7 +186,7 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
       <main id="parent-app-content" tabIndex={-1} className={cx('mx-auto w-full max-w-5xl px-4 pt-8 outline-none sm:px-6', showNavigation ? 'pb-28 md:pb-16' : 'pb-16')}>
         {content}
         <footer className="mt-12 flex flex-col gap-1 border-t border-line pt-5 text-xs text-muted sm:flex-row sm:justify-between">
-          <span>{SCHOOL_NAME} · Escola fictícia</span>
+          <span>{schoolName}</span>
           <span>Catraca de Troia · Portal dos responsáveis</span>
         </footer>
       </main>
@@ -270,11 +206,11 @@ export const ParentAppView: React.FC<ParentAppViewProps> = ({
     <div className="mb-6">
       <h1 className="display-title text-[28px] sm:text-[32px]">{greetingForNow()}, {guardianFirstName}.</h1>
       <p className="mt-2 text-sm text-muted">Mais perto da rotina de quem você ama.</p>
-      <p data-testid="parent-school" className="mt-1 text-xs text-muted">{SCHOOL_NAME} · Rede pública</p>
+      <p data-testid="parent-school" className="mt-1 text-xs text-muted">{schoolName}</p>
     </div>
   );
 
-  if (!hasLinkedStudent) {
+  if (!selectedStudent) {
     return shell(
       <>
         {pageHeading}

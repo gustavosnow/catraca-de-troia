@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildWeeklyAccessFromLogs } from '../../src/services/demoAccessService';
+import { buildWeeklyAccessFromLogs } from '../../src/services/accessHistory';
 import type { AbsenceJustification, AccessLog } from '../../src/types';
 
 const baseLog = {
   studentId: 'std-1',
   studentName: 'Ana Clara de Souza Mendes',
   matricula: '2024-0891',
-  avatar: '',
   turma: '4º Ano B',
   shift: 'Manhã',
   relativeTime: 'Persistido',

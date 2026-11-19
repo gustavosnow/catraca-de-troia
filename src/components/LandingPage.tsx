@@ -60,12 +60,12 @@ const GOALS = [
 const FAQ = [
   ['Preciso instalar um aplicativo?', 'Não. O portal abre no navegador do celular por link ou QR Code. Adicionar à tela inicial é opcional; o aplicativo Android segue como objetivo do produto, ainda não publicado.'],
   ['O cadastro libera os dados de um estudante?', 'Não. Depois do cadastro, o responsável solicita o vínculo informando a matrícula, e a escola confere a documentação antes de aprovar. Sem vínculo aprovado, nenhum dado do estudante é exibido.'],
-  ['O reconhecimento facial já está funcionando?', 'Não. Nesta demonstração as passagens são simuladas ou assistidas pela portaria. O reconhecimento facial com Python e OpenCV é previsto para o piloto, com metas que ainda serão homologadas.'],
+  ['O reconhecimento facial já está funcionando?', 'Em protótipo. Há um agente de laboratório com Python e OpenCV que registra entradas e saídas pela câmera no computador da portaria. Ele não é homologado, não aciona catraca física e só usa rostos de adultos voluntários da equipe. As metas do piloto ainda serão homologadas.'],
   ['Posso enviar atestados ou anexos?', 'Não. As justificativas de ausência são textuais e analisadas pela Coordenação ou pela Direção da escola.'],
   ['O que acontece se a internet cair?', 'Na proposta, identificação e registro continuam no servidor local da escola, com fila e sincronização posterior. O cache do portal no celular não substitui essa continuidade.'],
 ];
 
-/** Composição do produto no hero — painel e celular com dados fictícios. */
+/** Composição do produto no hero — ilustração do painel e do celular. */
 const ProductPreview: React.FC = () => (
   <div className="relative mx-auto w-full max-w-[560px] pb-10 pr-6 sm:pr-10" aria-hidden="true">
     <div className="card overflow-hidden shadow-[0_24px_60px_-24px_rgb(27_42_65/0.28)] lg:rotate-[-1.5deg]">
@@ -110,7 +110,7 @@ const ProductPreview: React.FC = () => (
       <div className="mt-3 rounded-xl border border-positive-line bg-positive-soft p-3">
         <School className="h-4 w-4 text-positive" />
         <p className="mt-2 text-[12px] font-bold leading-tight text-[#145f3e]">Ana Clara está na escola.</p>
-        <p className="mt-1 text-[9px] leading-snug text-[#2c6b4c]">Entrada às 07:10 · Catraca 01<br />Evento demonstrativo</p>
+        <p className="mt-1 text-[9px] leading-snug text-[#2c6b4c]">Entrada às 07:10 · Catraca 01<br />Reconhecimento facial</p>
       </div>
       <p className="mt-3 text-[9px] leading-snug text-muted">Mais perto da rotina de quem você ama.</p>
     </div>
@@ -295,13 +295,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onParentLogin, onParen
               <p className="eyebrow">Transparência em cada etapa</p>
               <h2 className="display-title mt-3 text-[30px] sm:text-[36px]">Um piloto local. Um futuro em construção.</h2>
               <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-ink-2">
-                O projeto acadêmico contempla uma escola pública de ensino fundamental e duas catracas. Os registros atuais são simulados ou feitos por passagem assistida. Integração física, biometria e canais externos ainda não estão operacionais.
+                O projeto acadêmico contempla uma escola pública de ensino fundamental e duas catracas. As passagens são registradas pelo protótipo de reconhecimento facial ou por passagem assistida da portaria. Catraca física, biometria homologada e canais externos ainda não estão operacionais.
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 <span className="chip chip-neutral"><Building2 aria-hidden="true" />1 escola</span>
-                <span className="chip chip-brand"><ScanFace aria-hidden="true" />2 catracas demonstrativas</span>
-                <span className="chip chip-neutral"><FlaskConical aria-hidden="true" />Dados fictícios</span>
-                <span className="chip chip-positive"><ShieldCheck aria-hidden="true" />Vínculos autorizados</span>
+                <span className="chip chip-brand"><ScanFace aria-hidden="true" />Reconhecimento facial em protótipo</span>
+                                <span className="chip chip-positive"><ShieldCheck aria-hidden="true" />Vínculos autorizados</span>
                 <span className="chip chip-neutral"><Wifi aria-hidden="true" />Fila local preservada</span>
               </div>
 
@@ -354,7 +353,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onParentLogin, onParen
         {/* CTA final */}
         <section className="border-t border-line bg-surface px-5 py-20 text-center sm:px-8">
           <h2 className="display-title text-[30px] sm:text-[40px]">Escola e família, do mesmo lado.</h2>
-          <p className="mx-auto mt-4 max-w-md text-[15px] text-ink-2">Escolha o ambiente adequado ao seu perfil. As contas disponíveis são fictícias.</p>
+          <p className="mx-auto mt-4 max-w-md text-[15px] text-ink-2">Escolha o ambiente adequado ao seu perfil.</p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <button type="button" className="btn btn-primary btn-lg" onClick={onParentLogin}>
               <ArrowRight aria-hidden="true" />
@@ -374,7 +373,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onParentLogin, onParen
       <footer className="border-t border-line px-5 py-8 sm:px-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <BrandLockup size={40} />
-          <p className="text-xs text-muted">Protótipo acadêmico · Escola fictícia · Sem hardware, biometria ou notificações externas integrados.</p>
+          <p className="text-xs text-muted">Protótipo acadêmico · Reconhecimento facial em laboratório · Sem catraca física ou notificações externas.</p>
         </div>
       </footer>
     </div>

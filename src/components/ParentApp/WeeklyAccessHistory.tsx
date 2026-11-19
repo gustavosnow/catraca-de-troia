@@ -108,7 +108,7 @@ export const WeeklyAccessHistory: React.FC<WeeklyAccessHistoryProps> = ({ days, 
 
     <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-muted">
       <Info aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-      O portal consulta a mesma API local do painel escolar, com eventos simulados. Ele não registra alterações offline; a fila do servidor escolar é que preserva os registros.
+      O portal consulta o mesmo servidor do painel escolar. Ele não registra alterações offline; a fila do servidor da escola é que preserva os registros.
     </p>
   </section>
 );

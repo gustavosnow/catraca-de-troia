@@ -1,8 +1,13 @@
 import type { AccessEventRecord, CreateAccessEventRequest } from '../../shared/contracts/accessEvents';
 import type { AccessEventSyncStatus } from '../../shared/contracts/accessEventSync';
-import type { LinkedStudent } from '../../shared/contracts/justifications';
 import type { AccessDirection, AccessLog, Student, Turnstile } from '../types';
 import { authenticatedRequest } from './authApi';
+
+const SOURCES: Record<AccessEventRecord['source'], NonNullable<AccessLog['source']>> = {
+  FACE_PROTOTYPE: 'camera',
+  ASSISTED_PASSAGE: 'assistida',
+  DEMO_SIMULATION: 'simulacao',
+};
 
 const mapEvent = (record: AccessEventRecord, students: Student[]): AccessLog => {
   const student = students.find((item) => item.id === record.student.id);
@@ -15,12 +20,11 @@ const mapEvent = (record: AccessEventRecord, students: Student[]): AccessLog => 
     studentId: record.student.id,
     studentName: record.student.name,
     matricula: record.student.enrollment,
-    avatar: student?.avatar || '',
     turma: student?.turma || 'Turma não informada',
     shift: student?.shift || 'Manhã',
     timestamp: record.occurredAt,
     exactTime,
-    relativeTime: 'Persistido na API local',
+    relativeTime: '',
     direction: record.direction === 'ENTRY' ? 'entry' : 'exit',
     turnstileId: record.turnstile.id,
     turnstileName: record.turnstile.name,
@@ -28,7 +32,7 @@ const mapEvent = (record: AccessEventRecord, students: Student[]): AccessLog => 
     method: record.method === 'FACIAL' ? 'Facial' : 'Manual',
     operator: record.createdById,
     reason: record.reason,
-    source: record.source === 'FACE_PROTOTYPE' ? 'camera' : 'simulacao',
+    source: SOURCES[record.source],
     recognition: record.recognition,
     notification: {
       whatsapp: record.notification.whatsapp === 'DELIVERED' ? 'Entregue' : 'Pendente',
@@ -39,9 +43,6 @@ const mapEvent = (record: AccessEventRecord, students: Student[]): AccessLog => 
   };
 };
 
-const listLinkedStudents = () =>
-  authenticatedRequest<LinkedStudent[]>('/api/v1/me/students');
-
 export const accessEventsApi = {
   getSyncStatus: () =>
     authenticatedRequest<AccessEventSyncStatus>('/api/v1/access-events/sync/status'),
@@ -51,9 +52,9 @@ export const accessEventsApi = {
       method: 'POST',
     }),
 
+  /** Portal: passagens dos estudantes já carregados para o responsável da sessão. */
   listForGuardian: async (students: Student[]) => {
-    const linkedStudents = await listLinkedStudents();
-    const records = await Promise.all(linkedStudents.map((student) =>
+    const records = await Promise.all(students.map((student) =>
       authenticatedRequest<AccessEventRecord[]>(`/api/v1/students/${student.id}/access-events?limit=100`),
     ));
     return records.flat().map((record) => mapEvent(record, students));
@@ -63,29 +64,26 @@ export const accessEventsApi = {
     (await authenticatedRequest<AccessEventRecord[]>('/api/v1/access-events?limit=100'))
       .map((record) => mapEvent(record, students)),
 
-  create: async (
+  /**
+   * Passagem assistida: entrada ou saída registrada pela equipe com motivo. A API
+   * confere a catraca, a sequência do dia e grava operador e auditoria.
+   */
+  createAssisted: async (
     student: Student,
     direction: AccessDirection,
     turnstile: Turnstile,
+    reason: string,
     students: Student[],
-    options: {
-      status?: CreateAccessEventRequest['status'];
-      method?: CreateAccessEventRequest['method'];
-      whatsappStatus?: CreateAccessEventRequest['whatsappStatus'];
-      pushStatus?: CreateAccessEventRequest['pushStatus'];
-      reason?: string;
-    } = {},
   ) => {
     const payload: CreateAccessEventRequest = {
       direction: direction === 'entry' ? 'ENTRY' : 'EXIT',
       turnstileId: turnstile.id,
-      turnstileName: turnstile.name.split(' - ')[0] + ' ('
-        + (turnstile.name.includes('Fundamental I') ? 'Fundamental I' : 'Portão Principal') + ')',
-      status: options.status || 'AUTHORIZED',
-      method: options.method || 'FACIAL',
-      whatsappStatus: options.whatsappStatus || 'DELIVERED',
-      pushStatus: options.pushStatus || 'DELIVERED',
-      reason: options.reason,
+      turnstileName: turnstile.name,
+      status: 'MANUAL_RELEASE',
+      method: 'MANUAL',
+      whatsappStatus: 'PENDING',
+      pushStatus: 'PENDING',
+      reason,
     };
     const idempotencyKey = globalThis.crypto?.randomUUID?.()
       ?? `access-${Date.now()}-${Math.random().toString(36).slice(2)}`;

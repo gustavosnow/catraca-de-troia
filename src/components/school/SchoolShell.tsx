@@ -61,7 +61,7 @@ const SECTION_LABELS: Record<SchoolSection, { label: string; group: string }> = 
   vinculos: { label: 'Vínculos familiares', group: 'Administração' },
   contas: { label: 'Contas e permissões', group: 'Administração' },
   auditoria: { label: 'Auditoria', group: 'Administração' },
-  ferramentas: { label: 'Ferramentas', group: 'Demonstração' },
+  ferramentas: { label: 'Ferramentas', group: 'Operação' },
 };
 
 interface SchoolShellProps {
@@ -176,8 +176,8 @@ export const SchoolShell: React.FC<SchoolShellProps> = ({
           <Building2 aria-hidden="true" className="h-4 w-4" />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold text-ink" title={user.schoolUnit || 'EMEF Profª. Cecília Meireles'}>{user.schoolUnit || 'EMEF Profª. Cecília Meireles'}</p>
-          <p className="text-[11px] text-muted">Unidade demonstrativa</p>
+          <p className="truncate text-[13px] font-semibold text-ink" title={user.schoolUnit}>{user.schoolUnit}</p>
+          <p className="text-[11px] text-muted">Unidade escolar</p>
         </div>
       </div>
 
@@ -198,7 +198,6 @@ export const SchoolShell: React.FC<SchoolShellProps> = ({
               <button type="button" className="nav-item" aria-current={section === 'ferramentas' ? 'page' : undefined} onClick={() => go('ferramentas')}>
                 <SlidersHorizontal aria-hidden="true" />
                 <span className="flex-1">Ferramentas</span>
-                <span className="rounded border border-line-strong px-1.5 py-px text-[10px] font-semibold tracking-wide text-muted">DEMO</span>
               </button>
             </li>
             <li>
@@ -216,9 +215,9 @@ export const SchoolShell: React.FC<SchoolShellProps> = ({
             Piloto local
           </span>
           <p className="mt-2 text-xs leading-relaxed text-muted">
-            1 escola · 2 catracas
+            Reconhecimento facial em protótipo.
             <br />
-            Hardware não integrado.
+            Sem catraca física acionada.
           </p>
         </div>
       </nav>
@@ -319,7 +318,7 @@ export const SchoolShell: React.FC<SchoolShellProps> = ({
         <main id="school-main-content" tabIndex={-1} className="mx-auto w-full max-w-[1320px] px-4 pb-16 pt-8 outline-none sm:px-6 lg:px-10">
           {children}
           <footer className="mt-12 flex flex-col gap-1 border-t border-line pt-5 text-xs text-muted sm:flex-row sm:justify-between">
-            <span>{user.schoolUnit || 'EMEF Profª. Cecília Meireles'} · Escola fictícia</span>
+            <span>{user.schoolUnit}</span>
             <span className="inline-flex items-center gap-1.5">
               <ClipboardList aria-hidden="true" className="h-3.5 w-3.5" />
               Catraca de Troia · Projeto acadêmico de gerência de projetos

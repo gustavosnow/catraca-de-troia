@@ -179,7 +179,7 @@ try {
       };
       const viewportOverflow = document.documentElement.scrollWidth > window.innerWidth + 1;
       const headerOverflow = header ? header.scrollWidth > header.clientWidth + 1 : true;
-      const schoolVisible = school?.textContent?.includes('EMEF Profª. Cecília Meireles') ?? false;
+      const schoolVisible = school?.textContent?.includes('Escola Municipal Catraca de Troia') ?? false;
       const studentCards = [...document.querySelectorAll('[data-testid="parent-students"] button')];
       const clippedStudentCards = studentCards.filter((card) => card.scrollWidth > card.clientWidth + 1).length;
       return {
@@ -388,7 +388,7 @@ try {
     await capture(`parent-${width}-offline.png`);
     executed.push(`${width}px:offline`);
     await click('#visual-toggle-connectivity');
-    const onlineMessage = await evaluate(`document.body.textContent?.includes('Dados da API local demonstrativa') ?? false`);
+    const onlineMessage = await evaluate(`document.body.textContent?.includes('Dados do servidor da escola') ?? false`);
     if (!onlineMessage) throw new Error(`${width}px: retomada da conectividade não refletida.`);
   }
 

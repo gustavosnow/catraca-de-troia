@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bell, Building2, Check, FileText, History, House, LogOut, Megaphone } from 'lucide-react';
-import type { ParentAccount } from '../../data/mockData';
+import { Bell, Building2, FileText, History, House, LogOut, Megaphone } from 'lucide-react';
+import type { ParentAccount } from '../../types';
 import { BrandLockup } from '../brand/BrandMark';
 import { Avatar, cx, firstNameOf } from '../ui';
 
@@ -8,8 +8,6 @@ export type ParentTab = 'home' | 'history' | 'notices';
 
 interface ParentHeaderProps {
   currentGuardian: ParentAccount;
-  allGuardians: ParentAccount[];
-  onSelectGuardian: (guardian: ParentAccount) => void;
   unreadNotificationsCount: number;
   onOpenNotifications: () => void;
   activeTab: ParentTab;
@@ -30,8 +28,6 @@ const TABS: Array<{ id: ParentTab; label: string; icon: typeof House }> = [
 
 export const ParentHeader: React.FC<ParentHeaderProps> = ({
   currentGuardian,
-  allGuardians,
-  onSelectGuardian,
   unreadNotificationsCount,
   onOpenNotifications,
   activeTab,
@@ -150,24 +146,6 @@ export const ParentHeader: React.FC<ParentHeaderProps> = ({
                     <p className="text-xs text-muted">{currentGuardian.relation} · {currentGuardian.childrenIds.length} {currentGuardian.childrenIds.length === 1 ? 'estudante vinculado' : 'estudantes vinculados'}</p>
                   </div>
                 </div>
-                {allGuardians.length > 1 && (
-                  <div className="border-b border-line py-1.5">
-                    <p className="eyebrow-muted px-4 py-1.5">Contas de demonstração</p>
-                    {allGuardians.map((guardian) => (
-                      <button
-                        key={guardian.id}
-                        type="button"
-                        role="menuitemradio"
-                        aria-checked={guardian.id === currentGuardian.id}
-                        className="flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-sm text-ink hover:bg-surface"
-                        onClick={() => { onSelectGuardian(guardian); setMenuOpen(false); }}
-                      >
-                        {guardian.name}
-                        {guardian.id === currentGuardian.id && <Check aria-hidden="true" className="h-4 w-4 text-action" />}
-                      </button>
-                    ))}
-                  </div>
-                )}
                 <div className="py-1.5">
                   {onSwitchToManagement && (
                     <button type="button" role="menuitem" className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-ink hover:bg-surface" onClick={() => { setMenuOpen(false); onSwitchToManagement(); }}>

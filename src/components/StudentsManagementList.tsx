@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowUpRight, CheckCircle2, CircleDashed, PauseCircle, Search, ShieldCheck } from 'lucide-react';
 import type { Shift, Student } from '../types';
-import { TURMAS_LIST } from '../data/mockData';
 import { EmptySearchIllustration } from './brand/Illustrations';
-import { Avatar, Callout, Chip, EmptyState, PageHeader, withoutRelation } from './ui';
+import { Avatar, Callout, Chip, EmptyState, PageHeader, SkeletonRows, withoutRelation } from './ui';
 
 interface StudentsManagementListProps {
   students: Student[];
+  state: 'loading' | 'persistent' | 'unavailable';
+  error?: string;
   onSelectStudent: (studentId: string) => void;
 }
 
@@ -16,11 +17,15 @@ const StudentStatus: React.FC<{ status: Student['status'] }> = ({ status }) => {
   return <Chip tone="neutral" icon={CircleDashed}>{status}</Chip>;
 };
 
-export const StudentsManagementList: React.FC<StudentsManagementListProps> = ({ students, onSelectStudent }) => {
+export const StudentsManagementList: React.FC<StudentsManagementListProps> = ({ students, state, error, onSelectStudent }) => {
   const [search, setSearch] = useState('');
   const [stage, setStage] = useState<'Todos' | 'Fundamental I' | 'Fundamental II'>('Todos');
   const [turma, setTurma] = useState('Todas');
   const [shift, setShift] = useState<Shift>('Todos');
+
+  // Turmas existentes no cadastro, em ordem natural (1º, 2º, ... 9º).
+  const turmaOptions = useMemo(() => ['Todas', ...Array.from(new Set<string>(students.map((student) => student.turma)))
+    .sort((left, right) => left.localeCompare(right, 'pt-BR', { numeric: true }))], [students]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLocaleLowerCase('pt-BR');
@@ -57,7 +62,7 @@ export const StudentsManagementList: React.FC<StudentsManagementListProps> = ({ 
             <h2 id="students-title" className="card-title">
               Estudantes da escola <span className="font-normal text-muted">/ {students.length}</span>
             </h2>
-            <p className="card-subtitle">O piloto não oferece matrícula, edição ou exclusão de estudantes.</p>
+            <p className="card-subtitle">Cadastro mantido pela secretaria da escola. Esta tela é somente para consulta.</p>
           </div>
         </div>
 
@@ -85,8 +90,8 @@ export const StudentsManagementList: React.FC<StudentsManagementListProps> = ({ 
           <div>
             <label htmlFor="students-turma" className="sr-only">Turma</label>
             <select id="students-turma" className="select" value={turma} onChange={(event) => setTurma(event.target.value)}>
-              {TURMAS_LIST.map((item) => (
-                <option key={item} value={item}>{item === 'Todas' ? 'Todas as turmas' : item.split(' - ')[0]}</option>
+              {turmaOptions.map((item) => (
+                <option key={item} value={item}>{item === 'Todas' ? 'Todas as turmas' : item}</option>
               ))}
             </select>
           </div>
@@ -101,7 +106,17 @@ export const StudentsManagementList: React.FC<StudentsManagementListProps> = ({ 
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {state === 'loading' && students.length === 0 ? (
+          <SkeletonRows rows={5} />
+        ) : state === 'unavailable' && students.length === 0 ? (
+          <div className="px-6 pb-6"><Callout tone="negative" role="alert">{error || 'Não foi possível carregar os estudantes.'}</Callout></div>
+        ) : students.length === 0 ? (
+          <EmptyState
+            illustration={<EmptySearchIllustration className="mb-4 h-20" />}
+            title="Nenhum estudante cadastrado"
+            description="A lista é carregada do cadastro da escola."
+          />
+        ) : filtered.length === 0 ? (
           <EmptyState
             illustration={<EmptySearchIllustration className="mb-4 h-20" />}
             title="Nenhum resultado"
@@ -158,7 +173,7 @@ export const StudentsManagementList: React.FC<StudentsManagementListProps> = ({ 
         )}
 
         <div className="table-footer">
-          <span>{filtered.length} de {students.length} estudantes · Dados fictícios</span>
+          <span>{filtered.length} de {students.length} estudantes</span>
           {hasFilters && <button type="button" className="btn-link" onClick={clearFilters}>Limpar filtros</button>}
         </div>
       </section>

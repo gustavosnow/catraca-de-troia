@@ -57,6 +57,10 @@ const failureMessage = (run?: EdgeAgentRun) => {
 const isCancelled = (run?: EdgeAgentRun) =>
   run?.state === 'FAILED' && run.log.some((line) => line.includes('Cadastro cancelado'));
 
+/** Nome da câmera pelo sentido: as duas câmeras podem estar na mesma catraca. */
+const cameraLabel = (device: AccessDeviceRecord) =>
+  device.direction === 'ENTRY' ? 'Câmera de entrada' : 'Câmera de saída';
+
 const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
@@ -148,7 +152,7 @@ export const FaceRecognitionPanel: React.FC<FaceRecognitionPanelProps> = ({
   }, [canManageBiometrics, enabled, ready]);
 
   // Lista os cadastros na primeira vez e sempre que um cadastro termina.
-  const lastEnrollmentRef = useRef<string>();
+  const lastEnrollmentRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (!canManageBiometrics || !enabled || !ready) return;
     const signature = enrollment ? `${enrollment.id}:${enrollment.state}` : 'none';
@@ -247,10 +251,13 @@ export const FaceRecognitionPanel: React.FC<FaceRecognitionPanelProps> = ({
                       <div className="min-w-0">
                         <p className="flex items-center gap-2 text-sm font-semibold text-ink">
                           <Camera aria-hidden="true" className="h-4 w-4 shrink-0 text-action" />
-                          <span className="truncate">{device.turnstile.name}</span>
+                          <span className="truncate">{cameraLabel(device)}</span>
+                          <span className={`chip ${device.direction === 'ENTRY' ? 'chip-positive' : 'chip-neutral'}`}>
+                            {device.direction === 'ENTRY' ? 'Entrada' : 'Saída'}
+                          </span>
                         </p>
                         <p className="mt-0.5 text-[13px] text-muted">
-                          {device.direction === 'ENTRY' ? 'Entrada' : 'Saída'} · limiar {device.minScore.toFixed(2)}
+                          {device.turnstile.name} · limiar {device.minScore.toFixed(2)}
                           {device.cameraSource ? ` · câmera ${device.cameraSource}` : ' · sem câmera definida'}
                           {!device.active && ' · desativada'}
                         </p>
@@ -340,10 +347,10 @@ export const FaceRecognitionPanel: React.FC<FaceRecognitionPanelProps> = ({
         {/* --------------------------------------------------- cadastro */}
         {canManageBiometrics && (
           <div className="border-t border-line pt-5">
-            <h3 className="eyebrow-muted mb-3">Cadastro facial demonstrativo</h3>
+            <h3 className="eyebrow-muted mb-3">Cadastro facial</h3>
             <Callout tone="warning" className="mb-4">
-              Cadastre apenas adultos da equipe, com consentimento, associados a estudantes fictícios.
-              Nunca use rostos de crianças ou de estudantes reais.
+              Protótipo de laboratório: cadastre só o rosto de um adulto voluntário da equipe, com consentimento,
+              representando o estudante no teste. Nunca cadastre o rosto de uma criança.
             </Callout>
 
             {isBusyState(enrollment) ? (
@@ -367,7 +374,7 @@ export const FaceRecognitionPanel: React.FC<FaceRecognitionPanelProps> = ({
             ) : (
               <div className="space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Estudante fictício" htmlFor="enroll-student">
+                  <Field label="Estudante representado" htmlFor="enroll-student">
                     <select
                       id="enroll-student"
                       className="select"
@@ -396,7 +403,7 @@ export const FaceRecognitionPanel: React.FC<FaceRecognitionPanelProps> = ({
                       <option value="">Selecione…</option>
                       {camerasWithSource.map(({ device, recognition }) => (
                         <option key={device.id} value={device.id}>
-                          {device.turnstile.name}{recognition?.state === 'RUNNING' ? ' (em uso)' : ''}
+                          {cameraLabel(device)} · {device.turnstile.name}{recognition?.state === 'RUNNING' ? ' (em uso)' : ''}
                         </option>
                       ))}
                     </select>
@@ -412,7 +419,7 @@ export const FaceRecognitionPanel: React.FC<FaceRecognitionPanelProps> = ({
                     disabled={!canCommand}
                     onChange={(event) => setConsent(event.target.checked)}
                   />
-                  Confirmo que a pessoa cadastrada é adulta da equipe, consentiu com o teste e está ligada a um estudante fictício.
+                  Confirmo que a pessoa cadastrada é adulta da equipe, consentiu com o teste e não é uma criança.
                 </label>
 
                 {enrollment && !isBusyState(enrollment) && (
@@ -439,7 +446,7 @@ export const FaceRecognitionPanel: React.FC<FaceRecognitionPanelProps> = ({
 
             <div className="mt-5">
               <div className="mb-2 flex items-baseline justify-between gap-3">
-                <h4 className="eyebrow-muted">Cadastros demonstrativos</h4>
+                <h4 className="eyebrow-muted">Rostos cadastrados neste computador</h4>
                 {enrollmentsLoading && <span className="text-xs text-muted" role="status">Consultando…</span>}
               </div>
               {enrollments.length === 0 ? (
@@ -451,8 +458,13 @@ export const FaceRecognitionPanel: React.FC<FaceRecognitionPanelProps> = ({
                   {enrollments.map((record) => (
                     <li key={record.studentId} className="flex items-center justify-between gap-3 px-4 py-3">
                       <div className="min-w-0">
-                        <p className="truncate text-[13px] font-semibold text-ink">{record.studentName ?? record.studentId}</p>
-                        <p className="text-xs text-muted">{record.samples} {record.samples === 1 ? 'amostra' : 'amostras'}</p>
+                        <p className="truncate text-[13px] font-semibold text-ink">
+                          {record.studentName ?? `Estudante removido do cadastro (${record.studentId})`}
+                        </p>
+                        <p className={`text-xs ${record.studentName ? 'text-muted' : 'text-warning'}`}>
+                          {record.samples} {record.samples === 1 ? 'amostra' : 'amostras'}
+                          {!record.studentName && ' · não é reconhecido; remova e cadastre de novo para um estudante atual'}
+                        </p>
                       </div>
                       <button
                         type="button"
@@ -479,14 +491,14 @@ export const FaceRecognitionPanel: React.FC<FaceRecognitionPanelProps> = ({
           </h3>
           {denials.length === 0 ? (
             <p className="rounded-[10px] bg-surface px-4 py-4 text-[13px] text-muted">
-              Nenhuma tentativa negada registrada nesta sessão.
+              Nenhuma leitura negada registrada.
             </p>
           ) : (
             <ul className="space-y-1.5">
               {denials.map((denial) => (
                 <li key={denial.id} className="flex justify-between gap-3 text-[13px] text-ink-2">
                   <span className="truncate">
-                    {DENIAL_LABELS[denial.reason]} · {denial.direction === 'ENTRY' ? 'entrada' : 'saída'}
+                    {DENIAL_LABELS[denial.reason]} · câmera de {denial.direction === 'ENTRY' ? 'entrada' : 'saída'}
                   </span>
                   <span className="tabular shrink-0 text-muted">
                     {Math.round(denial.matchScore * 100)}% · {formatTime(denial.occurredAt)}

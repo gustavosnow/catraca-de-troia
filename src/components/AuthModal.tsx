@@ -3,10 +3,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Building2,
-  CheckCircle2,
   Eye,
   EyeOff,
-  FlaskConical,
   KeyRound,
   LogIn,
   ShieldCheck,
@@ -15,13 +13,15 @@ import {
   Users,
   ScrollText,
 } from 'lucide-react';
-import { AuthUser, Student } from '../types';
-import { STUDENTS_DATABASE } from '../data/mockData';
+import type { AuthUser } from '../types';
+import { GUARDIAN_RELATIONSHIPS, type GuardianRelationship } from '../../shared/contracts/linkRequests';
 import { authApi } from '../services/authApi';
 import { toAuthUser } from '../services/authUserMapper';
 import { BrandLockup } from './brand/BrandMark';
 import { GateScene } from './brand/Illustrations';
-import { Avatar, Callout, Field } from './ui';
+import { Callout, Field } from './ui';
+
+const MIN_PASSWORD_LENGTH = 8;
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -32,7 +32,6 @@ interface AuthModalProps {
   dismissible?: boolean;
   onSwitchAccess?: () => void;
   onLoginSuccess: (user: AuthUser) => void;
-  studentsDatabase?: Student[];
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -44,13 +43,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   dismissible = true,
   onSwitchAccess,
   onLoginSuccess,
-  studentsDatabase = STUDENTS_DATABASE,
 }) => {
   const loginIdentifierRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<'login' | 'register' | 'forgot_password'>(initialMode);
   const [role, setRole] = useState<'parent' | 'staff'>(initialRole);
 
-  // Form states - Login
+  // Login
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -59,55 +57,44 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [loginSuccess, setLoginSuccess] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  // Form states - Register Parent
+  // Cadastro de responsável
   const [parentName, setParentName] = useState('');
   const [parentCpf, setParentCpf] = useState('');
   const [parentPhone, setParentPhone] = useState('');
   const [parentEmail, setParentEmail] = useState('');
-  const [parentRelation, setParentRelation] = useState<'Mãe' | 'Pai' | 'Avó / Avô' | 'Tutor(a) Legal' | 'Responsável'>('Mãe');
+  const [parentRelation, setParentRelation] = useState<GuardianRelationship>('Mãe');
   const [requestedEnrollment, setRequestedEnrollment] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState('');
-  const [acceptTerms, setAcceptTerms] = useState(false);
-
-  // Form states - Register Staff
-  const [staffName, setStaffName] = useState('');
-  const [staffMatricula, setStaffMatricula] = useState('');
-  const [staffEmail, setStaffEmail] = useState('');
-  const [staffPhone, setStaffPhone] = useState('');
-  const [staffRole, setStaffRole] = useState<'Operador de Portaria & Inspetor' | 'Coordenação Pedagógica' | 'Direção Escolar' | 'Segurança Patrimonial'>('Operador de Portaria & Inspetor');
-  const [schoolAuthKey, setSchoolAuthKey] = useState('');
-
-  // Forgot password states
-  const [forgotIdentifier, setForgotIdentifier] = useState('');
-  const [forgotStep, setForgotStep] = useState<'request' | 'code' | 'new_password' | 'done'>('request');
-  const [recoveryCode, setRecoveryCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
     if (!isOpen) return;
-    setMode(initialMode);
     setRole(allowedRole ?? initialRole);
+    // Contas da equipe são criadas pela escola: o perfil escolar só tem "Entrar".
+    setMode((allowedRole ?? initialRole) === 'staff' ? 'login' : initialMode);
     setLoginError('');
     setLoginSuccess('');
   }, [allowedRole, initialMode, initialRole, isOpen]);
 
+  // Foco no identificador só quando o modal abre; re-renderizações do App não podem
+  // tirar o foco do campo em que a pessoa está digitando.
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return undefined;
     const focusTimer = window.setTimeout(() => loginIdentifierRef.current?.focus(), 0);
+    return () => window.clearTimeout(focusTimer);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && dismissible) onClose();
     };
     window.addEventListener('keydown', closeOnEscape);
-    return () => {
-      window.clearTimeout(focusTimer);
-      window.removeEventListener('keydown', closeOnEscape);
-    };
+    return () => window.removeEventListener('keydown', closeOnEscape);
   }, [dismissible, isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  // Mask CPF
   const handleCpfChange = (val: string) => {
     const clean = val.replace(/\D/g, '').slice(0, 11);
     let formatted = clean;
@@ -117,16 +104,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setParentCpf(formatted);
   };
 
-  // Mask Phone
-  const handlePhoneChange = (val: string, setter: (s: string) => void) => {
+  const handlePhoneChange = (val: string) => {
     const clean = val.replace(/\D/g, '').slice(0, 11);
     let formatted = clean;
     if (clean.length > 2) formatted = `(${clean.slice(0, 2)}) ${clean.slice(2)}`;
     if (clean.length > 7) formatted = `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7)}`;
-    setter(formatted);
+    setParentPhone(formatted);
   };
 
-  // Handle Login Submit
   const authenticate = async (identifier: string, password: string, expectedRole: 'parent' | 'staff') => {
     setIsAuthenticating(true);
     setLoginError('');
@@ -153,144 +138,78 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
-
     if (!loginIdentifier.trim()) {
-      setLoginError('Por favor, informe seu e-mail, celular ou documento de acesso.');
+      setLoginError(role === 'parent' ? 'Informe seu e-mail, celular ou CPF.' : 'Informe seu e-mail institucional ou matrícula funcional.');
       return;
     }
     if (!loginPassword) {
-      setLoginError('Por favor, digite sua senha de acesso.');
+      setLoginError('Digite sua senha.');
       return;
     }
-
     void authenticate(loginIdentifier, loginPassword, role);
   };
 
-  // Quick Demo Login Handler
-  const handleQuickDemoLogin = (type: 'claudia' | 'rodrigo' | 'sem_vinculo' | 'carlos' | 'mariana') => {
-    const accounts = {
-      claudia: ['claudia.mendes@gmail.com', 'parent'],
-      rodrigo: ['rodrigo.oliveira@gmail.com', 'parent'],
-      sem_vinculo: ['sem.vinculo@gmail.com', 'parent'],
-      carlos: ['carlos.mendes@emef.educacao.sp.gov.br', 'staff'],
-      mariana: ['mariana.costa@emef.educacao.sp.gov.br', 'staff'],
-    } as const;
-    const [identifier] = accounts[type];
-    void authenticate(identifier, 'Troia@2026', role);
-  };
-
-  // Handle Parent Registration Submit
-  const handleRegisterParentSubmit = (e: React.FormEvent) => {
+  const handleRegisterParentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
-
-    if (!parentName.trim()) {
-      setLoginError('Por favor, informe seu nome completo.');
+    setLoginSuccess('');
+    if (parentName.trim().split(/\s+/).length < 2) {
+      setLoginError('Informe nome e sobrenome.');
       return;
     }
-    if (!parentPhone || parentPhone.replace(/\D/g, '').length < 10) {
-      setLoginError('Informe um número de celular válido.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail.trim())) {
+      setLoginError('Informe um e-mail válido. Ele será usado para entrar.');
+      return;
+    }
+    if (parentPhone.replace(/\D/g, '').length < 10) {
+      setLoginError('Informe um celular com DDD.');
+      return;
+    }
+    if (parentCpf && parentCpf.replace(/\D/g, '').length !== 11) {
+      setLoginError('O CPF deve ter 11 dígitos, ou deixe o campo em branco.');
       return;
     }
     if (requestedEnrollment.trim().length < 4) {
-      setLoginError('Informe a matrícula que deverá ser conferida pela escola.');
+      setLoginError('Informe a matrícula do estudante, que a escola vai conferir.');
       return;
     }
-    if (!registerPassword || registerPassword.length < 6) {
-      setLoginError('A senha deve possuir pelo menos 6 caracteres.');
+    if (registerPassword.length < MIN_PASSWORD_LENGTH) {
+      setLoginError(`A senha deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`);
       return;
     }
     if (registerPassword !== registerPasswordConfirm) {
       setLoginError('As senhas digitadas não coincidem.');
       return;
     }
-
-    setLoginSuccess('Cadastro demonstrativo recebido. Após a ativação da credencial, solicite o vínculo no portal para análise da escola.');
-    setTimeout(() => {
-      setMode('login');
-      setLoginSuccess('Use uma conta demonstrativa já validada para entrar.');
-    }, 700);
-  };
-
-  // Handle Staff Registration Submit
-  const handleRegisterStaffSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError('');
-
-    if (!staffName.trim()) {
-      setLoginError('Por favor, informe seu nome completo.');
-      return;
+    setIsAuthenticating(true);
+    setLoginSuccess('Criando sua conta…');
+    try {
+      const session = await authApi.registerGuardian({
+        name: parentName.trim(),
+        email: parentEmail.trim(),
+        phone: parentPhone,
+        cpf: parentCpf || undefined,
+        password: registerPassword,
+        studentEnrollment: requestedEnrollment.trim(),
+        relationship: parentRelation,
+      });
+      setLoginSuccess('Conta criada. A escola vai conferir o vínculo antes de liberar os dados do estudante.');
+      onLoginSuccess(toAuthUser(session.user));
+    } catch (error) {
+      setLoginSuccess('');
+      setLoginError(error instanceof Error ? error.message : 'Não foi possível concluir o cadastro.');
+    } finally {
+      setIsAuthenticating(false);
     }
-    if (!staffMatricula.trim()) {
-      setLoginError('Informe seu Registro Funcional (MAT).');
-      return;
-    }
-    if (!staffEmail.trim() || !staffEmail.includes('@')) {
-      setLoginError('Informe um e-mail institucional válido.');
-      return;
-    }
-    if (!registerPassword || registerPassword.length < 6) {
-      setLoginError('A senha deve possuir pelo menos 6 caracteres.');
-      return;
-    }
-    if (schoolAuthKey.trim() !== 'EMEF-2026' && schoolAuthKey.trim() !== 'EMEF-2026-SP' && schoolAuthKey.trim() !== 'TROIA2026') {
-      setLoginError('Chave de Unidade Escolar incorreta. Utilize "EMEF-2026-SP" para testes de homologação.');
-      return;
-    }
-
-    setLoginSuccess('Solicitação demonstrativa registrada. A credencial de equipe depende de aprovação institucional.');
-    setTimeout(() => {
-      setMode('login');
-      setLoginSuccess('Use uma conta demonstrativa já validada para entrar.');
-    }, 700);
-  };
-
-
-  const handleForgotRequest = () => {
-    if (!forgotIdentifier.trim()) {
-      setLoginError('Informe seu celular ou e-mail.');
-      return;
-    }
-    setForgotStep('code');
-    setLoginError('');
-    setLoginSuccess('Etapa simulada, sem envio externo. Código fictício para teste: 849201');
-  };
-
-  const handleForgotConfirm = () => {
-    if (recoveryCode !== '849201' && recoveryCode.length !== 6) {
-      setLoginError('Código incorreto. Use 849201 para teste.');
-      return;
-    }
-    if (!newPassword || newPassword.length < 6) {
-      setLoginError('A nova senha deve ter pelo menos 6 caracteres.');
-      return;
-    }
-    setLoginError('');
-    setLoginSuccess('Senha redefinida com sucesso! Você já pode entrar com sua nova senha.');
-    setTimeout(() => {
-      setMode('login');
-      setForgotStep('request');
-    }, 1200);
   };
 
   const switchMode = (next: 'login' | 'register' | 'forgot_password') => {
     setMode(next);
     setLoginError('');
-    if (next !== 'forgot_password') setForgotStep('request');
-    if (next === 'login') setLoginSuccess('');
+    setLoginSuccess('');
   };
 
   const isParent = role === 'parent';
-  const demoAccounts: Array<{ id: 'claudia' | 'rodrigo' | 'sem_vinculo' | 'carlos' | 'mariana'; name: string; detail: string }> = isParent
-    ? [
-        { id: 'claudia', name: 'Cláudia Mendes', detail: 'Mãe de Ana Clara e Arthur' },
-        { id: 'rodrigo', name: 'Rodrigo Oliveira', detail: 'Pai de Gabriel e Sophia' },
-        { id: 'sem_vinculo', name: 'Responsável sem vínculo', detail: 'Testar a solicitação à escola' },
-      ]
-    : [
-        { id: 'mariana', name: 'Profª Mariana Costa', detail: 'Coordenação Pedagógica' },
-        { id: 'carlos', name: 'Carlos Mendes', detail: 'Portaria e inspeção' },
-      ];
 
   return (
     <div
@@ -330,9 +249,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <GateScene className="mt-10 h-auto w-full max-w-[420px]" />
           </div>
           <p className="text-[13px] leading-relaxed text-muted">
-            Protótipo acadêmico local · Dados fictícios
+            Protótipo acadêmico · servidor local da escola
             <br />
-            Hardware e biometria não integrados.
+            Reconhecimento facial em laboratório, sem homologação.
           </p>
         </aside>
 
@@ -354,24 +273,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {mode === 'forgot_password'
                 ? 'Recuperar acesso.'
                 : mode === 'register'
-                  ? (isParent ? 'Criar cadastro de responsável.' : 'Solicitar credencial da equipe.')
+                  ? 'Criar cadastro de responsável.'
                   : (isParent ? 'Bem-vindo ao portal da família.' : 'Bem-vindo à gestão escolar.')}
             </h1>
             <p className="mt-2 text-[15px] text-ink-2">
               {mode === 'forgot_password'
-                ? 'Etapa demonstrativa: nenhum código é enviado por canal externo.'
+                ? 'A senha é redefinida pela própria escola.'
                 : mode === 'register'
-                  ? (isParent ? 'Depois do cadastro, a escola confere o vínculo com o estudante.' : 'A credencial depende de aprovação institucional.')
+                  ? 'Depois do cadastro, a escola confere o vínculo com o estudante.'
                   : (isParent ? 'Acompanhe a rotina escolar de quem você ama.' : 'Informações organizadas para cuidar de cada entrada.')}
             </p>
 
-            {mode !== 'forgot_password' && (
+            {mode !== 'forgot_password' && isParent && (
               <div role="tablist" aria-label="Acesso" className="tabs mt-7">
                 <button type="button" role="tab" aria-selected={mode === 'login'} className="tab inline-flex items-center gap-2" onClick={() => switchMode('login')}>
                   <LogIn aria-hidden="true" className="h-4 w-4" /> Entrar
                 </button>
                 <button type="button" role="tab" aria-selected={mode === 'register'} className="tab inline-flex items-center gap-2" onClick={() => switchMode('register')}>
-                  <UserPlus aria-hidden="true" className="h-4 w-4" /> {isParent ? 'Criar cadastro' : 'Solicitar credencial'}
+                  <UserPlus aria-hidden="true" className="h-4 w-4" /> Criar cadastro
                 </button>
               </div>
             )}
@@ -379,13 +298,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {!allowedRole && mode !== 'forgot_password' && (
               <div className="segmented mt-5 w-full" role="group" aria-label="Perfil">
                 <button type="button" className="flex-1" aria-pressed={isParent} onClick={() => setRole('parent')}>Responsáveis</button>
-                <button type="button" className="flex-1" aria-pressed={!isParent} onClick={() => setRole('staff')}>Gestão escolar</button>
+                <button type="button" className="flex-1" aria-pressed={!isParent} onClick={() => { setRole('staff'); switchMode('login'); }}>Gestão escolar</button>
               </div>
             )}
 
             <div className="mt-6 space-y-3" aria-live="polite">
               {loginError && <Callout tone="negative" role="alert">{loginError}</Callout>}
-              {loginSuccess && <Callout tone={loginSuccess.startsWith('Validando') ? 'info' : 'positive'} role="status">{loginSuccess}</Callout>}
+              {loginSuccess && <Callout tone={isAuthenticating ? 'info' : 'positive'} role="status">{loginSuccess}</Callout>}
             </div>
 
             {mode === 'login' && (
@@ -399,7 +318,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       autoComplete="username"
                       value={loginIdentifier}
                       onChange={(event) => setLoginIdentifier(event.target.value)}
-                      placeholder={isParent ? 'nome@exemplo.com' : 'nome@escola.example'}
+                      placeholder={isParent ? 'nome@exemplo.com' : 'nome@escola.edu.br'}
                     />
                   </Field>
                   <div>
@@ -415,7 +334,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         autoComplete="current-password"
                         value={loginPassword}
                         onChange={(event) => setLoginPassword(event.target.value)}
-                        placeholder="Digite a senha demonstrativa"
+                        placeholder="Digite sua senha"
                       />
                       <button
                         type="button"
@@ -438,32 +357,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </button>
                 </form>
 
-                <section aria-labelledby="demo-accounts-title" className="mt-8 border-t border-line pt-6">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <h2 id="demo-accounts-title" className="text-[13px] font-semibold text-ink">Contas de demonstração</h2>
-                    <span className="text-xs text-muted">Senha: <span className="font-mono text-ink-2">Troia@2026</span></span>
-                  </div>
-                  <ul className="mt-3 divide-y divide-line rounded-[10px] border border-line">
-                    {demoAccounts.map((account) => (
-                      <li key={account.id}>
-                        <button
-                          type="button"
-                          className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface disabled:opacity-60"
-                          onClick={() => handleQuickDemoLogin(account.id)}
-                          disabled={isAuthenticating}
-                        >
-                          <Avatar name={account.name} />
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-sm font-semibold text-ink">{account.name}</span>
-                            <span className="block text-xs text-muted">{account.detail}</span>
-                          </span>
-                          <ArrowRight aria-hidden="true" className="h-4 w-4 text-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-action" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-
                 {onSwitchAccess && (
                   <button type="button" className="btn btn-secondary mt-5 w-full" onClick={onSwitchAccess}>
                     {isParent ? <Building2 aria-hidden="true" /> : <Smartphone aria-hidden="true" />}
@@ -474,86 +367,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             )}
 
             {mode === 'register' && isParent && (
-              <form onSubmit={handleRegisterParentSubmit} className="mt-6 space-y-5" noValidate>
+              <form onSubmit={(event) => void handleRegisterParentSubmit(event)} className="mt-6 space-y-5" noValidate>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Nome completo" htmlFor="reg-name" className="sm:col-span-2">
                     <input id="reg-name" className="input" autoComplete="name" value={parentName} onChange={(event) => setParentName(event.target.value)} />
                   </Field>
                   <Field label="Parentesco" htmlFor="reg-relation">
-                    <select id="reg-relation" className="select" value={parentRelation} onChange={(event) => setParentRelation(event.target.value as typeof parentRelation)}>
-                      <option value="Mãe">Mãe</option>
-                      <option value="Pai">Pai</option>
-                      <option value="Avó / Avô">Avó / Avô</option>
-                      <option value="Tutor(a) Legal">Tutor(a) legal</option>
-                      <option value="Responsável">Responsável</option>
+                    <select id="reg-relation" className="select" value={parentRelation} onChange={(event) => setParentRelation(event.target.value as GuardianRelationship)}>
+                      {GUARDIAN_RELATIONSHIPS.map((item) => <option key={item} value={item}>{item}</option>)}
                     </select>
                   </Field>
-                  <Field label="CPF" htmlFor="reg-cpf">
+                  <Field label="CPF (opcional)" htmlFor="reg-cpf">
                     <input id="reg-cpf" className="input tabular" inputMode="numeric" value={parentCpf} onChange={(event) => handleCpfChange(event.target.value)} placeholder="000.000.000-00" />
                   </Field>
                   <Field label="Celular" htmlFor="reg-phone">
-                    <input id="reg-phone" className="input tabular" inputMode="tel" autoComplete="tel" value={parentPhone} onChange={(event) => handlePhoneChange(event.target.value, setParentPhone)} placeholder="(11) 98765-4321" />
+                    <input id="reg-phone" className="input tabular" inputMode="tel" autoComplete="tel" value={parentPhone} onChange={(event) => handlePhoneChange(event.target.value)} placeholder="(11) 90000-0000" />
                   </Field>
-                  <Field label="E-mail (opcional)" htmlFor="reg-email">
+                  <Field label="E-mail" htmlFor="reg-email" hint="Usado para entrar no portal.">
                     <input id="reg-email" type="email" className="input" autoComplete="email" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} />
                   </Field>
                   <Field label="Matrícula do estudante" htmlFor="reg-enrollment" hint="Será conferida pela escola antes de liberar qualquer dado." className="sm:col-span-2">
-                    <input id="reg-enrollment" className="input tabular" value={requestedEnrollment} onChange={(event) => setRequestedEnrollment(event.target.value)} placeholder="Ex.: 2024-0182" />
+                    <input id="reg-enrollment" className="input tabular" value={requestedEnrollment} onChange={(event) => setRequestedEnrollment(event.target.value)} placeholder="Ex.: 2026-0001" />
                   </Field>
                   <Field label="Senha" htmlFor="reg-password">
-                    <input id="reg-password" type="password" className="input" autoComplete="new-password" value={registerPassword} onChange={(event) => setRegisterPassword(event.target.value)} placeholder="Mínimo de 6 caracteres" />
+                    <input id="reg-password" type="password" className="input" autoComplete="new-password" value={registerPassword} onChange={(event) => setRegisterPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" />
                   </Field>
                   <Field label="Confirmar senha" htmlFor="reg-password-confirm">
                     <input id="reg-password-confirm" type="password" className="input" autoComplete="new-password" value={registerPasswordConfirm} onChange={(event) => setRegisterPasswordConfirm(event.target.value)} />
                   </Field>
                 </div>
-                <label htmlFor="reg-notify" className="flex cursor-pointer items-start gap-3 rounded-[10px] border border-line bg-surface px-4 py-3 text-[13px] text-ink-2">
-                  <input id="reg-notify" type="checkbox" className="checkbox mt-0.5" checked={acceptTerms} onChange={(event) => setAcceptTerms(event.target.checked)} />
-                  <span>Quero receber avisos de entrada e saída (preferência demonstrativa). O tratamento biométrico e o vínculo com estudantes dependem de validação institucional.</span>
-                </label>
-                <button type="submit" className="btn btn-primary btn-lg w-full">
+                <p className="rounded-[10px] border border-line bg-surface px-4 py-3 text-[13px] leading-relaxed text-ink-2">
+                  Nenhum dado do estudante aparece antes de a escola aprovar o vínculo. O cadastro não autoriza
+                  reconhecimento facial nem condiciona a frequência escolar.
+                </p>
+                <button type="submit" className="btn btn-primary btn-lg w-full" disabled={isAuthenticating}>
                   <UserPlus aria-hidden="true" />
-                  Concluir cadastro
-                </button>
-              </form>
-            )}
-
-            {mode === 'register' && !isParent && (
-              <form onSubmit={handleRegisterStaffSubmit} className="mt-6 space-y-5" noValidate>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Nome completo" htmlFor="staff-name" className="sm:col-span-2">
-                    <input id="staff-name" className="input" autoComplete="name" value={staffName} onChange={(event) => setStaffName(event.target.value)} />
-                  </Field>
-                  <Field label="Matrícula funcional" htmlFor="staff-registry">
-                    <input id="staff-registry" className="input" value={staffMatricula} onChange={(event) => setStaffMatricula(event.target.value)} placeholder="MAT-2026/0481" />
-                  </Field>
-                  <Field label="Função" htmlFor="staff-role">
-                    <select id="staff-role" className="select" value={staffRole} onChange={(event) => setStaffRole(event.target.value as typeof staffRole)}>
-                      <option value="Operador de Portaria & Inspetor">Portaria e inspeção</option>
-                      <option value="Coordenação Pedagógica">Coordenação Pedagógica</option>
-                      <option value="Direção Escolar">Direção Escolar</option>
-                      <option value="Segurança Patrimonial">Segurança Patrimonial</option>
-                    </select>
-                  </Field>
-                  <Field label="E-mail institucional" htmlFor="staff-email">
-                    <input id="staff-email" type="email" className="input" autoComplete="email" value={staffEmail} onChange={(event) => setStaffEmail(event.target.value)} placeholder="nome@escola.example" />
-                  </Field>
-                  <Field label="Telefone ou ramal (opcional)" htmlFor="staff-phone">
-                    <input id="staff-phone" className="input tabular" inputMode="tel" value={staffPhone} onChange={(event) => handlePhoneChange(event.target.value, setStaffPhone)} />
-                  </Field>
-                  <Field label="Chave da unidade escolar" htmlFor="staff-key" hint="Para testes de homologação use EMEF-2026-SP." className="sm:col-span-2">
-                    <input id="staff-key" className="input font-mono" value={schoolAuthKey} onChange={(event) => setSchoolAuthKey(event.target.value)} />
-                  </Field>
-                  <Field label="Senha" htmlFor="staff-password">
-                    <input id="staff-password" type="password" className="input" autoComplete="new-password" value={registerPassword} onChange={(event) => setRegisterPassword(event.target.value)} placeholder="Mínimo de 6 caracteres" />
-                  </Field>
-                  <Field label="Confirmar senha" htmlFor="staff-password-confirm">
-                    <input id="staff-password-confirm" type="password" className="input" autoComplete="new-password" value={registerPasswordConfirm} onChange={(event) => setRegisterPasswordConfirm(event.target.value)} />
-                  </Field>
-                </div>
-                <button type="submit" className="btn btn-primary btn-lg w-full">
-                  <KeyRound aria-hidden="true" />
-                  Solicitar credencial
+                  {isAuthenticating ? 'Criando conta…' : 'Concluir cadastro'}
                 </button>
               </form>
             )}
@@ -564,32 +413,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <ArrowLeft aria-hidden="true" />
                   Voltar para entrar
                 </button>
-                {forgotStep === 'request' ? (
-                  <>
-                    <Field label="Celular ou e-mail cadastrado" htmlFor="forgot-identifier">
-                      <input id="forgot-identifier" className="input h-11" value={forgotIdentifier} onChange={(event) => setForgotIdentifier(event.target.value)} />
-                    </Field>
-                    <button type="button" className="btn btn-primary btn-lg w-full" onClick={handleForgotRequest}>Gerar código de recuperação</button>
-                  </>
-                ) : (
-                  <>
-                    <Field label="Código de 6 dígitos" htmlFor="forgot-code">
-                      <input id="forgot-code" className="input h-11 tabular tracking-[0.4em]" inputMode="numeric" maxLength={6} value={recoveryCode} onChange={(event) => setRecoveryCode(event.target.value.replace(/\D/g, ''))} placeholder="000000" />
-                    </Field>
-                    <Field label="Nova senha" htmlFor="forgot-password">
-                      <input id="forgot-password" type="password" className="input h-11" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="Mínimo de 6 caracteres" />
-                    </Field>
-                    <button type="button" className="btn btn-primary btn-lg w-full" onClick={handleForgotConfirm}>
-                      <CheckCircle2 aria-hidden="true" />
-                      Redefinir senha
-                    </button>
-                  </>
-                )}
+                <Callout tone="info" icon={KeyRound} title="Redefinição pela escola.">
+                  Procure a Coordenação ou a Direção com um documento de identificação. A escola confere seus dados
+                  e define uma nova senha de acesso. O sistema não envia códigos por SMS ou e-mail.
+                </Callout>
               </div>
             )}
 
-            <Callout tone="neutral" icon={FlaskConical} className="mt-8">
-              Sessão validada pela API local com contas fictícias. Cadastro, recuperação e identidade institucional permanecem demonstrativos.
+            <Callout tone="neutral" icon={ShieldCheck} className="mt-8">
+              Acesso validado pelo servidor da escola. Cada perfil vê somente o que lhe cabe.
             </Callout>
           </div>
         </main>

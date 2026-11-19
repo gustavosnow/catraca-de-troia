@@ -6,17 +6,17 @@ export type NotificationStatus = 'Entregue' | 'Lido' | 'Pendente' | 'Falha';
 
 export type AccessDirection = 'entry' | 'exit';
 
+/** Ficha do estudante como a interface usa; vem de /students ou /me/students. */
 export interface Student {
   id: string;
   matricula: string;
   name: string;
-  avatar: string;
   turma: string;
   shift: 'Manhã' | 'Tarde' | 'Integral';
+  /** Primeiro responsável com vínculo aprovado; vazio quando ainda não há vínculo. */
   guardianName: string;
   guardianPhone: string;
   guardianRelation: string;
-  email: string;
   emergencyContact: string;
   status: 'Ativo' | 'Suspenso' | 'Afastado';
   age?: number;
@@ -30,7 +30,6 @@ export interface AccessLog {
   studentId: string;
   studentName: string;
   matricula: string;
-  avatar: string;
   turma: string;
   shift: 'Manhã' | 'Tarde' | 'Integral';
   timestamp: string; // ISO string or HH:mm:ss
@@ -50,8 +49,8 @@ export interface AccessLog {
   reason?: string;
   operator?: string;
   isNew?: boolean;
-  /** Origem do registro: simulação demonstrativa ou câmera do protótipo facial (MC-036). */
-  source?: 'simulacao' | 'camera';
+  /** Origem: câmera do protótipo facial, passagem assistida ou simulação de bases antigas. */
+  source?: 'camera' | 'assistida' | 'simulacao';
   recognition?: {
     deviceId: string;
     matchScore: number;
@@ -59,25 +58,37 @@ export interface AccessLog {
   };
 }
 
+/** Câmera (sentido) de uma catraca cadastrada em access_devices. */
+export interface TurnstileLane {
+  deviceId: string;
+  direction: AccessDirection;
+  active: boolean;
+  lastSeenAt?: string;
+}
+
+/** Catraca cadastrada, agrupando as câmeras de entrada e de saída. */
 export interface Turnstile {
   id: string;
   name: string;
-  location: string;
-  status: 'Online' | 'Ocupada' | 'Manutenção' | 'Offline';
-  passesToday: number;
-  ipAddress: string;
-  lastPing: string;
+  lanes: TurnstileLane[];
 }
 
+/** Ponto de atenção do dia: leitura negada pelo protótipo facial. */
 export interface SecurityAlert {
   id: string;
   title: string;
-  description: string;
-  time: string;
-  type: 'unrecognized' | 'blocked_badge' | 'wrong_shift' | 'manual_override';
-  severity: 'high' | 'medium' | 'low';
-  turnstile: string;
-  resolved: boolean;
+  turnstileName: string;
+  direction: AccessDirection;
+  occurredAt: string;
+}
+
+/** Responsável da sessão no portal (montado a partir da sessão e de /me/students). */
+export interface ParentAccount {
+  id: string;
+  name: string;
+  phone: string;
+  relation: string;
+  childrenIds: string[];
 }
 
 export interface DayTimelineEvent {
@@ -156,23 +167,8 @@ export interface AuthUser {
   email: string;
   phone: string;
   role: UserRole;
-  cpf?: string;
-  avatar?: string;
-  guardianRelation?: 'Mãe' | 'Pai' | 'Avó / Avô' | 'Tutor(a) Legal' | 'Responsável';
   childrenIds?: string[];
-  staffRole?: 'Operador de Portaria & Inspetor' | 'Coordenação Pedagógica' | 'Direção Escolar' | 'Segurança Patrimonial';
+  staffRole?: 'Operador de Portaria & Inspetor' | 'Coordenação Pedagógica' | 'Direção Escolar';
   functionalRegistry?: string;
   schoolUnit: string;
-  inepCode?: string;
-}
-
-export interface StaffAccount {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: 'Operador de Portaria & Inspetor' | 'Coordenação Pedagógica' | 'Direção Escolar' | 'Segurança Patrimonial';
-  functionalRegistry: string;
-  schoolUnit: string;
-  avatar?: string;
 }
