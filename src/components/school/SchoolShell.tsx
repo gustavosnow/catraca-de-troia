@@ -9,7 +9,7 @@ import {
   ClipboardList,
   FileText,
   FlaskConical,
-  HelpCircle,
+  Presentation,
   History,
   House,
   LayoutGrid,
@@ -71,7 +71,8 @@ interface SchoolShellProps {
   user: AuthUser;
   counts: { notices: number; pendingJustifications: number; pendingLinks: number; activeAlerts: number };
   onOpenAlerts: () => void;
-  onOpenProjectDocs: () => void;
+  /** Abre a apresentação do projeto (#/projeto). */
+  onOpenPresentation: () => void;
   onSwitchToParentApp: () => void;
   onLogout: () => void;
   connection: { tone: 'positive' | 'warning' | 'neutral'; label: string };
@@ -98,7 +99,7 @@ export const SchoolShell: React.FC<SchoolShellProps> = ({
   user,
   counts,
   onOpenAlerts,
-  onOpenProjectDocs,
+  onOpenPresentation,
   onSwitchToParentApp,
   onLogout,
   connection,
@@ -201,8 +202,8 @@ export const SchoolShell: React.FC<SchoolShellProps> = ({
               </button>
             </li>
             <li>
-              <button type="button" className="nav-item" onClick={() => { onOpenProjectDocs(); setIsMobileNavOpen(false); }}>
-                <HelpCircle aria-hidden="true" />
+              <button type="button" className="nav-item" onClick={() => { setIsMobileNavOpen(false); onOpenPresentation(); }}>
+                <Presentation aria-hidden="true" />
                 <span className="flex-1">Sobre o projeto</span>
               </button>
             </li>

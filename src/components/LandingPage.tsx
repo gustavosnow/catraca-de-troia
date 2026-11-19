@@ -7,8 +7,9 @@ import {
   FlaskConical,
   LockKeyhole,
   Menu,
-  School,
+  Presentation,
   ScanFace,
+  School,
   ShieldCheck,
   Users,
   Wifi,
@@ -22,6 +23,8 @@ interface LandingPageProps {
   onParentLogin: () => void;
   onParentRegister: () => void;
   onSchoolLogin: () => void;
+  /** Abre a apresentação do projeto (#/projeto), pública. */
+  onOpenPresentation: () => void;
 }
 
 const NAV_ITEMS = [
@@ -117,7 +120,7 @@ const ProductPreview: React.FC = () => (
   </div>
 );
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onParentLogin, onParentRegister, onSchoolLogin }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onParentLogin, onParentRegister, onSchoolLogin, onOpenPresentation }) => {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
 
@@ -300,9 +303,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onParentLogin, onParen
               <div className="mt-6 flex flex-wrap gap-2">
                 <span className="chip chip-neutral"><Building2 aria-hidden="true" />1 escola</span>
                 <span className="chip chip-brand"><ScanFace aria-hidden="true" />Reconhecimento facial em protótipo</span>
-                                <span className="chip chip-positive"><ShieldCheck aria-hidden="true" />Vínculos autorizados</span>
+                <span className="chip chip-positive"><ShieldCheck aria-hidden="true" />Vínculos autorizados</span>
                 <span className="chip chip-neutral"><Wifi aria-hidden="true" />Fila local preservada</span>
               </div>
+
+              <button type="button" className="btn btn-primary mt-7" onClick={onOpenPresentation}>
+                <Presentation aria-hidden="true" />
+                Ver a apresentação do projeto
+              </button>
 
               <dl className="mt-10 grid gap-4 sm:grid-cols-3">
                 {GOALS.map(([value, label]) => (

@@ -7,7 +7,6 @@ import { ManualReleaseModal } from './components/ManualReleaseModal';
 import { StudentDetailModal } from './components/StudentDetailModal';
 import { AlertsModal } from './components/AlertsModal';
 import { ParentAppView } from './components/ParentApp/ParentAppView';
-import { ProjectDocsModal } from './components/ProjectDocsModal';
 import { SchoolNoticesManager } from './components/SchoolNoticesManager';
 import { StudentsManagementList } from './components/StudentsManagementList';
 import { AuthModal } from './components/AuthModal';
@@ -50,8 +49,12 @@ import type {
 
 import { CheckCircle2, Megaphone } from 'lucide-react';
 
-type ViewMode = 'landing' | 'parent_app' | 'management_dashboard';
+type ViewMode = 'landing' | 'presentation' | 'parent_app' | 'management_dashboard';
 type AccessMode = 'login' | 'register';
+
+/** Apresentação do projeto (#/projeto): carregada só quando aberta. */
+const ProjectPresentation = React.lazy(() => import('./components/presentation/ProjectPresentation'));
+const PRESENTATION_RETURN_KEY = 'catraca:presentation-return';
 
 const PresentationAccessModal = React.lazy(async () => {
   const module = await import('./components/PresentationAccessModal');
@@ -60,6 +63,7 @@ const PresentationAccessModal = React.lazy(async () => {
 
 const getViewModeFromHash = (): ViewMode => {
   if (isParentOnlyBuild) return 'parent_app';
+  if (window.location.hash.startsWith('#/projeto')) return 'presentation';
   if (window.location.hash.startsWith('#/escola')) return 'management_dashboard';
   if (window.location.hash.startsWith('#/responsaveis')) return 'parent_app';
   return 'landing';
@@ -116,7 +120,7 @@ export default function App() {
       const nextView = getViewModeFromHash();
       setViewMode(nextView);
       if (nextView === 'management_dashboard') setSection(getSectionFromHash());
-      if (nextView === 'landing') {
+      if (nextView === 'landing' || nextView === 'presentation') {
         setIsAuthModalOpen(false);
         return;
       }
@@ -134,7 +138,7 @@ export default function App() {
       setIsAuthModalOpen(true);
     };
     window.addEventListener('catraca:session-ended', endSession);
-    if (!isParentOnlyBuild && viewMode === 'landing') {
+    if (!isParentOnlyBuild && (viewMode === 'landing' || viewMode === 'presentation')) {
       setIsRestoringSession(false);
       return () => window.removeEventListener('catraca:session-ended', endSession);
     }
@@ -169,6 +173,20 @@ export default function App() {
       ? `${basePath}/${accessMode === 'register' ? 'cadastro' : 'login'}`
       : basePath;
     setViewMode(mode);
+  };
+
+  /** Abre a apresentação lembrando de onde veio, para o "Sair" voltar ao mesmo lugar. */
+  const openPresentation = () => {
+    try { sessionStorage.setItem(PRESENTATION_RETURN_KEY, window.location.hash || '#/apresentacao'); } catch { /* sem armazenamento */ }
+    window.location.hash = '/projeto';
+  };
+
+  const closePresentation = () => {
+    let target = '#/apresentacao';
+    try { target = sessionStorage.getItem(PRESENTATION_RETURN_KEY) || target; } catch { /* sem armazenamento */ }
+    if (target.startsWith('#/projeto')) target = '#/apresentacao';
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+    window.location.hash = target.slice(1);
   };
 
   const navigateToLanding = () => {
@@ -679,7 +697,6 @@ export default function App() {
   // Modals state
   const [isManualReleaseOpen, setIsManualReleaseOpen] = useState<boolean>(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState<boolean>(false);
-  const [isProjectDocsOpen, setIsProjectDocsOpen] = useState<boolean>(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   // Toast notification banner
@@ -878,8 +895,17 @@ export default function App() {
     </div>;
   }
 
+  if (viewMode === 'presentation') {
+    return (
+      <React.Suspense fallback={<div role="status" className="flex min-h-screen items-center justify-center bg-[#0b151d] text-sm text-[#d1d5db]">Abrindo a apresentação…</div>}>
+        <ProjectPresentation onExit={closePresentation} />
+      </React.Suspense>
+    );
+  }
+
   if (viewMode === 'landing') {
     return <LandingPage
+      onOpenPresentation={openPresentation}
       onParentLogin={() => openAccess('parent', 'login')}
       onParentRegister={() => openAccess('parent', 'register')}
       onSchoolLogin={() => openAccess('staff', 'login')}
@@ -974,7 +1000,7 @@ export default function App() {
           activeAlerts: activeAlertsCount,
         }}
         onOpenAlerts={() => setIsAlertsOpen(true)}
-        onOpenProjectDocs={() => setIsProjectDocsOpen(true)}
+        onOpenPresentation={openPresentation}
         onSwitchToParentApp={() => void handleSwitchAccess('parent_app')}
         onLogout={() => void handleLogout()}
         connection={connection}
@@ -1137,11 +1163,6 @@ export default function App() {
         alerts={alerts}
         isOpen={isAlertsOpen}
         onClose={() => setIsAlertsOpen(false)}
-      />
-
-      <ProjectDocsModal
-        isOpen={isProjectDocsOpen}
-        onClose={() => setIsProjectDocsOpen(false)}
       />
 
       {isPresentationAccessOpen && (

@@ -352,3 +352,11 @@ Conteúdo: passagens dos 10 estudantes por turno, com cerca de 1 em 8 assistidas
 Limites: as passagens pela câmera são geradas pela rota de reconhecimento, sem câmera física; similaridade e tempo de inferência são valores de carga, não medições do protótipo.
 
 Ajuste da MC-040: o banco (`.data/`) continua fora do Git, porque guarda hashes de senhas e sessões e mudaria a cada uso. Para a equipe ver os mesmos dados, `npm run db:demo` roda a carga da escola e o movimento num clone novo; sem câmeras a preservar, a carga cadastra entrada e saída da catraca 01. O README avisa que os dados precisam ser ativados e não publica a senha.
+
+## MC-041 — Apresentação navegável do projeto em 19/11/2026
+
+Solicitação: preparar uma apresentação acadêmica visual para expor o projeto e permitir abri-la tanto na landing quanto no painel escolar.
+
+Ajustes: criada a rota pública `#/projeto` com 21 slides, navegação por botões, teclado e gesto horizontal, visão geral, tela cheia e retorno à tela de origem. O deck reúne escopo, ciclo de vida, EAP, prazo, orçamento, metas, riscos, arquitetura, perfis e evidências, com imagens das interfaces e links para a pasta oficial. O modal resumido **Sobre o projeto** foi substituído por essa apresentação. A paleta azul-marinho e laranja foi preservada.
+
+Limites: os slides são material de exposição. Metas, custos e prazo são critérios e estimativas do cenário planejado; integração física, entrega externa de notificações e homologação não foram demonstradas. As imagens são capturas do protótipo, sem dados reais de estudantes ou biometria. Os documentos acadêmicos vinculados continuam como fonte vigente.
