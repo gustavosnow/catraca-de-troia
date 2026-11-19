@@ -1,11 +1,15 @@
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto';
-import type { AuthenticatedUser, AuthSession, LoginRequest } from '../../../shared/contracts/auth';
+import type {
+  AuthenticatedUser, AuthSession, LoginRequest, RegisterGuardianRequest,
+} from '../../../shared/contracts/auth';
+import type { GuardianRelationship } from '../../../shared/contracts/linkRequests';
 import type { UserRole } from '../../../shared/contracts/justifications';
 import type { ActorRequest } from '../../auth/sessionAuth';
 import { hashSessionToken } from '../../auth/sessionAuth';
-import { normalizeIdentifier } from '../../auth/credentials';
+import { normalizeIdentifier, registerCredentials } from '../../auth/credentials';
+import { LinkRequestService } from '../linkRequests/service';
 import type { AppDatabase } from '../../db';
-import { unauthorized } from '../../errors';
+import { conflict, notFound, unauthorized } from '../../errors';
 
 interface CredentialRow {
   user_id: string;
@@ -89,6 +93,44 @@ export class AuthService {
     })();
 
     return { token, expiresAt, user };
+  }
+
+  /**
+   * Cadastro de responsável: cria a conta e a solicitação de vínculo em uma
+   * transação, e devolve a sessão. A conta não vê nenhum estudante até a escola
+   * aprovar o vínculo. Contas da equipe escolar não são criadas por aqui.
+   */
+  registerGuardian(input: RegisterGuardianRequest): AuthSession {
+    const student = this.database.prepare(`
+      SELECT school_id FROM students WHERE enrollment = ?
+    `).get(input.studentEnrollment.trim()) as { school_id: string } | undefined;
+    if (!student) throw notFound('Matrícula não localizada. Confira o número com a secretaria da escola.');
+
+    const userId = randomUUID();
+    const createdAt = this.now();
+    this.database.transaction(() => {
+      this.database.prepare(`
+        INSERT INTO users (id, school_id, name, role, email, phone, functional_registry)
+        VALUES (?, ?, ?, 'GUARDIAN', ?, ?, NULL)
+      `).run(userId, student.school_id, input.name.trim(), input.email.trim().toLowerCase(), input.phone.trim());
+      try {
+        registerCredentials(this.database, userId, [input.email, input.phone, input.cpf ?? ''], input.password);
+      } catch {
+        throw conflict('ACCOUNT_EXISTS', 'Já existe uma conta com este e-mail, telefone ou CPF. Entre com ela ou procure a escola.');
+      }
+      this.database.prepare(`
+        INSERT INTO audit_log
+          (id, school_id, actor_id, aggregate_type, aggregate_id, action, previous_state, new_state, occurred_at)
+        VALUES (?, ?, ?, 'USER_ACCOUNT', ?, 'GUARDIAN_REGISTERED', NULL, 'ACTIVE', ?)
+      `).run(randomUUID(), student.school_id, userId, userId, createdAt);
+      new LinkRequestService(this.database, this.now).create(
+        { id: userId, schoolId: student.school_id, name: input.name.trim(), role: 'GUARDIAN' },
+        { studentEnrollment: input.studentEnrollment, relationship: input.relationship as GuardianRelationship },
+        `registration:${userId}`,
+      );
+    })();
+
+    return this.login({ identifier: input.email, password: input.password });
   }
 
   currentUser(actorId: string): AuthenticatedUser {
