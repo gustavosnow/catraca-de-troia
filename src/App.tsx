@@ -583,7 +583,7 @@ export default function App() {
     soundManager.playAccessGranted();
     setToastMessage({
       id: latest.id,
-      title: latest.direction === 'entry' ? 'Entrada pela câmera' : 'Saída pela câmera',
+      title: latest.direction === 'entry' ? 'Entrada pelo protótipo facial' : 'Saída pelo protótipo facial',
       studentName: latest.studentName,
       time: latest.exactTime,
       phone: latest.notification.phoneTarget,
@@ -1072,6 +1072,9 @@ export default function App() {
             onOpenPresentationAccess={() => setIsPresentationAccessOpen(true)}
             onOpenProjectDocs={() => setIsProjectDocsOpen(true)}
             onSwitchToParentApp={() => void handleSwitchAccess('parent_app')}
+            canManageBiometrics={canManageSchool}
+            students={students}
+            isOnline={isOnline}
             delivery={canReviewLinks ? (
               <NotificationDeliveryPanel
                 snapshot={deliverySnapshot}
