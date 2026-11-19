@@ -42,7 +42,7 @@ export const GuardianLinkRequests: React.FC<GuardianLinkRequestsProps> = ({ requ
   };
 
   return (
-    <section id="vinculos" data-testid="guardian-link-requests" className="guardian-link-requests card scroll-mt-24 p-6" aria-labelledby="link-requests-title">
+    <section data-testid="guardian-link-requests" className="guardian-link-requests card p-4 sm:p-6" aria-labelledby="link-requests-title">
       <div className="flex items-start gap-3">
         <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-brand-soft text-action">
           <Link2 aria-hidden="true" className="h-5 w-5" />
@@ -92,14 +92,22 @@ export const GuardianLinkRequests: React.FC<GuardianLinkRequestsProps> = ({ requ
             {requests.map((request) => {
               const status = STATUS[request.status];
               return (
-                <li key={request.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                  <Avatar name={request.student.name} size="sm" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-ink">{request.student.name}</p>
-                    <p className="tabular text-xs text-muted">Matrícula {request.student.enrollment} · {request.relationship}</p>
-                    {request.reviewNote && <p className="mt-1 text-xs text-ink-2">Observação da escola: {request.reviewNote}</p>}
+                <li key={request.id} className="px-3 py-3 sm:px-4">
+                  <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
+                    <div className="flex min-w-0 grow basis-52 items-start gap-2.5">
+                      <Avatar name={request.student.name} size="sm" />
+                      <div className="min-w-0 wrap-anywhere">
+                        <p className="text-sm font-medium text-ink">{request.student.name}</p>
+                        <p className="tabular mt-0.5 text-xs text-muted">Matrícula {request.student.enrollment} · {request.relationship}</p>
+                      </div>
+                    </div>
+                    <Chip tone={status.tone} icon={status.icon}>{status.label}</Chip>
                   </div>
-                  <Chip tone={status.tone} icon={status.icon}>{status.label}</Chip>
+                  {request.reviewNote && (
+                    <p className="mt-3 border-t border-line pt-2 text-[13px] leading-relaxed wrap-anywhere text-ink-2">
+                      <span className="font-medium">Observação da escola:</span> {request.reviewNote}
+                    </p>
+                  )}
                 </li>
               );
             })}

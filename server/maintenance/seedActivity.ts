@@ -126,7 +126,7 @@ const pass = (studentId: string, direction: 'ENTRY' | 'EXIT', iso: string, assis
       matchScore: Number((0.55 + random() * 0.27).toFixed(4)),
       inferenceMs: Number((70 + random() * 120).toFixed(1)),
       framesConfirmed: 3,
-    });
+    }, 'DEMO_SIMULATION');
     if (decision.decision === 'AUTHORIZED') totals.facial += 1;
     return;
   }
@@ -139,7 +139,7 @@ const pass = (studentId: string, direction: 'ENTRY' | 'EXIT', iso: string, assis
     whatsappStatus: 'PENDING',
     pushStatus: 'PENDING',
     reason: assistedReason ?? ASSISTED_REASONS[between(0, ASSISTED_REASONS.length - 1)],
-  }, `carga-${randomUUID()}`);
+  }, `carga-${randomUUID()}`, 'DEMO_SIMULATION');
   totals.assisted += 1;
 };
 
@@ -154,7 +154,7 @@ const deny = (iso: string, reason: 'NO_MATCH' | 'LOW_SCORE') => {
     matchScore: reason === 'NO_MATCH' ? Number((0.1 + random() * 0.15).toFixed(4)) : Number((0.3 + random() * 0.08).toFixed(4)),
     inferenceMs: Number((70 + random() * 120).toFixed(1)),
     framesConfirmed: reason === 'NO_MATCH' ? 1 : 3,
-  });
+  }, 'DEMO_SIMULATION');
   totals.denials += 1;
 };
 

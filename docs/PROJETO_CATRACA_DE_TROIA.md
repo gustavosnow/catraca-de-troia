@@ -1,12 +1,12 @@
 # Catraca de Troia — Controle de Acesso Inteligente
 
-Consolidação técnica conferida em **04/11/2026** contra TAP, Atividade 01, Dicionário da EAP v1.3 (atualizado em 29/10/2026) e Plano de Riscos atuais do Drive. A data registra esta conferência; não altera datas de revisão ou aprovação dos documentos originais. Entregas e metas do piloto completo permanecem planejadas, sem homologação institucional comprovada pelo protótipo.
+Consolidação técnica conferida em **04/11/2026**. Em **19/11/2026**, a revisão da apresentação consultou o TAP, a Atividade 01, o Dicionário da EAP v1.6 (atualizado em 19/11/2026) e o Plano de Riscos no Drive. A data registra esta conferência; não altera datas de revisão ou aprovação dos documentos originais. Entregas e metas do piloto completo permanecem planejadas, sem homologação institucional comprovada pelo protótipo.
 
 ## Fontes de referência
 
 - [Atividade 01 — Ciclo de Vida](https://docs.google.com/document/d/1eYtvWycQ0RY8AZVUsdvft_6PcsAiU6WM-Qp0A1GZnhA/edit).
 - [Termo de Abertura do Projeto](https://docs.google.com/document/d/123CtOo0_VU80zlFWrm8pKOE5eh1VWj38N-YrP_6kH2U/edit).
-- [Dicionário da EAP — versão 1.3](https://docs.google.com/document/d/1oiOUK3fTjjsJNeXXXpx0q8YL7LK9P8CJ/edit).
+- [Dicionário da EAP — versão 1.6](https://docs.google.com/document/d/1oiOUK3fTjjsJNeXXXpx0q8YL7LK9P8CJ/edit).
 - [Mapeamento e Plano de Resposta a Riscos em TI](https://docs.google.com/document/d/1btSlX5aFU_2gdUn7JFvTXXJ90HBENuXh_d514wiCOHE/edit).
 
 Esses documentos prevalecem sobre textos herdados do AI Studio. A consolidação não substitui os documentos originais nem comprova aprovação de novas funcionalidades.

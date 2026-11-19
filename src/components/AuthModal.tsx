@@ -117,14 +117,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoginError('');
     setLoginSuccess('Validando credenciais e criando sessão…');
     try {
-      const session = await authApi.login({ identifier, password, rememberMe });
+      const session = await authApi.login({ identifier, password, rememberMe }, expectedRole);
       const authUser = toAuthUser(session.user);
-      if (authUser.role !== expectedRole) {
-        await authApi.logout();
-        throw new Error(expectedRole === 'parent'
-          ? 'Esta credencial pertence à equipe escolar.'
-          : 'Esta credencial pertence a um responsável.');
-      }
       setLoginSuccess(`Sessão autorizada. Olá, ${authUser.name.split(' ')[0]}.`);
       onLoginSuccess(authUser);
     } catch (error) {
@@ -349,7 +343,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </div>
                   <label htmlFor="auth-remember" className="flex cursor-pointer items-center gap-2.5 text-[13px] text-ink-2">
                     <input id="auth-remember" type="checkbox" className="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} />
-                    Lembrar este dispositivo
+                    Estender a duração da sessão para 30 dias
                   </label>
                   <button type="submit" className="btn btn-primary btn-lg w-full" disabled={isAuthenticating}>
                     {isAuthenticating ? 'Entrando…' : 'Entrar'}

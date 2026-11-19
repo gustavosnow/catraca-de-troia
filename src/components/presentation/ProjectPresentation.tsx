@@ -34,6 +34,14 @@ export const ProjectPresentation: React.FC<ProjectPresentationProps> = ({ onExit
     setOverview(false);
   }, []);
 
+  useEffect(() => {
+    const onHashChange = () => {
+      if (window.location.hash.startsWith('#/projeto')) goTo(slideFromHash());
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [goTo]);
+
   // O número do slide fica na URL (sem disparar hashchange) para reabrir no mesmo ponto.
   useEffect(() => {
     window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#/projeto/${index + 1}`);
@@ -58,6 +66,7 @@ export const ProjectPresentation: React.FC<ProjectPresentationProps> = ({ onExit
       if (event.altKey || event.ctrlKey || event.metaKey) return;
       const target = event.target as HTMLElement | null;
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+      if (event.key === ' ' && target?.closest('button, a')) return;
       if (overview && event.key === 'Escape') { setOverview(false); return; }
       switch (event.key) {
         case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ':

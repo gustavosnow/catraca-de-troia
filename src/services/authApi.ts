@@ -3,28 +3,23 @@ import type {
 } from '../../shared/contracts/auth';
 import { apiBaseUrl } from '../config/runtime';
 import { ApiClientError } from './apiError';
-
-const persistentTokenKey = 'catraca-troia.session';
-const temporaryTokenKey = 'catraca-troia.session.temporary';
-
-const readToken = () => sessionStorage.getItem(temporaryTokenKey)
-  || localStorage.getItem(persistentTokenKey);
-
-const clearToken = () => {
-  sessionStorage.removeItem(temporaryTokenKey);
-  localStorage.removeItem(persistentTokenKey);
-};
+import { clearSessionToken, readSessionToken, saveSessionToken, tabSessionReady } from './tabSession';
 
 const notifySessionEnded = () => window.dispatchEvent(new Event('catraca:session-ended'));
 
-const parseResponse = async <T>(response: Response): Promise<T> => {
+const ensureCurrentSession = (token: string) => {
+  if (readSessionToken() !== token) throw new ApiClientError('SESSION_CHANGED', 'A sessão desta aba foi alterada.', 401);
+};
+
+const parseResponse = async <T>(response: Response, token?: string): Promise<T> => {
   const body = await response.json().catch(() => null) as {
     data?: T;
     error?: { code: string; message: string };
   } | null;
+  if (token) ensureCurrentSession(token);
   if (!response.ok) {
-    if (response.status === 401) {
-      clearToken();
+    if (response.status === 401 && token) {
+      clearSessionToken();
       notifySessionEnded();
     }
     throw new ApiClientError(
@@ -37,13 +32,14 @@ const parseResponse = async <T>(response: Response): Promise<T> => {
 };
 
 export const authenticatedRequest = async <T>(pathname: string, init?: RequestInit): Promise<T> => {
-  const token = readToken();
+  await tabSessionReady;
+  const token = readSessionToken();
   if (!token) throw new ApiClientError('UNAUTHORIZED', 'Entre para continuar.', 401);
   const headers = new Headers(init?.headers);
   headers.set('Authorization', `Bearer ${token}`);
   if (init?.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   try {
-    return await parseResponse<T>(await fetch(`${apiBaseUrl}${pathname}`, { ...init, headers }));
+    return await parseResponse<T>(await fetch(`${apiBaseUrl}${pathname}`, { ...init, headers }), token);
   } catch (error) {
     if (error instanceof ApiClientError) throw error;
     throw new ApiClientError('API_UNAVAILABLE', 'A API local não está acessível.', 0);
@@ -51,7 +47,8 @@ export const authenticatedRequest = async <T>(pathname: string, init?: RequestIn
 };
 
 export const authenticatedRawRequest = async (pathname: string, init?: RequestInit) => {
-  const token = readToken();
+  await tabSessionReady;
+  const token = readSessionToken();
   if (!token) throw new ApiClientError('UNAUTHORIZED', 'Entre para continuar.', 401);
   const headers = new Headers(init?.headers);
   headers.set('Authorization', `Bearer ${token}`);
@@ -61,15 +58,28 @@ export const authenticatedRawRequest = async (pathname: string, init?: RequestIn
   } catch {
     throw new ApiClientError('API_UNAVAILABLE', 'A API local não está acessível.', 0);
   }
-  if (!response.ok) await parseResponse<never>(response);
+  if (!response.ok) await parseResponse<never>(response, token);
+  ensureCurrentSession(token);
   return response;
 };
 
-export const authApi = {
-  hasStoredSession: () => Boolean(readToken()),
+const revokeToken = (token: string) => fetch(`${apiBaseUrl}/api/v1/auth/logout`, {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${token}` },
+}).catch(() => undefined);
 
-  login: async (input: LoginRequest) => {
-    const previousToken = readToken();
+const startSession = (session: AuthSession, remember = false) => {
+  const previous = readSessionToken();
+  saveSessionToken(session.token, remember);
+  if (previous) void revokeToken(previous);
+  return session;
+};
+
+export const authApi = {
+  hasStoredSession: () => Boolean(readSessionToken()),
+
+  login: async (input: LoginRequest, expectedRole: 'parent' | 'staff') => {
+    await tabSessionReady;
     let response: Response;
     try {
       response = await fetch(`${apiBaseUrl}/api/v1/auth/login`, {
@@ -81,22 +91,18 @@ export const authApi = {
       throw new ApiClientError('API_UNAVAILABLE', 'A API de autenticação não está acessível.', 0);
     }
     const session = await parseResponse<AuthSession>(response);
-    if (previousToken) {
-      await fetch(`${apiBaseUrl}/api/v1/auth/logout`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${previousToken}` },
-      }).catch(() => undefined);
+    if ((session.user.role === 'GUARDIAN') !== (expectedRole === 'parent')) {
+      void revokeToken(session.token);
+      throw new Error(expectedRole === 'parent'
+        ? 'Esta credencial pertence à equipe escolar.'
+        : 'Esta credencial pertence a um responsável.');
     }
-    clearToken();
-    (input.rememberMe ? localStorage : sessionStorage).setItem(
-      input.rememberMe ? persistentTokenKey : temporaryTokenKey,
-      session.token,
-    );
-    return session;
+    return startSession(session, input.rememberMe);
   },
 
   /** Cadastro do responsável: cria a conta e o pedido de vínculo, e já inicia a sessão. */
   registerGuardian: async (input: RegisterGuardianRequest) => {
+    await tabSessionReady;
     let response: Response;
     try {
       response = await fetch(`${apiBaseUrl}/api/v1/auth/register`, {
@@ -107,21 +113,17 @@ export const authApi = {
     } catch {
       throw new ApiClientError('API_UNAVAILABLE', 'A API de autenticação não está acessível.', 0);
     }
-    const session = await parseResponse<AuthSession>(response);
-    clearToken();
-    sessionStorage.setItem(temporaryTokenKey, session.token);
-    return session;
+    return startSession(await parseResponse<AuthSession>(response));
   },
 
   restore: () => authenticatedRequest<AuthenticatedUser>('/api/v1/auth/session'),
 
   logout: async () => {
-    try {
-      await authenticatedRequest<void>('/api/v1/auth/logout', { method: 'POST' });
-    } finally {
-      clearToken();
-    }
+    await tabSessionReady;
+    const token = readSessionToken();
+    clearSessionToken();
+    if (token) await revokeToken(token);
   },
 
-  clear: clearToken,
+  clear: clearSessionToken,
 };

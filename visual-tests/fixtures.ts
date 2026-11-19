@@ -1,6 +1,7 @@
 import type {
   AbsenceJustification, AccessLog, ParentAccount, ParentNotification, SchoolNotice, Student,
 } from '../src/types';
+import type { GuardianLinkRequestRecord } from '../shared/contracts/linkRequests';
 
 /**
  * Dados exclusivos do aceite visual (layout do portal em várias larguras).
@@ -31,12 +32,24 @@ export const visualGuardian: ParentAccount = {
   childrenIds: visualStudents.map((student) => student.id),
 };
 
+export const visualLinkRequests: GuardianLinkRequestRecord[] = [
+  {
+    id: 'visual-link-1', schoolId: 'visual-school', guardian: visualGuardian,
+    student: { id: 'visual-unlinked', name: 'Estudante informado', enrollment: '2026-0004' },
+    relationship: 'Tutor(a) Legal', status: 'REJECTED', submittedAt: '2026-11-10T13:00:00Z',
+    reviewNote: 'O vínculo não pôde ser confirmado. Confira a matrícula e procure a secretaria da escola para revisar os dados da solicitação.', version: 2,
+  },
+];
+
 const today = new Date();
 const at = (hours: number, minutes: number) => {
   const date = new Date(today);
   date.setHours(hours, minutes, 0, 0);
   return date.toISOString();
 };
+const notificationDate = (hours: number, minutes: number) => new Date(at(hours, minutes)).toLocaleString('pt-BR', {
+  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+});
 const log = (id: string, student: Student, direction: AccessLog['direction'], timestamp: string): AccessLog => ({
   id,
   studentId: student.id,
@@ -81,7 +94,12 @@ export const visualNotices: SchoolNotice[] = [
 export const visualNotifications: ParentNotification[] = [
   {
     id: 'visual-notification-1', title: 'Entrada registrada', message: 'Lívia Batista entrou pela Catraca 01.',
-    timestamp: at(7, 12), type: 'entry', studentName: 'Lívia Batista', turnstile: 'Catraca 01', isRead: false,
+    timestamp: notificationDate(7, 12), type: 'entry', studentName: 'Lívia Batista', turnstile: 'Catraca 01', isRead: false,
+  },
+  {
+    id: 'visual-notification-2', title: 'Reunião de responsáveis do segundo bimestre',
+    message: 'A escola enviou um comunicado sobre o calendário de avaliações e a apresentação das turmas.',
+    timestamp: notificationDate(14, 25), type: 'notice', isRead: false,
   },
 ];
 

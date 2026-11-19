@@ -45,6 +45,7 @@ export type RecognitionDecision =
 
 export interface AccessDenialRecord {
   id: string;
+  demo: boolean;
   deviceId: string;
   turnstile: { id: string; name: string };
   direction: AccessDirectionRecord;

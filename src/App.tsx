@@ -24,6 +24,7 @@ import { soundManager } from './utils/sound';
 import { isParentOnlyBuild } from './config/runtime';
 import { justificationsApi } from './services/justificationsApi';
 import { accessEventsApi } from './services/accessEventsApi';
+import type { AccessEventOverview } from '../shared/contracts/accessEvents';
 import { accessDevicesApi } from './services/accessDevicesApi';
 import { studentsApi } from './services/studentsApi';
 import { isToday } from './services/accessHistory';
@@ -135,6 +136,7 @@ export default function App() {
   useEffect(() => {
     const endSession = () => {
       setAuthenticatedUser(null);
+      resetSessionData();
       setIsAuthModalOpen(true);
     };
     window.addEventListener('catraca:session-ended', endSession);
@@ -147,15 +149,21 @@ export default function App() {
       setIsAuthModalOpen(viewMode !== 'landing');
       return () => window.removeEventListener('catraca:session-ended', endSession);
     }
+    let active = true;
     authApi.restore()
-      .then((user) => handleLoginSuccess(toAuthUser(user)))
-      .catch(() => {
-        authApi.clear();
-        setAuthenticatedUser(null);
-        setIsAuthModalOpen(true);
+      .then((user) => {
+        if (active) handleLoginSuccess(toAuthUser(user));
       })
-      .finally(() => setIsRestoringSession(false));
-    return () => window.removeEventListener('catraca:session-ended', endSession);
+      .catch(() => {
+        if (!active) return;
+        authApi.clear();
+        endSession();
+      })
+      .finally(() => { if (active) setIsRestoringSession(false); });
+    return () => {
+      active = false;
+      window.removeEventListener('catraca:session-ended', endSession);
+    };
   }, []);
 
   const navigateToView = (mode: Exclude<ViewMode, 'landing'>, accessMode?: AccessMode) => {
@@ -220,6 +228,7 @@ export default function App() {
   // Recarrega eventos e justificativas só quando o conjunto de estudantes muda, não a cada consulta.
   const studentIdsKey = students.map((student) => student.id).join(',');
   const [logs, setLogs] = useState<AccessLog[]>([]);
+  const [accessOverview, setAccessOverview] = useState<AccessEventOverview | null>(null);
   const [accessEventsState, setAccessEventsState] = useState<'loading' | 'persistent' | 'unavailable'>('loading');
   const [accessEventsError, setAccessEventsError] = useState<string>();
   const [accessEventsUpdatedAt, setAccessEventsUpdatedAt] = useState<string>();
@@ -232,8 +241,9 @@ export default function App() {
 
   // Handle successful login
   const handleLoginSuccess = (user: AuthUser) => {
+    resetSessionData();
     if (isParentOnlyBuild && user.role === 'staff') {
-      void authApi.logout().catch(() => authApi.clear());
+      void authApi.logout();
       setAuthenticatedUser(null);
       setAuthModalRole('parent');
       setIsAuthModalOpen(true);
@@ -258,7 +268,7 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await authApi.logout().catch(() => authApi.clear());
+    await authApi.logout();
     setAuthenticatedUser(null);
     resetSessionData();
     setAuthModalRole(viewMode === 'parent_app' ? 'parent' : 'staff');
@@ -267,7 +277,7 @@ export default function App() {
   };
 
   const handleSwitchAccess = async (target: Exclude<ViewMode, 'landing'>) => {
-    await authApi.logout().catch(() => authApi.clear());
+    await authApi.logout();
     setAuthenticatedUser(null);
     resetSessionData();
     setAuthModalMode('login');
@@ -409,6 +419,7 @@ export default function App() {
           .filter((denial) => isToday(denial.occurredAt))
           .map((denial) => ({
             id: denial.id,
+            demo: denial.demo,
             title: DENIAL_TITLES[denial.reason],
             turnstileName: denial.turnstile.name,
             direction: denial.direction === 'ENTRY' ? 'entry' : 'exit',
@@ -593,6 +604,7 @@ export default function App() {
     if (!isOnline) {
       setAccessEventsState('unavailable');
       setAccessEventsError('Dispositivo sem conexão.');
+      setAccessOverview(null);
       return;
     }
     let active = true;
@@ -616,8 +628,17 @@ export default function App() {
       }
     };
 
-    void loadAccessEvents(true);
-    const interval = window.setInterval(() => void loadAccessEvents(), 5000);
+    const refresh = (showLoading = false) => {
+      void loadAccessEvents(showLoading);
+      if (viewMode === 'management_dashboard') {
+        void accessEventsApi.getOverview().then(
+          (overview) => { if (active) setAccessOverview(overview); },
+          () => { if (active) setAccessOverview(null); },
+        );
+      }
+    };
+    refresh(true);
+    const interval = window.setInterval(refresh, 5000);
     return () => {
       active = false;
       window.clearInterval(interval);
@@ -736,14 +757,34 @@ export default function App() {
     setCurrentStaffUser(EMPTY_STAFF);
     setStudents([]);
     setLogs([]);
+    setAccessOverview(null);
     setJustifications([]);
     setNotices([]);
     setNotifications([]);
     setLinkRequests([]);
     setGuardianLinks([]);
+    setAuditRecords([]);
+    setManagedAccounts([]);
+    setDeliverySnapshot(undefined);
+    setSyncStatus(null);
     setTurnstiles([]);
     setAlerts([]);
     setSelectedStudent(null);
+    setToastMessage(null);
+    seenCameraEventIds.current = null;
+    setStudentsState('loading');
+    setStudentsError(undefined);
+    setAccessEventsState('loading');
+    setAccessEventsError(undefined);
+    setAccessEventsUpdatedAt(undefined);
+    setCommunicationsState('loading');
+    setCommunicationsError(undefined);
+    setCommunicationsUpdatedAt(undefined);
+    setJustificationsState('loading');
+    setJustificationsError(undefined);
+    setJustificationsUpdatedAt(undefined);
+    setLinkRequestsState('loading');
+    setLinkRequestsError(undefined);
   };
 
 
@@ -950,6 +991,8 @@ export default function App() {
           guardian={currentGuardian}
           schoolName={authenticatedUser.schoolUnit}
           students={students}
+          studentsState={studentsState}
+          studentsError={studentsError}
           onSwitchToManagement={isParentOnlyBuild ? undefined : () => void handleSwitchAccess('management_dashboard')}
           notices={notices}
           notifications={notifications}
@@ -1009,6 +1052,7 @@ export default function App() {
           <OverviewPage
             userName={currentStaffUser.name}
             totalStudents={students.length}
+            accessOverview={accessOverview}
             logs={logs}
             logsState={accessEventsState}
             logsError={accessEventsError}

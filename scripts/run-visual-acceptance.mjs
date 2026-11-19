@@ -213,15 +213,21 @@ try {
         const rect = child.getBoundingClientRect();
         return rect.left < sectionRect.left - 1 || rect.right > sectionRect.right + 1;
       }).length;
+      const request = section.querySelector('li');
+      const note = [...(request?.querySelectorAll('p') ?? [])].find((paragraph) => paragraph.textContent.includes('Observação da escola:'));
+      const requestStyle = request && getComputedStyle(request);
+      const textWidth = request ? request.clientWidth - parseFloat(requestStyle.paddingLeft) - parseFloat(requestStyle.paddingRight) : 0;
       return {
         missing: false,
         formOverflow: form.scrollWidth > form.clientWidth + 1,
         overflowingChildren,
+        narrowedReviewNote: !note || note.getBoundingClientRect().width < textWidth - 1,
+        requestOverflow: request ? request.scrollWidth > request.clientWidth + 1 : true,
       };
     })())`);
     const result = JSON.parse(raw);
-    if (result.missing || result.formOverflow || result.overflowingChildren > 0) {
-      throw new Error(`${width}px/${view}: formulário de vínculo fora do contêiner: ${JSON.stringify(result)}.`);
+    if (result.missing || result.formOverflow || result.overflowingChildren > 0 || result.narrowedReviewNote || result.requestOverflow) {
+      throw new Error(`${width}px/${view}: formulário ou cartão de vínculo sem espaço para leitura: ${JSON.stringify(result)}.`);
     }
   };
 
@@ -289,7 +295,8 @@ try {
     if (failed) throw new Error(`${width}px/${view}: navegação fora do lugar: ${JSON.stringify(result)}.`);
   };
 
-  const cases = [360, 440, 768, 1440];
+  const accountMenu = '[aria-label="Abrir menu da conta"]';
+  const cases = [320, 360, 390, 440, 768, 1440];
   const executed = [];
   for (const width of cases) {
     await command('browsingContext.setViewport', {
@@ -307,8 +314,6 @@ try {
     const reducedMotion = await evaluate(`window.matchMedia('(prefers-reduced-motion: reduce)').matches`);
     if (!reducedMotion) throw new Error('Preferência de redução de movimento não aplicada no navegador de aceite.');
 
-    await evaluate(`document.querySelector('[aria-label="Dispensar aviso de instalação"]')?.click()`);
-
     await assertResponsiveLayout(width, 'home');
     await assertNavigationPlacement(width, 'home');
     await assertActivePage('#tab-parent-home');
@@ -324,12 +329,36 @@ try {
     await click('#tab-parent-notices');
     await assertActivePage('#tab-parent-notices');
     await assertResponsiveLayout(width, 'notices');
-    await assertGuardianLinkRequestLayout(width, 'notices');
+    if (await evaluate(`document.querySelector('[data-testid="guardian-link-requests"]') !== null`)) {
+      throw new Error(`${width}px: Avisos ainda contém o formulário de vínculo.`);
+    }
     await capture(`parent-${width}-notices.png`);
     executed.push(`${width}px:notices`);
 
+    await click(accountMenu);
+    await click('#btn-parent-links');
+    if (!(await evaluate(`document.activeElement?.matches('#parent-links-title')`))) {
+      throw new Error(`${width}px: menu da conta não abriu Meus vínculos com foco no título.`);
+    }
+    await assertGuardianLinkRequestLayout(width, 'links');
+    await capture(`parent-${width}-links.png`);
+    executed.push(`${width}px:links`);
+    if (width === 320) {
+      await evaluate(`document.querySelector('[data-testid="guardian-link-requests"] li')?.scrollIntoView({ block: 'center' })`);
+      await capture('parent-320-link-note.png');
+    }
+
     await click('#tab-parent-home');
     await click('#btn-parent-notifications');
+    if (width === 320) {
+      const notificationHeaderFits = await evaluate(`(() => {
+        const row = document.querySelector('[aria-labelledby="notification-drawer-title"] li:last-child');
+        const title = row?.querySelector('p');
+        const timestamp = title?.nextElementSibling;
+        return Boolean(timestamp && timestamp.getBoundingClientRect().top >= title.getBoundingClientRect().bottom - 1);
+      })()`);
+      if (!notificationHeaderFits) throw new Error('320px: a data deve ficar abaixo do título comprido da notificação.');
+    }
     await capture(`parent-${width}-notifications.png`);
     executed.push(`${width}px:notifications`);
     await closeDialogWithEscape('[aria-labelledby="notification-drawer-title"]', '#btn-parent-notifications');
@@ -340,6 +369,66 @@ try {
     executed.push(`${width}px:absence`);
     await closeDialogWithEscape('[aria-labelledby="absence-modal-title"]', '#tab-parent-absence');
   }
+
+  const installOption = '[role="menu"] #btn-parent-install';
+  const installDialog = '[aria-labelledby="parent-install-help-title"]';
+  await command('browsingContext.setViewport', { context, viewport: { width: 360, height: 800 }, devicePixelRatio: 1 });
+  await click('#tab-parent-home');
+  await click('#btn-parent-home-links');
+  await assertGuardianLinkRequestLayout(360, 'links-from-home');
+  executed.push('360px:links-from-home');
+  for (const tab of ['home', 'history', 'notices']) {
+    await click(`#tab-parent-${tab}`);
+    if (await evaluate(`document.querySelector('aside[aria-label="Adicionar à tela inicial"]') !== null`)) {
+      throw new Error(`${tab}: o convite de instalação não deve ficar no conteúdo da aba.`);
+    }
+    await click(accountMenu);
+    const options = await evaluate(`document.querySelectorAll(${JSON.stringify(installOption)}).length`);
+    if (options !== 1) throw new Error(`${tab}: a instalação deve ter um único atalho no menu da conta.`);
+    await click(accountMenu);
+  }
+  await click(accountMenu);
+  await click(installOption);
+  if (!(await evaluate(`document.querySelector(${JSON.stringify(installDialog)})?.textContent.includes('Abra o menu do navegador')`))) {
+    throw new Error('Instruções de instalação manual ausentes.');
+  }
+  await capture('parent-360-install-help.png');
+  await closeDialogWithEscape(installDialog, accountMenu);
+  executed.push('360px:install-help');
+
+  await evaluate(`(() => {
+    const prompt = new Event('beforeinstallprompt', { cancelable: true });
+    Object.assign(prompt, {
+      prompt: async () => { document.body.dataset.installPromptOpened = 'true'; },
+      userChoice: Promise.resolve({ outcome: 'accepted' }),
+    });
+    window.dispatchEvent(prompt);
+    return true;
+  })()`);
+  await click(accountMenu);
+  await click(installOption);
+  if (!(await evaluate(`document.body.dataset.installPromptOpened === 'true' && !document.querySelector(${JSON.stringify(installDialog)})`))) {
+    throw new Error('Convite nativo não recebeu a ação de instalação.');
+  }
+  await evaluate(`window.dispatchEvent(new Event('appinstalled'))`);
+  await click(accountMenu);
+  if (await evaluate(`document.querySelector(${JSON.stringify(installOption)}) !== null`)) {
+    throw new Error('Atalho de instalação ainda aparece após instalar o portal.');
+  }
+  await click(accountMenu);
+  executed.push('360px:install-prompt');
+
+  await command('browsingContext.navigate', {
+    context,
+    url: `${baseUrl}/visual-tests/parent-portal.html?sem-vinculo`,
+    wait: 'complete',
+  });
+  await click(accountMenu);
+  if (!(await evaluate(`document.querySelector('#no-student-title') && document.querySelector(${JSON.stringify(installOption)}) !== null`))) {
+    throw new Error('Atalho de instalação ausente para responsável sem vínculo.');
+  }
+  await assertGuardianLinkRequestLayout(360, 'links-without-student');
+  executed.push('360px:install-without-link');
 
   await command('browsingContext.setViewport', {
     context,
@@ -354,7 +443,6 @@ try {
   await wait(350);
   await assertNavigationPlacement(1440, 'short-viewport');
   await click('#tab-parent-notices');
-  await assertGuardianLinkRequestLayout(1440, 'short-viewport-notices');
   await evaluate(`(() => {
     const scrollingElement = document.scrollingElement;
     if (scrollingElement) scrollingElement.scrollTop = scrollingElement.scrollHeight;

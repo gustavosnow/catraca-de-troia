@@ -353,10 +353,36 @@ Limites: as passagens pela câmera são geradas pela rota de reconhecimento, sem
 
 Ajuste da MC-040: o banco (`.data/`) continua fora do Git, porque guarda hashes de senhas e sessões e mudaria a cada uso. Para a equipe ver os mesmos dados, `npm run db:demo` roda a carga da escola e o movimento num clone novo; sem câmeras a preservar, a carga cadastra entrada e saída da catraca 01. O README avisa que os dados precisam ser ativados e não publica a senha.
 
-## MC-041 — Apresentação navegável do projeto em 19/11/2026
+## MC-041 — Instalação do portal pelo menu da conta em 19/11/2026
+
+O card de instalação foi retirado das abas do portal. O atalho **Adicionar à tela inicial** fica no menu da conta, inclusive enquanto o responsável aguarda a aprovação do vínculo. O navegador abre o convite de instalação quando o oferece. No celular, o atalho também dá acesso às instruções manuais. A instalação permanece opcional e a opção fica oculta no aplicativo nativo ou quando o portal roda em modo instalado.
+
+## MC-042 — Sessões independentes por aba em 19/11/2026
+
+Cada aba do navegador guarda sua própria sessão. É possível manter contas diferentes abertas ao mesmo tempo. Atualizar a página restaura a sessão daquela aba, e sair ou trocar de portal encerra apenas essa sessão. A opção de estender a duração continua aplicando o prazo de 30 dias na API. A sessão compartilhada da versão anterior é descartada na primeira abertura e exige novo login.
+
+Em navegadores com `BroadcastChannel`, uma aba aberta por outra que copie a sessão pede login próprio quando a original ainda está aberta. As abas usam apenas um identificador para detectar a cópia. Ao encerrar ou mudar de sessão, a interface limpa os dados da conta anterior e descarta respostas pendentes dela.
+
+## MC-043 — Meus vínculos e leitura em telas estreitas em 19/11/2026
+
+O formulário e o histórico de solicitações passaram da aba **Avisos** para a área **Meus vínculos**, acessível pelo menu da conta e pelo atalho no Início. Sem estudante vinculado, o formulário continua disponível logo após o login. As observações da escola usam a largura do cartão, e horários, indicadores e ações passam para a linha seguinte quando disputam espaço com o texto. O aceite visual inclui solicitações recusadas com observação e notificações de título longo, a partir de 320 px.
+
+## MC-044 — Vínculos ativos agrupados por responsável em 19/11/2026
+
+No painel escolar, o nome do responsável aparece uma vez acima de seus estudantes. Cada vínculo mantém data, situação e revogação individual. O agrupamento usa a conta do responsável, por isso contas com o mesmo nome continuam separadas e um estudante pode aparecer em mais de um grupo quando há mais de um vínculo aprovado. A lista se ajusta à tela do celular.
+
+## MC-045 — Indicadores do dia e origem da carga em 19/11/2026
+
+A visão geral consulta todas as passagens do dia no fuso da escola para totalizar entradas, saídas e passagens por catraca. A presença é calculada pela última passagem de cada estudante naquele dia. A listagem recente continua limitada aos últimos registros.
+
+A carga de demonstração grava a origem fictícia das passagens de câmera e assistidas. O painel, o CSV e o portal identificam essas passagens, e as leituras negadas da carga recebem a mesma identificação. As cargas locais anteriores são reconhecidas pelo identificador de origem, preservando os registros do banco e da fila. Os valores artificiais de similaridade e inferência são omitidos das passagens no painel.
+
+## MC-046 — Apresentação navegável do projeto em 19/11/2026
 
 Solicitação: preparar uma apresentação acadêmica visual para expor o projeto e permitir abri-la tanto na landing quanto no painel escolar.
 
 Ajustes: criada a rota pública `#/projeto` com 21 slides, navegação por botões, teclado e gesto horizontal, visão geral, tela cheia e retorno à tela de origem. O deck reúne escopo, ciclo de vida, EAP, prazo, orçamento, metas, riscos, arquitetura, perfis e evidências, com imagens das interfaces e links para a pasta oficial. O modal resumido **Sobre o projeto** foi substituído por essa apresentação. A paleta azul-marinho e laranja foi preservada.
 
 Limites: os slides são material de exposição. Metas, custos e prazo são critérios e estimativas do cenário planejado; integração física, entrega externa de notificações e homologação não foram demonstradas. As imagens são capturas do protótipo, sem dados reais de estudantes ou biometria. Os documentos acadêmicos vinculados continuam como fonte vigente.
+
+A revisão acadêmica conferiu TAP, Atividade 01, EAP v1.6 e Plano de Riscos. O slide de evidências identifica a validação atual e a referência anterior da PR #3. O vídeo documenta o ensaio de laboratório de 18/11/2026.

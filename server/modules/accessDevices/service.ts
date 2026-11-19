@@ -10,7 +10,7 @@ import type { AccessDirectionRecord } from '../../../shared/contracts/accessEven
 import type { DemoActor } from '../../../shared/contracts/justifications';
 import type { AppDatabase } from '../../db';
 import { forbidden, invalidRequest, unauthorized } from '../../errors';
-import { AccessEventService } from '../accessEvents/service';
+import { AccessEventService, isDemoCapture } from '../accessEvents/service';
 
 /**
  * Protótipo de reconhecimento facial (MC-036).
@@ -39,6 +39,7 @@ export interface AccessDeviceRow {
 
 interface AccessDenialRow {
   id: string;
+  capture_id: string;
   device_id: string;
   turnstile_id: string;
   turnstile_name: string;
@@ -92,6 +93,7 @@ export const mapDevice = (row: AccessDeviceRow): AccessDeviceRecord => ({
 
 const mapDenial = (row: AccessDenialRow): AccessDenialRecord => ({
   id: row.id,
+  demo: isDemoCapture(row.capture_id),
   deviceId: row.device_id,
   turnstile: { id: row.turnstile_id, name: row.turnstile_name },
   direction: row.direction,
@@ -193,11 +195,17 @@ export class AccessDeviceService {
     return row;
   }
 
-  recognize(device: AccessDeviceRow, request: RecognitionRequest): RecognitionDecision {
+  recognize(
+    device: AccessDeviceRow,
+    request: RecognitionRequest,
+    source: 'FACE_PROTOTYPE' | 'DEMO_SIMULATION' = 'FACE_PROTOTYPE',
+  ): RecognitionDecision {
     return this.database.transaction((): RecognitionDecision => {
       const timestamp = this.now();
-      this.database.prepare('UPDATE access_devices SET last_seen_at = ? WHERE id = ?')
-        .run(timestamp, device.id);
+      if (source === 'FACE_PROTOTYPE') {
+        this.database.prepare('UPDATE access_devices SET last_seen_at = ? WHERE id = ?')
+          .run(timestamp, device.id);
+      }
 
       // Reenvio da mesma leitura: devolve a decisão já tomada.
       const previousEvent = this.events.findDeviceEvent(device.operator_user_id, device.id, request.captureId);
@@ -265,6 +273,7 @@ export class AccessDeviceService {
         turnstileName: device.turnstile_name,
         matchScore: request.matchScore,
         inferenceMs: request.inferenceMs,
+        source,
       });
       return { decision: 'AUTHORIZED', duplicate: false, event };
     })();
@@ -281,7 +290,7 @@ export class AccessDeviceService {
   listDenials(actor: DemoActor, limit = 50): AccessDenialRecord[] {
     if (actor.role === 'GUARDIAN') throw forbidden();
     const rows = this.database.prepare(`
-      SELECT id, device_id, turnstile_id, turnstile_name, direction, reason,
+      SELECT id, capture_id, device_id, turnstile_id, turnstile_name, direction, reason,
         student_id, match_score, inference_ms, occurred_at
       FROM access_denials
       WHERE school_id = ?

@@ -25,6 +25,7 @@ const READ_MATRIX: Record<string, number[]> = {
   '/students': [401, 403, 403, 200, 200, 200],
   '/me/students': [401, 200, 200, 200, 200, 200],
   '/access-events': [401, 403, 403, 200, 200, 200],
+  '/access-events/overview': [401, 403, 403, 200, 200, 200],
   '/access-events/sync/status': [401, 403, 403, 200, 200, 200],
   '/students/std-1/access-events': [401, 200, 404, 200, 200, 200],
   '/students/std-2/access-events': [401, 404, 404, 200, 200, 200],

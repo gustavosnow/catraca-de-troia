@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, ShieldAlert } from 'lucide-react';
 import type { SecurityAlert } from '../types';
+import { DEMO_ACCESS_LABEL } from '../services/accessHistory';
 import { AllClearIllustration } from './brand/Illustrations';
 import { EmptyState, Modal } from './ui';
 
@@ -36,7 +37,7 @@ export const AlertsModal: React.FC<AlertsModalProps> = ({ alerts, isOpen, onClos
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-ink">{alert.title}</p>
               <p className="mt-0.5 text-[13px] text-muted">
-                {alert.turnstileName} · {alert.direction === 'entry' ? 'entrada' : 'saída'}
+                {alert.turnstileName} · {alert.direction === 'entry' ? 'entrada' : 'saída'}{alert.demo && ` · ${DEMO_ACCESS_LABEL}`}
               </p>
             </div>
             <span className="tabular shrink-0 text-xs text-muted">{timeOf(alert.occurredAt)}</span>

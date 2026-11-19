@@ -562,7 +562,7 @@ const LEVEL_STYLE: Record<string, string> = {
 };
 const RiskMatrix: React.FC = () => (
   <div className="deck-inner">
-    <Heading eyebrow="Plano de riscos" title={<>Oito riscos, <span className="deck-accent">três em nível alto</span></>} />
+    <Heading eyebrow="Plano de riscos do cenário hipotético" title={<>Oito riscos, <span className="deck-accent">três em nível alto</span></>} />
     <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_1fr]">
       <figure className="deck-reveal" style={d(1)}>
         <div className="flex">
@@ -753,7 +753,7 @@ const Security: React.FC = () => {
   const profiles: Array<[Icon, string, string[]]> = [
     [School, 'Coordenação e Direção', ['Tudo o que a portaria vê', 'Vínculos, contas e auditoria', 'Análise de justificativas', 'Cadastro facial']],
     [KeyRound, 'Portaria', ['Registros e estudantes', 'Passagem assistida', 'Câmeras das catracas', 'Sem administração nem biometria']],
-    [Users, 'Responsável', ['Só os próprios filhos', 'Depois da aprovação do vínculo', 'Presença, histórico e avisos', 'Justificativa de ausência']],
+    [Users, 'Responsável', ['Somente estudantes com vínculo aprovado', 'Presença, histórico e avisos', 'Justificativa de ausência']],
   ];
   return (
     <div className="deck-inner">
@@ -776,7 +776,7 @@ const Security: React.FC = () => {
       <div className="deck-reveal mt-7 flex flex-wrap gap-2" style={d(4)}>
         <span className="deck-chip"><ShieldCheck className="h-4 w-4 text-[#e65100]" aria-hidden="true" />Permissões conferidas no servidor, rota a rota, por teste</span>
         <span className="deck-chip"><ScanFace className="h-4 w-4 text-[#e65100]" aria-hidden="true" />Biometria só de adultos voluntários, com consentimento</span>
-        <span className="deck-chip"><Lock className="h-4 w-4 text-[#e65100]" aria-hidden="true" />Governança de dados conforme a LGPD</span>
+        <span className="deck-chip"><Lock className="h-4 w-4 text-[#e65100]" aria-hidden="true" />Governança institucional de dados prevista no TAP</span>
       </div>
     </div>
   );
@@ -798,18 +798,34 @@ const Evidence: React.FC = () => {
       <div className="deck-inner">
         <Heading eyebrow="Evidências" title={<>O que foi <span className="deck-accent">verificado</span></>} />
         <div className="mt-9 grid gap-4 sm:grid-cols-3">
-          {([[TestTube2, '46', 'testes automatizados da API'], [LayoutDashboard, '24', 'cenários de aceite visual'], [PlayCircle, '1', 'vídeo do ensaio de laboratório']] as Array<[Icon, string, string]>).map(([IconComponent, value, label], position) => (
+          {([[TestTube2, '47', 'testes automatizados da API'], [LayoutDashboard, '44', 'cenários de aceite visual do portal'], [PlayCircle, '1', 'vídeo do ensaio de laboratório']] as Array<[Icon, string, string]>).map(([IconComponent, value, label], position) => (
             <article key={label} className="deck-card deck-reveal flex items-center gap-4" style={d(position + 1)}>
               <span className="deck-icon"><IconComponent aria-hidden="true" /></span>
               <div>
                 <p className="text-[clamp(2rem,3vw,2.8rem)] font-extrabold leading-none text-[#ff6a00]">{value}</p>
-                <p className="mt-1">{label}</p>
+                <p className="mt-1">
+                  {IconComponent === PlayCircle ? (
+                    <a
+                      href="https://drive.google.com/file/d/1W0_vFphnIqT9nNE8Y9d63lcIgvaaakTv/view"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-4"
+                    >
+                      {label} de 18/11/2026
+                    </a>
+                  ) : label}
+                </p>
               </div>
             </article>
           ))}
         </div>
-        <ol className="relative mt-10 grid gap-5 md:grid-cols-4">
-          <div className="deck-bar absolute left-0 right-0 top-[.55rem] hidden h-[3px] rounded bg-[#ff6a00]/50 md:block" style={d(3)} aria-hidden="true" />
+        <p className="deck-note deck-reveal mt-4" style={d(3)}>
+          Validação local do PR #7 em 19/11/2026. A{' '}
+          <a href="https://github.com/gustavosnow/catraca-de-troia/pull/3" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">
+            PR #3 (`16d5320`)
+          </a>{' '}registrou 40 testes de API e 24 cenários visuais.
+        </p>
+        <ol className="relative mt-8 grid gap-5 md:grid-cols-4">
           {milestones.map(([date, text], position) => (
             <li key={date + text} className="deck-reveal relative md:pt-7" style={d(position + 4)}>
               <span className="absolute left-0 top-0 hidden h-[1.15rem] w-[1.15rem] rounded-full border-[3px] border-[#0b151d] bg-[#ff6a00] md:block" aria-hidden="true" />

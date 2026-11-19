@@ -1,4 +1,4 @@
-import type { AccessEventRecord, CreateAccessEventRequest } from '../../shared/contracts/accessEvents';
+import type { AccessEventOverview, AccessEventRecord, CreateAccessEventRequest } from '../../shared/contracts/accessEvents';
 import type { AccessEventSyncStatus } from '../../shared/contracts/accessEventSync';
 import type { AccessDirection, AccessLog, Student, Turnstile } from '../types';
 import { authenticatedRequest } from './authApi';
@@ -44,6 +44,9 @@ const mapEvent = (record: AccessEventRecord, students: Student[]): AccessLog => 
 };
 
 export const accessEventsApi = {
+  getOverview: () =>
+    authenticatedRequest<AccessEventOverview>('/api/v1/access-events/overview'),
+
   getSyncStatus: () =>
     authenticatedRequest<AccessEventSyncStatus>('/api/v1/access-events/sync/status'),
 

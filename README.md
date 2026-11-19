@@ -70,6 +70,7 @@ O comando `npm run dev` inicia a API na porta `3001` e o Vite na porta `3000`. O
 | Endereço | Conteúdo |
 |---|---|
 | `http://localhost:3000/` | Apresentação pública. Encaminha para o cadastro de responsável ou para o login, mesmo com sessão anterior. Também abre em `/#/apresentacao`. |
+| `http://localhost:3000/#/projeto` | Apresentação acadêmica de 21 slides, com navegação por botões, teclado e gesto. |
 | `http://localhost:3000/#/responsaveis` | Portal dos responsáveis (cadastro em `/#/responsaveis/cadastro`). |
 | `http://localhost:3000/#/escola` | Painel escolar. |
 
@@ -137,18 +138,18 @@ scripts/                  aceite visual, verificação da PWA e build do APK
 docs/                     escopo, rastreabilidade, mudanças e roteiros
 ```
 
-`src/services/accessEventsApi.ts` integra o fluxo persistente, e `accessHistory.ts` deriva a linha do tempo e o histórico a partir desses registros. Não há dados fictícios no código do sistema: eles existem só nas fixtures dos testes. A tela **Sobre o projeto** traz apenas um resumo da demonstração e o link para a pasta oficial no Drive. Orçamento, prazo, metas e riscos não são copiados para o código.
+`src/services/accessEventsApi.ts` integra o fluxo persistente, e `accessHistory.ts` deriva a linha do tempo e o histórico a partir desses registros. A carga opcional `db:demo` cria dados fictícios. As movimentações geradas ficam identificadas no painel, na exportação CSV e no portal. O botão **Sobre o projeto** abre a apresentação acadêmica, que inclui um link para a pasta oficial no Drive.
 
 ## API local, autenticação e sessões
 
 A API inicia em `http://127.0.0.1:3001` e persiste sessões, justificativas, eventos, avisos, notificações internas e solicitações de vínculo em `.data/catraca-de-troia.sqlite`.
 
-- **Vínculos:** os responsáveis solicitam vínculo pela matrícula. Somente Coordenação/Direção analisa, revoga vínculos ativos e consulta a trilha de auditoria. A aprovação ou a revogação atualiza a autorização efetiva no backend, e o responsável consulta somente os estudantes com vínculo aprovado.
+- **Vínculos:** os responsáveis solicitam vínculo pela matrícula em **Meus vínculos**, no menu da conta. Sem vínculo aprovado, o formulário aparece logo ao entrar. Somente Coordenação/Direção analisa, revoga vínculos ativos e consulta a trilha de auditoria. A aprovação ou a revogação atualiza a autorização efetiva no backend, e o responsável consulta somente os estudantes com vínculo aprovado.
 - **Justificativas:** Coordenação/Direção analisa as justificativas textuais, e a Portaria apenas consulta a fila. Não há upload nem download de arquivos no piloto.
-- **Eventos:** cada evento registra estudante, entrada/saída, instante, catraca, origem e ator escolar. Há duas origens: **Protótipo facial** (câmera autenticada por token do dispositivo) e **Passagem assistida** (equipe, com catraca cadastrada e motivo obrigatório). Cada estudante segue a sequência do dia: a primeira passagem é entrada e depois alterna, na câmera e na passagem assistida. A rota manual não aceita passagem facial nem define status de entrega.
+- **Eventos** registram estudante, entrada/saída, instante, catraca, origem e ator escolar. As origens são **Protótipo facial** (câmera autenticada), **Passagem assistida** (operada pela equipe com motivo) e **Dados de demonstração** (carga fictícia). Cada estudante começa o dia com entrada e depois alterna entrada e saída. Os indicadores escolares consultam o dia inteiro no fuso da escola, com uma consulta separada para os registros recentes.
 - **Perfis:** `server/test/rbac.test.ts` confere todas as rotas de leitura para seis perfis e as escritas restritas.
 - **Notificações:** a leitura dos avisos é individual por responsável. As notificações de passagem e do fluxo de justificativas aparecem na caixa interna do portal.
-- **Segurança:** as senhas são derivadas com scrypt e salt, e a API guarda somente o hash dos tokens opacos. As sessões expiram em 12 horas, ou em 30 dias com "lembrar dispositivo", podem ser restauradas e são revogadas no logout. A API aplica cabeçalhos básicos de segurança, impede cache das respostas e limita em memória as tentativas repetidas de login e de solicitação de vínculo.
+- **Segurança:** as senhas são derivadas com scrypt e salt, e a API guarda somente o hash dos tokens opacos. No navegador, cada aba tem seu próprio login e mantém a sessão ao ser recarregada. Sair encerra a sessão daquela aba. As sessões expiram em 12 horas, ou em até 30 dias com a opção de estender a duração marcada. A API aplica cabeçalhos básicos de segurança, impede cache das respostas e limita em memória as tentativas repetidas de login e de solicitação de vínculo.
 
 > [!NOTE]
 > Este é um corte funcional local. Ainda faltam provedor institucional, HTTPS, proteção e armazenamento nativo dos tokens, política de senha, MFA, redefinição de senha pela Coordenação no painel, limitação distribuída ou persistente e testes formais de segurança.
@@ -197,7 +198,7 @@ Preparação do ambiente Python, uso do celular como câmera e comandos: [`edge/
 
 ### PWA
 
-A entrada instalável abre em `/#/responsaveis`, tem manifesto e guarda em cache apenas o shell estático. O service worker não armazena chamadas `/api`, envios nem dados pessoais. Se a conexão cair com o portal aberto, a interface indica o estado offline e mantém somente em memória os últimos dados carregados na sessão. Ela exibe a última atualização, bloqueia escritas e refaz as consultas ao reconectar. Em navegadores compatíveis, use o convite **Instalar**. No Safari iOS, use **Compartilhar → Adicionar à Tela de Início**.
+A entrada instalável abre em `/#/responsaveis`, tem manifesto e guarda em cache apenas o shell estático. O service worker não armazena chamadas `/api`, envios nem dados pessoais. Se a conexão cair com o portal aberto, a interface indica o estado offline e mantém somente em memória os últimos dados carregados na sessão. Ela exibe a última atualização, bloqueia escritas e refaz as consultas ao reconectar. Para instalar, abra o menu da conta no avatar e escolha **Adicionar à tela inicial**. O atalho abre o convite do navegador quando disponível ou mostra as instruções de instalação manual.
 
 Para conferir a versão instalável local, mantenha a API ativa, rode `npm run build:parent` e `npm run preview` e abra `http://localhost:4173/#/responsaveis`. O servidor de desenvolvimento prioriza o HMR. O manifesto e o service worker validados são os do build de produção.
 

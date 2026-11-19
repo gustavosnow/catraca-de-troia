@@ -1,5 +1,13 @@
 import { AbsenceJustification, AccessLog, DayTimelineEvent, WeeklyAccessDay } from '../types';
 
+export const DEMO_ACCESS_LABEL = 'Dados de demonstração';
+
+const TIMELINE_ORIGINS = {
+  assistida: 'Passagem assistida pela escola',
+  camera: 'Reconhecimento facial',
+  simulacao: DEMO_ACCESS_LABEL,
+};
+
 /** Data local (AAAA-MM-DD) do registro, para agrupar por dia. */
 export const localDateKey = (date: Date) => [
   date.getFullYear(),
@@ -31,7 +39,7 @@ export const buildStudentAccessTimeline = (
       location: log.turnstileName,
       status: 'completed',
       badgeType: log.direction,
-      detail: log.source === 'assistida' ? 'Passagem assistida pela escola' : log.source === 'camera' ? 'Reconhecimento facial' : 'Registro anterior',
+      detail: log.source ? TIMELINE_ORIGINS[log.source] : 'Registro anterior',
     }));
 
 const durationBetween = (entryTime: string, exitTime: string) => {
@@ -110,6 +118,7 @@ export const buildWeeklyAccessFromLogs = (
       method: reference?.method || '-',
       status,
       durationHours,
+      hasDemoRecords: dayLogs.some((log) => log.source === 'simulacao'),
       notificationDelivered: reference?.notification.pushApp === 'Entregue',
     };
   });
