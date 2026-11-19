@@ -2,11 +2,11 @@
 
 Protótipo acadêmico de controle de entrada e saída em uma escola pública de ensino fundamental. Painel web da gestão escolar e portal responsivo dos responsáveis, preparado para evolução móvel.
 
-**Estado: protótipo acadêmico funcional local.** Painel escolar e portal dos responsáveis compartilham API Express/SQLite, autenticação com contas fictícias, vínculos autorizados, eventos simulados de entrada/saída, avisos, justificativas textuais, notificações internas, auditoria e fila local. Há um protótipo de laboratório de reconhecimento facial (Python/OpenCV em `edge/`, comandado em **Ferramentas** do painel escolar; MC-036 a MC-038), sem homologação, sem catraca física acionada e restrito a adultos da equipe com consentimento ligados a estudantes fictícios. Canais externos não estão integrados. O aplicativo Android (APK) permanece como objetivo; para a apresentação, o portal abre pelo navegador por link ou QR Code, sem instalação obrigatória.
+**Estado: protótipo acadêmico funcional local.** Painel escolar e portal dos responsáveis compartilham API Express/SQLite com os dados cadastrados da escola (MC-039): contas, estudantes, vínculos autorizados, entradas e saídas, avisos, justificativas textuais, notificações internas, auditoria e fila local. Não há dados fictícios no sistema; eles existem só nas fixtures dos testes automatizados. Há um protótipo de laboratório de reconhecimento facial (Python/OpenCV em `edge/`, comandado em **Ferramentas** do painel escolar; MC-036 a MC-039), sem homologação, sem catraca física acionada e restrito ao rosto de adultos voluntários da equipe, com consentimento; nunca o de uma criança. Canais externos não estão integrados. O aplicativo Android (APK) permanece como objetivo; para a apresentação, o portal abre pelo navegador por link ou QR Code, sem instalação obrigatória.
 
 **Escopo conferido em 04/11/2026 (EAP v1.3):** uma escola e duas catracas; justificativas exclusivamente textuais, sem atestados ou outros anexos. Não há ficha de saúde, carteirinha digital, RFID nem gestão de acesso de visitantes e funcionários nas telas do piloto. Rotas de arquivos foram desativadas e novas referências a anexos são rejeitadas. Dados legados em bancos existentes não são apagados por esta revisão.
 
-A raiz `/` apresenta publicamente a ideia do sistema e encaminha para o cadastro demonstrativo ou login, mesmo quando o navegador possui uma sessão anterior. O mesmo conteúdo pode ser aberto explicitamente em `/#/apresentacao`. Os acessos diretos continuam disponíveis em `/#/responsaveis`, `/#/responsaveis/cadastro` e `/#/escola`.
+A raiz `/` apresenta publicamente a ideia do sistema e encaminha para o cadastro de responsável ou login, mesmo quando o navegador possui uma sessão anterior. O mesmo conteúdo pode ser aberto explicitamente em `/#/apresentacao`. Os acessos diretos continuam disponíveis em `/#/responsaveis`, `/#/responsaveis/cadastro` e `/#/escola`.
 
 ## Executar
 
@@ -14,6 +14,7 @@ Requisito: Node.js com npm. A demonstração atual não exige chave Gemini.
 
 ```bash
 npm ci
+SEED_PASSWORD='senha-inicial' npm run db:seed   # só na primeira vez: carga da escola
 npm run dev
 ```
 
@@ -21,7 +22,7 @@ Abra `http://localhost:3000`. O comando inicia a API na porta `3001` e o Vite na
 
 Se a porta `3001` já estiver ocupada por outro serviço, inicie ambos os processos com `API_PORT=3101 npm run dev`. O proxy do Vite seguirá a mesma porta; reinicie o comando após alterar `API_PORT`.
 
-As interfaces também possuem entradas demonstrativas identificáveis: `http://localhost:3000/#/responsaveis` e `http://localhost:3000/#/escola`. Eventos de entrada/saída, histórico derivado, justificativas, avisos e notificações internas são persistidos pela API local. A leitura dos avisos é individual por responsável; notificações de passagem e do fluxo de justificativas também aparecem na caixa interna do portal.
+Os acessos diretos são `http://localhost:3000/#/responsaveis` e `http://localhost:3000/#/escola`. Eventos de entrada/saída, histórico derivado, justificativas, avisos e notificações internas são persistidos pela API local. A leitura dos avisos é individual por responsável; notificações de passagem e do fluxo de justificativas também aparecem na caixa interna do portal.
 
 ```bash
 npm run lint
@@ -36,25 +37,29 @@ npm run preview
 
 ## API local, autenticação e sessões
 
-O backend persiste sessões, justificativas, eventos, avisos, notificações internas e solicitações de vínculo em `.data/catraca-de-troia.sqlite`. Responsáveis solicitam vínculo pela matrícula; somente Coordenação/Direção pode analisar, revogar vínculos ativos e consultar a trilha de auditoria. Aprovação ou revogação atualiza a autorização efetiva no backend. Os dados e as credenciais iniciais são fictícios.
+O backend persiste sessões, justificativas, eventos, avisos, notificações internas e solicitações de vínculo em `.data/catraca-de-troia.sqlite`. Responsáveis solicitam vínculo pela matrícula; somente Coordenação/Direção pode analisar, revogar vínculos ativos e consultar a trilha de auditoria. Aprovação ou revogação atualiza a autorização efetiva no backend.
 
 ```bash
 npm run api:dev
 npm run test:api
 ```
 
-A API inicia em `http://127.0.0.1:3001`. Use os atalhos da tela de entrada ou uma das contas abaixo; a senha comum da demonstração é `Troia@2026`.
+A API inicia em `http://127.0.0.1:3001`. O banco nasce vazio; `npm run db:seed` carrega a escola (dados em `server/maintenance/schoolData.ts`) com a senha inicial informada em `SEED_PASSWORD`, que não fica no código. Sem `--reset`, a carga recusa um banco que já tenha pessoas; com `--reset`, faz antes um backup verificado em `.data/backups/` e preserva as câmeras cadastradas.
 
-- Responsável: `claudia.mendes@gmail.com` ou `(11) 98765-4321`.
-- Responsável sem vínculo, para testar a solicitação: `sem.vinculo@gmail.com`.
-- Portaria: `carlos.mendes@emef.educacao.sp.gov.br` ou `MAT-2026/0481`.
-- Coordenação: `mariana.costa@emef.educacao.sp.gov.br` ou `MAT-2026/0129`.
+| Perfil | Conta | Acesso |
+|---|---|---|
+| Coordenação | `gustavo.coelho@catracadetroia.edu.br` | painel completo, inclusive vínculos, contas, auditoria e cadastro facial |
+| Portaria | `hanrry.junior@catracadetroia.edu.br` | registros, estudantes, passagem assistida e câmeras, sem administração nem biometria |
+| Responsável | `saylon.batista@catracadetroia.edu.br` | portal com Lívia, Davi e Helena Batista |
+| Responsável | `fernanda.ribeiro@`, `marcos.almeida@`, `patricia.nunes@`, `roberto.teixeira@`, `juliana.moraes@catracadetroia.edu.br` | portal com os próprios filhos |
 
-As senhas são derivadas com scrypt e salt; a API armazena somente o hash dos tokens opacos. Sessões expiram em 12 horas ou 30 dias quando “lembrar dispositivo” está ativo, podem ser restauradas e são revogadas no logout. A API aplica cabeçalhos básicos de segurança, impede cache das respostas e limita em memória tentativas repetidas de login e solicitações de vínculo. Este é um corte funcional local: ainda faltam provedor institucional, HTTPS, proteção/armazenamento nativo dos tokens, política de senha, MFA, recuperação real, limitação distribuída/persistente e testes formais de segurança.
+Os 10 estudantes têm matrículas `2026-0001` a `2026-0010`. Novos responsáveis se cadastram pelo portal: a conta e o pedido de vínculo são criados juntos, e nenhum dado aparece antes da aprovação da Coordenação ou Direção. Contas da equipe não são criadas pela própria pessoa; a redefinição de senha é feita pela escola.
+
+As senhas são derivadas com scrypt e salt; a API armazena somente o hash dos tokens opacos. Sessões expiram em 12 horas ou 30 dias quando “lembrar dispositivo” está ativo, podem ser restauradas e são revogadas no logout. A API aplica cabeçalhos básicos de segurança, impede cache das respostas e limita em memória tentativas repetidas de login e solicitações de vínculo. Este é um corte funcional local: ainda faltam provedor institucional, HTTPS, proteção/armazenamento nativo dos tokens, política de senha, MFA, redefinição de senha pela Coordenação no painel, limitação distribuída/persistente e testes formais de segurança.
 
 O React consome as rotas comuns. Coordenação/Direção analisam justificativas textuais; Portaria somente consulta a fila. O responsável consulta somente os estudantes com vínculo aprovado. Não há upload/download de arquivos no piloto.
 
-Os eventos persistidos registram estudante, entrada/saída, instante, catraca, método e ator escolar. A simulação automática inicia desativada e não representa hardware real. A passagem assistida exige estudante cadastrado, catraca e motivo, registra a conta escolar autenticada e não envia WhatsApp.
+Os eventos persistidos registram estudante, entrada/saída, instante, catraca, origem e ator escolar. Há duas origens: **Protótipo facial** (câmera autenticada por token do dispositivo) e **Passagem assistida** (equipe, com catraca cadastrada e motivo obrigatório); a simulação de passagens foi removida. Cada estudante segue a sequência do dia: a primeira passagem é entrada e depois alterna, na câmera e na passagem assistida. A rota manual não aceita passagem facial nem define status de entrega.
 
 ## Fila local e sincronização de eventos
 
