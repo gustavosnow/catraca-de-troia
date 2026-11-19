@@ -757,24 +757,26 @@ body {
   font-family: "Montserrat", "Inter", ui-sans-serif, system-ui, sans-serif;
   position: fixed;
   inset: 0;
+  display: grid;
+  grid-template: auto minmax(0, 1fr) auto / minmax(0, 1fr);
   overflow: hidden;
   background: var(--deck-night);
   color: #fff;
 }
 
+.deck[data-theme="light"] { background: var(--deck-paper); color: var(--deck-ink); }
+
 .deck-slide {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   display: flex;
   align-items: center;
   align-items: safe center;
-  padding: clamp(4.5rem, 7vh, 6rem) clamp(1.25rem, 5vw, 5.5rem) clamp(5rem, 9vh, 6.5rem);
+  padding: clamp(1.25rem, 3vh, 2.5rem) clamp(1.25rem, 5vw, 5.5rem);
 }
-.deck-slide[data-theme="light"] { background: var(--deck-paper); color: var(--deck-ink); }
-.deck-slide[data-theme="dark"] { background: var(--deck-night); color: #fff; }
 .deck-inner { position: relative; z-index: 1; width: 100%; max-width: 1240px; margin: 0 auto; }
 
 .deck-eyebrow {

@@ -48,7 +48,7 @@ Linha de base: uma escola, duas catracas, processamento facial local, 24 semanas
 
 ## Início rápido
 
-Requisito: Node.js com npm. A demonstração atual não exige chave Gemini.
+Requisito: Node.js 22 ou superior com npm. A demonstração atual não exige chave Gemini.
 
 ```bash
 npm ci
@@ -66,6 +66,8 @@ npm run dev
 > `npm run db:seed:atividade`, ambos com `SEED_PASSWORD`. O `db:demo` recusa um banco que já tenha dados.
 
 Para completar o cadastro de um banco de demonstração existente, use `npm run db:seed -- --catracas`. O comando acrescenta as câmeras faltantes e preserva as contas, os eventos e as configurações existentes.
+
+Se o `npm ci` pedir um compilador para o SQLite, em sistemas com o binário pré-compilado use `npm ci --ignore-scripts`. O comando `npm run test:api` verifica se o SQLite carregou.
 
 O comando `npm run dev` inicia a API na porta `3001` e o Vite na porta `3000`. O proxy do Vite mantém as chamadas da interface no mesmo endereço. Abra:
 

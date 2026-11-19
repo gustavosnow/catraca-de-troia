@@ -387,6 +387,8 @@ Limites: os slides são material de exposição. Metas, custos e prazo são crit
 
 A revisão acadêmica conferiu TAP, Atividade 01, EAP v1.6 e Plano de Riscos. O slide de evidências identifica a validação atual e a referência anterior da PR #3. O vídeo documenta o ensaio de laboratório de 18/11/2026.
 
+Na verificação final, o cabeçalho e o rodapé passaram a ocupar linhas próprias. O conteúdo rola na área entre eles em janelas baixas. O sumário mantém o foco do teclado e o retorno ao painel restaura a sessão da aba após recarregar um slide.
+
 ## MC-047 — Duas catracas na demonstração em 19/11/2026
 
 A carga inicial cadastra Catraca 01 e Catraca 02, cada uma com câmera de entrada e de saída. O movimento gerado em bases novas usa as duas. O comando `npm run db:seed -- --catracas` complementa uma base de demonstração anterior sem recriar contas ou movimentações e mantém as câmeras existentes. O cadastro representa o cenário de demonstração com o protótipo de laboratório.

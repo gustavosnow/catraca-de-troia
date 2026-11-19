@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, LayoutGrid, Maximize2, Minimize2, X } from 'lucide-react';
+import { useAccessibleDialog } from '../../hooks/useAccessibleDialog';
 import { BrandLockup } from '../brand/BrandMark';
 import { SLIDES } from './slides';
 
@@ -22,6 +23,7 @@ export const ProjectPresentation: React.FC<ProjectPresentationProps> = ({ onExit
   const [index, setIndex] = useState(slideFromHash);
   const [direction, setDirection] = useState<'next' | 'prev' | undefined>();
   const [overview, setOverview] = useState(false);
+  const overviewRef = useAccessibleDialog({ isOpen: overview, onClose: () => setOverview(false) });
   const [fullscreen, setFullscreen] = useState(Boolean(document.fullscreenElement));
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const slide = SLIDES[index];
@@ -64,11 +66,16 @@ export const ProjectPresentation: React.FC<ProjectPresentationProps> = ({ onExit
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (overview) {
+        if (event.key.toLowerCase() === 'g') setOverview(false);
+        return;
+      }
       const target = event.target as HTMLElement | null;
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+      if (target?.classList.contains('deck-slide') && target.scrollHeight > target.clientHeight
+        && ['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', ' '].includes(event.key)) return;
       if (event.key === ' ' && target?.closest('button, a')) return;
-      if (overview && event.key === 'Escape') { setOverview(false); return; }
       switch (event.key) {
         case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ':
           event.preventDefault(); goTo(index + 1); break;
@@ -86,6 +93,7 @@ export const ProjectPresentation: React.FC<ProjectPresentationProps> = ({ onExit
   }, [goTo, index, overview, toggleFullscreen]);
 
   const onTouchStart = (event: React.TouchEvent) => {
+    if (overview) return;
     const touch = event.touches[0];
     touchStart.current = { x: touch.clientX, y: touch.clientY };
   };
@@ -106,14 +114,14 @@ export const ProjectPresentation: React.FC<ProjectPresentationProps> = ({ onExit
     : 'border-[#e5e7eb] bg-white text-[#1f2937] hover:bg-[#f3f4f6]';
 
   return (
-    <div className="deck" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+    <div className="deck" data-theme={slide.theme} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       {/* Progresso */}
       <div className="absolute inset-x-0 top-0 z-20 h-1 bg-black/10" aria-hidden="true">
         <div className="h-full bg-[#ff6a00] transition-[width] duration-500 ease-out" style={{ width: `${((index + 1) / SLIDES.length) * 100}%` }} />
       </div>
 
       {/* Barra superior */}
-      <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 px-4 pt-4 sm:px-8">
+      <header className="flex items-center justify-between gap-3 px-4 pb-2 pt-4 sm:px-8">
         {/* Variante escura da marca (como na arte), legível sobre fundo claro ou escuro. */}
         <BrandLockup size={40} className="sm:w-[134px]" />
         <div className="flex items-center gap-2">
@@ -134,9 +142,9 @@ export const ProjectPresentation: React.FC<ProjectPresentationProps> = ({ onExit
       <section
         key={slide.id}
         className="deck-slide"
-        data-theme={slide.theme}
         data-direction={direction}
         role="group"
+        tabIndex={0}
         aria-roledescription="slide"
         aria-label={`${index + 1} de ${SLIDES.length}: ${slide.title}`}
       >
@@ -144,7 +152,7 @@ export const ProjectPresentation: React.FC<ProjectPresentationProps> = ({ onExit
       </section>
 
       {/* Navegação inferior */}
-      <footer className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between gap-3 px-4 pb-4 sm:px-8 sm:pb-6">
+      <footer className="flex items-center justify-between gap-3 px-4 pb-4 pt-2 sm:px-8 sm:pb-6">
         <p className={`text-sm font-semibold tabular-nums ${dark ? 'text-[#d1d5db]' : 'text-[#4b5563]'}`} aria-live="polite">
           <span className={dark ? 'text-white' : 'text-[#1f2937]'}>{String(index + 1).padStart(2, '0')}</span> / {String(SLIDES.length).padStart(2, '0')}
           <span className="ml-3 hidden md:inline">{slide.title}</span>
@@ -162,7 +170,7 @@ export const ProjectPresentation: React.FC<ProjectPresentationProps> = ({ onExit
 
       {/* Visão geral */}
       {overview && (
-        <div role="dialog" aria-modal="true" aria-label="Todos os slides" className="absolute inset-0 z-30 overflow-y-auto bg-[#0b151d]/95 p-4 backdrop-blur sm:p-10">
+        <div ref={overviewRef} role="dialog" aria-modal="true" aria-label="Todos os slides" tabIndex={-1} className="absolute inset-0 z-30 overflow-y-auto bg-[#0b151d]/95 p-4 backdrop-blur sm:p-10">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <p className="text-lg font-bold text-white">Todos os slides</p>
             <button type="button" className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/15 px-3 text-sm font-semibold text-white hover:bg-white/10" onClick={() => setOverview(false)}>

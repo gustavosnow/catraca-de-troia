@@ -480,13 +480,53 @@ try {
     if (!onlineMessage) throw new Error(`${width}px: retomada da conectividade não refletida.`);
   }
 
+  const presentationViewports = [];
+  for (const [width, height] of [[360, 740], [740, 360], [1366, 618], [1440, 900]]) {
+    await command('browsingContext.setViewport', { context, viewport: { width, height }, devicePixelRatio: 1 });
+    await command('browsingContext.navigate', { context, url: `${baseUrl}/#/projeto/1`, wait: 'complete' });
+    for (let attempt = 0; attempt < 30; attempt++) {
+      if (await evaluate('Boolean(document.querySelector(".deck-slide"))')) break;
+      await wait(100);
+    }
+
+    for (let number = 1; number <= 21; number++) {
+      const issue = await evaluate(`(() => {
+        const slide = document.querySelector('.deck-slide');
+        if (!slide?.getAttribute('aria-label')?.startsWith('${number} de 21:')) return 'slide incorreto';
+        const header = slide.previousElementSibling.getBoundingClientRect();
+        const footer = slide.nextElementSibling.getBoundingClientRect();
+        const area = slide.getBoundingClientRect();
+        const content = slide.querySelector('.deck-inner');
+        if (area.top < header.bottom - 1 || area.bottom > footer.top + 1) return 'barras sobre o conteúdo';
+        slide.scrollTop = 0;
+        if (content.getBoundingClientRect().top < area.top - 1) return 'início cortado';
+        slide.scrollTop = slide.scrollHeight;
+        if (content.getBoundingClientRect().bottom > area.bottom + 1) return 'fim inacessível pela rolagem';
+        if (document.documentElement.scrollWidth > innerWidth) return 'rolagem horizontal da página';
+        return '';
+      })()`);
+      if (issue) throw new Error(`Apresentação ${width}×${height}, slide ${number}: ${issue}.`);
+      if (number < 21) await pressKey('\uE014');
+    }
+    presentationViewports.push(`${width}×${height}`);
+  }
+
+  const overviewButton = 'button[aria-label="Ver todos os slides (G)"]';
+  const overview = '[aria-label="Todos os slides"]';
+  await click(overviewButton);
+  const focusInside = await evaluate(`document.querySelector('${overview}')?.contains(document.activeElement)`);
+  if (!focusInside) throw new Error('O sumário da apresentação abriu sem foco.');
+  await closeDialogWithEscape(overview, overviewButton);
+
   console.log(`Aceite visual concluído: ${executed.length} cenários.`);
+  console.log(`Apresentação: 21 slides conferidos em ${presentationViewports.join(", ")}.`);
   console.log(`Evidências: ${path.relative(root, outputDirectory)}`);
   console.log(executed.join('\n'));
   writeFileSync(path.join(outputDirectory, 'results.json'), `${JSON.stringify({
     executedAt: new Date().toISOString(),
     browser: 'Firefox headless via WebDriver BiDi',
     scenarios: executed,
+    presentationViewports,
     result: 'PASS',
   }, null, 2)}\n`);
   await command('session.end');

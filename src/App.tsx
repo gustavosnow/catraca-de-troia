@@ -111,7 +111,10 @@ export default function App() {
   // Perspective Mode: 'parent_app' (Requested mobile app for parents) vs 'management_dashboard' (School portal)
   const [viewMode, setViewMode] = useState<ViewMode>(getViewModeFromHash);
   const [authenticatedUser, setAuthenticatedUser] = useState<AuthUser | null>(null);
-  const [isRestoringSession, setIsRestoringSession] = useState(authApi.hasStoredSession());
+  const isRestoringSession = viewMode !== 'landing'
+    && viewMode !== 'presentation'
+    && !authenticatedUser
+    && authApi.hasStoredSession();
 
   // Seção do painel escolar, refletida na URL (#/escola/<seção>).
   const [section, setSection] = useState<SchoolSection>(getSectionFromHash);
@@ -133,22 +136,19 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  const endSession = () => {
+    setAuthenticatedUser(null);
+    resetSessionData();
+    setIsAuthModalOpen(true);
+  };
+
   useEffect(() => {
-    const endSession = () => {
-      setAuthenticatedUser(null);
-      resetSessionData();
-      setIsAuthModalOpen(true);
-    };
     window.addEventListener('catraca:session-ended', endSession);
-    if (!isParentOnlyBuild && (viewMode === 'landing' || viewMode === 'presentation')) {
-      setIsRestoringSession(false);
-      return () => window.removeEventListener('catraca:session-ended', endSession);
-    }
-    if (!authApi.hasStoredSession()) {
-      setIsRestoringSession(false);
-      setIsAuthModalOpen(viewMode !== 'landing');
-      return () => window.removeEventListener('catraca:session-ended', endSession);
-    }
+    return () => window.removeEventListener('catraca:session-ended', endSession);
+  }, []);
+
+  useEffect(() => {
+    if (!isRestoringSession) return;
     let active = true;
     authApi.restore()
       .then((user) => {
@@ -158,15 +158,11 @@ export default function App() {
         if (!active) return;
         authApi.clear();
         endSession();
-      })
-      .finally(() => { if (active) setIsRestoringSession(false); });
-    return () => {
-      active = false;
-      window.removeEventListener('catraca:session-ended', endSession);
-    };
-  }, []);
+      });
+    return () => { active = false; };
+  }, [isRestoringSession]);
 
-  const navigateToView = (mode: Exclude<ViewMode, 'landing'>, accessMode?: AccessMode) => {
+  const navigateToView = (mode: Exclude<ViewMode, 'landing' | 'presentation'>, accessMode?: AccessMode) => {
     if (isParentOnlyBuild && mode === 'management_dashboard') return;
     const basePath = mode === 'management_dashboard' ? '/escola' : '/responsaveis';
     // Preserva a seção atual (ex.: #/escola/estudantes) ao restaurar a sessão.
@@ -191,7 +187,10 @@ export default function App() {
 
   const closePresentation = () => {
     let target = '#/apresentacao';
-    try { target = sessionStorage.getItem(PRESENTATION_RETURN_KEY) || target; } catch { /* sem armazenamento */ }
+    try {
+      target = sessionStorage.getItem(PRESENTATION_RETURN_KEY) || target;
+      sessionStorage.removeItem(PRESENTATION_RETURN_KEY);
+    } catch { /* sem armazenamento */ }
     if (target.startsWith('#/projeto')) target = '#/apresentacao';
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
     window.location.hash = target.slice(1);
@@ -276,7 +275,7 @@ export default function App() {
     setIsAuthModalOpen(true);
   };
 
-  const handleSwitchAccess = async (target: Exclude<ViewMode, 'landing'>) => {
+  const handleSwitchAccess = async (target: Exclude<ViewMode, 'landing' | 'presentation'>) => {
     await authApi.logout();
     setAuthenticatedUser(null);
     resetSessionData();
