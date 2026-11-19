@@ -376,3 +376,19 @@ No painel escolar, o nome do responsável aparece uma vez acima de seus estudant
 A visão geral consulta todas as passagens do dia no fuso da escola para totalizar entradas, saídas e passagens por catraca. A presença é calculada pela última passagem de cada estudante naquele dia. A listagem recente continua limitada aos últimos registros.
 
 A carga de demonstração grava a origem fictícia das passagens de câmera e assistidas. O painel, o CSV e o portal identificam essas passagens, e as leituras negadas da carga recebem a mesma identificação. As cargas locais anteriores são reconhecidas pelo identificador de origem, preservando os registros do banco e da fila. Os valores artificiais de similaridade e inferência são omitidos das passagens no painel.
+
+## MC-046 — Apresentação navegável do projeto em 19/11/2026
+
+Solicitação: preparar uma apresentação acadêmica visual para expor o projeto e permitir abri-la tanto na landing quanto no painel escolar.
+
+Ajustes: criada a rota pública `#/projeto` com 21 slides, navegação por botões, teclado e gesto horizontal, visão geral, tela cheia e retorno à tela de origem. O deck reúne escopo, ciclo de vida, EAP, prazo, orçamento, metas, riscos, arquitetura, perfis e evidências, com imagens das interfaces e links para a pasta oficial. O modal resumido **Sobre o projeto** foi substituído por essa apresentação. A paleta azul-marinho e laranja foi preservada.
+
+Limites: os slides são material de exposição. Metas, custos e prazo são critérios e estimativas do cenário planejado; integração física, entrega externa de notificações e homologação não foram demonstradas. As imagens são capturas do protótipo, sem dados reais de estudantes ou biometria. Os documentos acadêmicos vinculados continuam como fonte vigente.
+
+A revisão acadêmica conferiu TAP, Atividade 01, EAP v1.6 e Plano de Riscos. O slide de evidências identifica a validação atual e a referência anterior da PR #3. O vídeo documenta o ensaio de laboratório de 18/11/2026.
+
+Na verificação final, o cabeçalho e o rodapé passaram a ocupar linhas próprias. O conteúdo rola na área entre eles em janelas baixas. O sumário mantém o foco do teclado e o retorno ao painel restaura a sessão da aba após recarregar um slide.
+
+## MC-047 — Duas catracas na demonstração em 19/11/2026
+
+A carga inicial cadastra Catraca 01 e Catraca 02, cada uma com câmera de entrada e de saída. O movimento gerado em bases novas usa as duas. O comando `npm run db:seed -- --catracas` complementa uma base de demonstração anterior sem recriar contas ou movimentações e mantém as câmeras existentes. O cadastro representa o cenário de demonstração com o protótipo de laboratório.

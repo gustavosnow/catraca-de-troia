@@ -5,9 +5,42 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { createApp } from '../app';
+import { ensureDemoTurnstiles } from '../maintenance/demoTurnstiles';
+import { SCHOOL, STAFF } from '../maintenance/schoolData';
 import { createTestDatabase } from './fixtures/schoolFixtures';
 import { AccessDeviceService } from '../modules/accessDevices/service';
 import { apiRequest as request } from './authTestUtils';
+
+test('carga de catracas completa uma base antiga sem sobrescrever câmeras existentes', (t) => {
+  const database = createTestDatabase();
+  t.after(() => database.close());
+  const operator = STAFF.find((member) => member.role === 'STAFF_GATE')!;
+  database.prepare('INSERT INTO schools (id, name) VALUES (?, ?)').run(SCHOOL.id, SCHOOL.name);
+  database.prepare("INSERT INTO users (id, school_id, name, role) VALUES (?, ?, ?, 'STAFF_GATE')")
+    .run(operator.id, SCHOOL.id, operator.name);
+
+  const devices = new AccessDeviceService(database);
+  const entry = devices.register({
+    id: 'cat-01-entrada',
+    schoolId: SCHOOL.id,
+    name: 'Câmera existente',
+    turnstileId: 'cat-01',
+    turnstileName: 'Catraca 01 (Cadastro existente)',
+    direction: 'ENTRY',
+    operatorUserId: operator.id,
+    minScore: 0.64,
+    cameraSource: '1',
+  });
+
+  assert.deepEqual(ensureDemoTurnstiles(database), ['cat-01-saida', 'cat-02-entrada', 'cat-02-saida']);
+  assert.deepEqual(ensureDemoTurnstiles(database), []);
+  assert.equal(devices.authenticate(entry.token).camera_source, '1');
+
+  const actor = { id: operator.id, schoolId: SCHOOL.id, name: operator.name, role: operator.role };
+  const configured = devices.listDevices(actor);
+  assert.deepEqual(configured.find((device) => device.id === entry.device.id), entry.device);
+  assert.deepEqual(configured.filter((device) => device.turnstile.id === 'cat-02').map((device) => device.direction), ['ENTRY', 'EXIT']);
+});
 
 const startApi = async () => {
   let current = Date.parse('2026-11-17T10:00:00.000Z');

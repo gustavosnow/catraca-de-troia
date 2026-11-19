@@ -79,7 +79,7 @@ export default defineConfig(() => {
       VitePWA({
         injectRegister: null,
         registerType: 'autoUpdate',
-        includeAssets: ['pwa-192.png', 'pwa-512.png', 'logo-catraca-troia.png'],
+        includeAssets: ['pwa-192.png', 'pwa-512.png', 'apresentacao/logo-catraca-troia.webp', 'apresentacao/selo-escuro.webp'],
         manifest: {
           id: '/#/responsaveis',
           name: 'Catraca de Troia — Responsáveis',

@@ -256,7 +256,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {dismissible && (
               <button type="button" className="btn-link" onClick={onClose}>
                 <ArrowLeft aria-hidden="true" className="!translate-x-0" />
-                Voltar<span className="max-[379px]:sr-only">&nbsp;à apresentação</span>
+                <span>Voltar<span className="max-[379px]:sr-only">{' à apresentação'}</span></span>
               </button>
             )}
           </div>
