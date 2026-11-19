@@ -214,7 +214,7 @@ const System: React.FC = () => (
       </div>
       <div className="relative">
         <div className="deck-pop" style={d(1)}>
-          <Laptop src="/apresentacao/tela-painel.webp" alt="Tela da visão geral do painel escolar" />
+          <Laptop src="/apresentacao/tela-painel.webp" alt="Visão geral do painel escolar com duas catracas cadastradas" />
         </div>
         <div className="deck-pop absolute -bottom-8 -right-2 w-[28%] min-w-[110px] sm:-right-6" style={d(3)}>
           <Phone src="/apresentacao/tela-portal.webp" alt="Tela inicial do portal dos responsáveis no celular" />
