@@ -7,6 +7,7 @@
  * Sem --reset, recusa um banco que já tenha pessoas cadastradas. Com --reset,
  * cria antes um backup verificado em .data/backups, recria o banco vazio e
  * preserva as câmeras já cadastradas (catraca, sentido, limiar e fonte de vídeo).
+ * Sem câmeras para preservar (clone novo), cadastra entrada e saída da catraca 01.
  * A senha inicial vem de SEED_PASSWORD e não fica no código.
  */
 import { existsSync, rmSync } from 'node:fs';
@@ -16,6 +17,7 @@ import { randomUUID } from 'node:crypto';
 import { createDatabase } from '../db';
 import { MIN_PASSWORD_LENGTH, registerCredentials } from '../auth/credentials';
 import { createVerifiedBackup } from './databaseBackup';
+import { AccessDeviceService } from '../modules/accessDevices/service';
 import { GUARDIANS, SCHOOL, STAFF, STUDENTS } from './schoolData';
 
 interface DeviceRow {
@@ -124,11 +126,35 @@ const main = async () => {
     `).run(randomUUID(), SCHOOL.id, coordinator.id, SCHOOL.id,
       `${STAFF.length} equipe, ${GUARDIANS.length} responsáveis, ${STUDENTS.length} estudantes`, now);
   })();
+
+  // Clone novo: sem câmeras para preservar, cadastra entrada e saída da catraca 01.
+  // A fonte de vídeo fica para o painel (Ferramentas); o painel gera o token a cada início.
+  const createdDevices: string[] = [];
+  if (devices.length === 0) {
+    const service = new AccessDeviceService(database);
+    for (const direction of ['ENTRY', 'EXIT'] as const) {
+      const id = direction === 'ENTRY' ? 'cat-01-entrada' : 'cat-01-saida';
+      service.register({
+        id,
+        schoolId: SCHOOL.id,
+        name: direction === 'ENTRY' ? 'Câmera de entrada' : 'Câmera de saída',
+        turnstileId: 'cat-01',
+        turnstileName: 'Catraca 01 (Portão Principal)',
+        direction,
+        operatorUserId: gate.id,
+        minScore: 0.4,
+      });
+      createdDevices.push(id);
+    }
+  }
   database.close();
 
   console.log(`Escola: ${SCHOOL.name}`);
   console.log(`Equipe: ${STAFF.map((member) => `${member.name} <${member.email}>`).join(', ')}`);
   console.log(`Responsáveis: ${GUARDIANS.length} | Estudantes: ${STUDENTS.length} | Câmeras preservadas: ${devices.length}`);
+  if (createdDevices.length > 0) {
+    console.log(`Câmeras cadastradas: ${createdDevices.join(', ')} (defina a fonte de vídeo em Ferramentas).`);
+  }
   console.log('Todas as contas usam a senha inicial definida em SEED_PASSWORD.');
 };
 

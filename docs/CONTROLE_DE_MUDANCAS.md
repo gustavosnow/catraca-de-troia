@@ -350,3 +350,5 @@ Decisão: `npm run db:seed:atividade` gera o movimento das dez últimas semanas 
 Conteúdo: passagens dos 10 estudantes por turno, com cerca de 1 em 8 assistidas, chegadas atrasadas, uma saída antecipada e cinco faltas; uma ou duas leituras negadas por dia; cinco comunicados da Coordenação; quatro justificativas textuais (duas aprovadas, uma recusada, uma pendente) e uma falta sem justificativa; um pedido de vínculo recusado e o cadastro de uma nova responsável com pedido pendente; leitura das notificações pelos responsáveis, deixando as dos dois últimos dias não lidas.
 
 Limites: as passagens pela câmera são geradas pela rota de reconhecimento, sem câmera física; similaridade e tempo de inferência são valores de carga, não medições do protótipo.
+
+Ajuste da MC-040: o banco (`.data/`) continua fora do Git, porque guarda hashes de senhas e sessões e mudaria a cada uso. Para a equipe ver os mesmos dados, `npm run db:demo` roda a carga da escola e o movimento num clone novo; sem câmeras a preservar, a carga cadastra entrada e saída da catraca 01. O README avisa que os dados precisam ser ativados e não publica a senha.

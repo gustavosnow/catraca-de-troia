@@ -14,10 +14,21 @@ Requisito: Node.js com npm. A demonstração atual não exige chave Gemini.
 
 ```bash
 npm ci
-SEED_PASSWORD='senha-inicial' npm run db:seed             # só na primeira vez: carga da escola
-SEED_PASSWORD='senha-inicial' npm run db:seed:atividade   # opcional: duas semanas de movimento
+SEED_PASSWORD='senha-combinada' npm run db:demo   # só na primeira vez: ativa os dados
 npm run dev
 ```
+
+> **Ative os dados antes de usar.** O banco (`.data/`) não vai para o Git: ele guarda
+> hashes de senhas e sessões e mudaria a cada uso. Sem o `db:demo`, o sistema abre
+> vazio e o login não funciona. O comando roda uma vez por computador e cria a
+> escola, as contas, as duas câmeras da catraca 01 e as duas últimas semanas
+> letivas de movimento. A senha de todas as contas é a que você passar em
+> `SEED_PASSWORD`; combine-a com a equipe fora do repositório. Ela não fica no código.
+> As datas do movimento são calculadas a partir do dia em que o comando roda.
+> Para recomeçar: `SEED_PASSWORD='...' npm run db:seed -- --reset` e
+> depois `SEED_PASSWORD='...' npm run db:seed:atividade` (o `--reset`
+> faz backup antes em `.data/backups/`). O `db:demo` recusa um banco que já
+> tenha dados, para não apagar o de ninguém.
 
 Abra `http://localhost:3000`. O comando inicia a API na porta `3001` e o Vite na porta `3000`; o proxy do Vite mantém as chamadas da interface no mesmo endereço. A raiz abre a apresentação pública, que encaminha para o portal dos responsáveis ou para o painel escolar.
 
