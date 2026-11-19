@@ -366,3 +366,7 @@ Em navegadores com `BroadcastChannel`, uma aba aberta por outra que copie a sess
 ## MC-043 — Meus vínculos e leitura em telas estreitas em 19/11/2026
 
 O formulário e o histórico de solicitações passaram da aba **Avisos** para a área **Meus vínculos**, acessível pelo menu da conta e pelo atalho no Início. Sem estudante vinculado, o formulário continua disponível logo após o login. As observações da escola usam a largura do cartão, e horários, indicadores e ações passam para a linha seguinte quando disputam espaço com o texto. O aceite visual inclui solicitações recusadas com observação e notificações de título longo, a partir de 320 px.
+
+## MC-044 — Vínculos ativos agrupados por responsável em 19/11/2026
+
+No painel escolar, o nome do responsável aparece uma vez acima de seus estudantes. Cada vínculo mantém data, situação e revogação individual. O agrupamento usa a conta do responsável, por isso contas com o mesmo nome continuam separadas e um estudante pode aparecer em mais de um grupo quando há mais de um vínculo aprovado. A lista se ajusta à tela do celular.

@@ -21,7 +21,7 @@ Não integram o piloto atestados ou outros anexos, ficha de saúde, carteirinha 
 | 1.3.5 | Integração de catracas | Duas unidades demonstrativas; passagem assistida de aluno com motivo e operador; cadastro de câmera por catraca/sentido com token opaco (`npm run device:register`) | Nenhum hardware acionado; liberação apenas indicada na tela do agente |
 | 1.3.6 | Notificações | Caixa interna e fila PUSH_DEMO | Sem push/WhatsApp externo ou prova da meta temporal |
 | 1.3.7 | Gestão biométrica | Cadastro/remoção local de vetores do protótipo, com confirmação de consentimento e sem fotos (`edge/enroll.py`) | Vetores sem criptografia institucional; governança LGPD e módulo de produção pendentes |
-| 1.3.8 | Perfis e vínculos | Sessões opacas e independentes por aba no navegador (MC-042), aprovação/revogação de vínculo e autorização no backend | Sem identidade institucional ou homologação de segurança |
+| 1.3.8 | Perfis e vínculos | Sessões opacas e independentes por aba no navegador (MC-042), aprovação/revogação de vínculo, autorização no backend e lista de vínculos ativos agrupada por responsável (MC-044) | Sem identidade institucional ou homologação de segurança |
 | 1.4.1–1.4.3 | Testes e qualidade | TypeScript, build, testes API e validação PWA | Não comprova carga, segurança ou metas da EAP |
 | 1.5.1 | Continuidade e backup | Fila local, idempotência, sincronização e backup testados em ambiente local | Implantação escolar e destino remoto pendentes |
 | 1.5.2 | Instalação física | Quantidade de catracas refletida no cenário | Comissionamento pendente |
