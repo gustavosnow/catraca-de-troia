@@ -7,6 +7,7 @@ import {
   Clock3,
   FlaskConical,
   Hand,
+  ScanFace,
   ShieldCheck,
   Smartphone,
 } from 'lucide-react';
@@ -30,10 +31,27 @@ export const DirectionChip: React.FC<{ direction: AccessLog['direction'] }> = ({
     ? <Chip tone="positive" icon={ArrowDownLeft}>Entrada</Chip>
     : <Chip tone="neutral" icon={ArrowUpRight}>Saída</Chip>;
 
-export const MethodChip: React.FC<{ method: AccessLog['method'] }> = ({ method }) =>
-  method === 'Manual'
-    ? <Chip tone="info" icon={Hand} title="Passagem assistida registrada pela portaria">Assistida</Chip>
-    : <Chip tone="neutral" icon={FlaskConical} title="Evento simulado — nenhum reconhecimento facial real">Simulada</Chip>;
+/**
+ * Origem do registro, com o mesmo rótulo na tabela, na ficha do estudante e no CSV:
+ * passagem assistida pela portaria, protótipo facial (MC-036) ou evento simulado.
+ */
+export const accessOriginLabel = (log: AccessLog) => {
+  if (log.method === 'Manual') return 'Assistida';
+  return log.source === 'camera' ? 'Protótipo facial' : 'Simulada';
+};
+
+export const MethodChip: React.FC<{ log: AccessLog }> = ({ log }) => {
+  if (log.method === 'Manual') {
+    return <Chip tone="info" icon={Hand} title="Passagem assistida registrada pela portaria">Assistida</Chip>;
+  }
+  if (log.source === 'camera') {
+    const detail = log.recognition
+      ? `Protótipo facial: similaridade ${log.recognition.matchScore.toFixed(3)}, inferência ${Math.round(log.recognition.inferenceMs)} ms (${log.recognition.deviceId})`
+      : 'Protótipo facial de laboratório — sem homologação';
+    return <Chip tone="brand" icon={ScanFace} title={detail}>Protótipo facial</Chip>;
+  }
+  return <Chip tone="neutral" icon={FlaskConical} title="Evento simulado — nenhum reconhecimento facial real">Simulada</Chip>;
+};
 
 export const StatusChip: React.FC<{ log: AccessLog }> = ({ log }) => {
   if (log.status === 'Tolerância') return <Chip tone="warning" icon={Clock3}>Tolerância</Chip>;
@@ -61,7 +79,7 @@ export const AccessLogTable: React.FC<AccessLogTableProps> = ({ logs, onSelectSt
             <th scope="col">Horário</th>
             <th scope="col">Movimento</th>
             <th scope="col">Catraca</th>
-            {full && <th scope="col">Método</th>}
+            {full && <th scope="col">Origem</th>}
             {full && <th scope="col">Situação</th>}
             {full && <th scope="col">Notificação</th>}
             <th scope="col" className="w-14 pr-6 text-right"><span className="sr-only">Detalhes</span></th>
@@ -93,7 +111,7 @@ export const AccessLogTable: React.FC<AccessLogTableProps> = ({ logs, onSelectSt
                   <p className="num font-medium">{turnstile.code}</p>
                   <p className="cell-secondary">{turnstile.place}</p>
                 </td>
-                {full && <td><MethodChip method={log.method} /></td>}
+                {full && <td><MethodChip log={log} /></td>}
                 {full && <td><StatusChip log={log} /></td>}
                 {full && (
                   <td className="whitespace-nowrap">

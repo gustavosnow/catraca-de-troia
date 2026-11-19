@@ -4,7 +4,7 @@ import type { AccessLog } from '../../types';
 import { TURMAS_LIST } from '../../data/mockData';
 import { EmptySearchIllustration } from '../brand/Illustrations';
 import { Callout, EmptyState, PageHeader, SkeletonRows } from '../ui';
-import { AccessLogTable } from './AccessLogTable';
+import { AccessLogTable, accessOriginLabel } from './AccessLogTable';
 
 interface AccessRecordsPageProps {
   logs: AccessLog[];
@@ -57,7 +57,7 @@ export const AccessRecordsPage: React.FC<AccessRecordsPageProps> = ({
   };
 
   const exportCsv = () => {
-    const headers = ['Movimento', 'Horario', 'Data', 'Matricula', 'Estudante', 'Turma', 'Turno', 'Catraca', 'Metodo', 'Situacao', 'Notificacao interna'];
+    const headers = ['Movimento', 'Horario', 'Data', 'Matricula', 'Estudante', 'Turma', 'Turno', 'Catraca', 'Origem', 'Situacao', 'Notificacao interna'];
     const rows = filtered.map((log) => [
       log.direction === 'entry' ? 'Entrada' : 'Saída',
       log.exactTime,
@@ -67,7 +67,7 @@ export const AccessRecordsPage: React.FC<AccessRecordsPageProps> = ({
       log.turma,
       log.shift,
       log.turnstileName,
-      log.method === 'Manual' ? 'Assistida' : 'Simulada',
+      accessOriginLabel(log),
       log.status,
       log.notification.pushApp,
     ].map(csvCell).join(';'));
