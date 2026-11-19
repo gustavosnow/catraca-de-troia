@@ -10,3 +10,9 @@ public/*.apk
 *.log
 .env*
 !.env.example
+
+# Protótipo facial (MC-036): vetores, métricas, modelos e ambiente local nunca vão para o Git
+edge/data/
+edge/models/
+edge/.venv/
+__pycache__/

@@ -3,6 +3,75 @@ import { randomBytes, scryptSync } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
+/**
+ * Definição atual de access_events. Também é usada para reconstruir bases
+ * antigas, cujo CHECK de `source` aceitava apenas DEMO_SIMULATION (MC-036).
+ */
+const accessEventsColumns = `
+    id TEXT PRIMARY KEY,
+    school_id TEXT NOT NULL REFERENCES schools(id),
+    student_id TEXT NOT NULL REFERENCES students(id),
+    direction TEXT NOT NULL CHECK (direction IN ('ENTRY', 'EXIT')),
+    occurred_at TEXT NOT NULL,
+    turnstile_id TEXT NOT NULL,
+    turnstile_name TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('AUTHORIZED', 'MANUAL_RELEASE')),
+    method TEXT NOT NULL CHECK (method IN ('FACIAL', 'MANUAL')),
+    created_by TEXT NOT NULL REFERENCES users(id),
+    source TEXT NOT NULL CHECK (source IN ('DEMO_SIMULATION', 'FACE_PROTOTYPE')),
+    whatsapp_status TEXT NOT NULL CHECK (whatsapp_status IN ('DELIVERED', 'PENDING')),
+    push_status TEXT NOT NULL CHECK (push_status IN ('DELIVERED', 'PENDING')),
+    reason TEXT,
+    idempotency_key TEXT NOT NULL,
+    request_hash TEXT NOT NULL,
+    origin_node_id TEXT,
+    origin_event_id TEXT,
+    sync_payload_hash TEXT,
+    device_id TEXT,
+    match_score REAL,
+    inference_ms REAL,
+    UNIQUE (created_by, idempotency_key)`;
+
+const accessEventsColumnNames = [
+  'id', 'school_id', 'student_id', 'direction', 'occurred_at', 'turnstile_id',
+  'turnstile_name', 'status', 'method', 'created_by', 'source', 'whatsapp_status',
+  'push_status', 'reason', 'idempotency_key', 'request_hash', 'origin_node_id',
+  'origin_event_id', 'sync_payload_hash', 'device_id', 'match_score', 'inference_ms',
+];
+
+/** Reconstrói access_events preservando todas as linhas, quando o CHECK é antigo. */
+const migrateAccessEventsSourceCheck = (database: Database.Database) => {
+  const table = database.prepare(`
+    SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'access_events'
+  `).get() as { sql: string } | undefined;
+  if (!table || table.sql.includes('FACE_PROTOTYPE')) return;
+
+  const columns = accessEventsColumnNames.join(', ');
+  database.pragma('foreign_keys = OFF');
+  try {
+    database.transaction(() => {
+      database.exec(`
+        CREATE TABLE access_events_mc035 (${accessEventsColumns}
+        );
+        INSERT INTO access_events_mc035 (${columns})
+          SELECT ${columns} FROM access_events;
+        DROP TABLE access_events;
+        ALTER TABLE access_events_mc035 RENAME TO access_events;
+        CREATE INDEX IF NOT EXISTS idx_access_events_school_time
+          ON access_events(school_id, occurred_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_access_events_student_time
+          ON access_events(student_id, occurred_at DESC);
+      `);
+      const violations = database.pragma('foreign_key_check(access_events)') as unknown[];
+      if (violations.length > 0) {
+        throw new Error('Migração de access_events encontrou referências inválidas.');
+      }
+    })();
+  } finally {
+    database.pragma('foreign_keys = ON');
+  }
+};
+
 const schema = `
   CREATE TABLE IF NOT EXISTS schools (
     id TEXT PRIMARY KEY,
@@ -130,24 +199,43 @@ const schema = `
     ON justifications(student_id, submitted_at DESC);
 
   CREATE TABLE IF NOT EXISTS access_events (
+${accessEventsColumns}
+  );
+
+  CREATE TABLE IF NOT EXISTS access_devices (
     id TEXT PRIMARY KEY,
     school_id TEXT NOT NULL REFERENCES schools(id),
-    student_id TEXT NOT NULL REFERENCES students(id),
-    direction TEXT NOT NULL CHECK (direction IN ('ENTRY', 'EXIT')),
-    occurred_at TEXT NOT NULL,
+    name TEXT NOT NULL,
     turnstile_id TEXT NOT NULL,
     turnstile_name TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('AUTHORIZED', 'MANUAL_RELEASE')),
-    method TEXT NOT NULL CHECK (method IN ('FACIAL', 'MANUAL')),
-    created_by TEXT NOT NULL REFERENCES users(id),
-    source TEXT NOT NULL CHECK (source IN ('DEMO_SIMULATION')),
-    whatsapp_status TEXT NOT NULL CHECK (whatsapp_status IN ('DELIVERED', 'PENDING')),
-    push_status TEXT NOT NULL CHECK (push_status IN ('DELIVERED', 'PENDING')),
-    reason TEXT,
-    idempotency_key TEXT NOT NULL,
-    request_hash TEXT NOT NULL,
-    UNIQUE (created_by, idempotency_key)
+    direction TEXT NOT NULL CHECK (direction IN ('ENTRY', 'EXIT')),
+    operator_user_id TEXT NOT NULL REFERENCES users(id),
+    min_score REAL NOT NULL CHECK (min_score > 0 AND min_score < 1),
+    token_hash TEXT NOT NULL UNIQUE,
+    active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+    created_at TEXT NOT NULL,
+    last_seen_at TEXT,
+    camera_source TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS access_denials (
+    id TEXT PRIMARY KEY,
+    school_id TEXT NOT NULL REFERENCES schools(id),
+    device_id TEXT NOT NULL REFERENCES access_devices(id),
+    capture_id TEXT NOT NULL,
+    turnstile_id TEXT NOT NULL,
+    turnstile_name TEXT NOT NULL,
+    direction TEXT NOT NULL CHECK (direction IN ('ENTRY', 'EXIT')),
+    reason TEXT NOT NULL CHECK (reason IN ('UNKNOWN_FACE', 'LOW_SCORE', 'STUDENT_NOT_REGISTERED')),
+    student_id TEXT REFERENCES students(id),
+    match_score REAL NOT NULL,
+    inference_ms REAL NOT NULL,
+    occurred_at TEXT NOT NULL,
+    UNIQUE (device_id, capture_id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_access_denials_school_time
+    ON access_denials(school_id, occurred_at DESC);
 
   CREATE TABLE IF NOT EXISTS access_event_sync_queue (
     event_id TEXT PRIMARY KEY REFERENCES access_events(id) ON DELETE CASCADE,
@@ -428,9 +516,23 @@ export const createDatabase = (options: DatabaseOptions = {}) => {
   if (!accessEventColumns.some((column) => column.name === 'sync_payload_hash')) {
     database.exec('ALTER TABLE access_events ADD COLUMN sync_payload_hash TEXT');
   }
+  for (const [column, definition] of [
+    ['device_id', 'TEXT'],
+    ['match_score', 'REAL'],
+    ['inference_ms', 'REAL'],
+  ] as const) {
+    if (!accessEventColumns.some((candidate) => candidate.name === column)) {
+      database.exec(`ALTER TABLE access_events ADD COLUMN ${column} ${definition}`);
+    }
+  }
+  migrateAccessEventsSourceCheck(database);
   const justificationColumns = database.prepare('PRAGMA table_info(justifications)').all() as Array<{ name: string }>;
   if (!justificationColumns.some((column) => column.name === 'attachment_id')) {
     database.exec('ALTER TABLE justifications ADD COLUMN attachment_id TEXT REFERENCES attachments(id)');
+  }
+  const deviceColumns = database.prepare('PRAGMA table_info(access_devices)').all() as Array<{ name: string }>;
+  if (!deviceColumns.some((column) => column.name === 'camera_source')) {
+    database.exec('ALTER TABLE access_devices ADD COLUMN camera_source TEXT');
   }
   const linkColumns = database.prepare('PRAGMA table_info(guardian_student_links)').all() as Array<{ name: string }>;
   const linkMigrations = [

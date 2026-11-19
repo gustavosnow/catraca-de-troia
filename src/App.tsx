@@ -503,6 +503,7 @@ export default function App() {
           ? await accessEventsApi.listForGuardian(students)
           : await accessEventsApi.listForSchool(students);
         if (!active) return;
+        if (viewMode === 'management_dashboard') announceNewCameraEvents(records);
         setLogs(records);
         setAccessEventsState('persistent');
         setAccessEventsError(undefined);
@@ -569,6 +570,28 @@ export default function App() {
       setIsRetryingSyncConflicts(false);
     }
   };
+
+  // Eventos da câmera chegam pela consulta periódica; avisa no painel os que ainda não foram vistos.
+  const seenCameraEventIds = useRef<Set<string> | null>(null);
+  function announceNewCameraEvents(records: AccessLog[]) {
+    const cameraEvents = records.filter((record) => record.source === 'camera');
+    const seen = seenCameraEventIds.current;
+    seenCameraEventIds.current = new Set(cameraEvents.map((record) => record.id));
+    if (!seen) return;
+    const latest = cameraEvents.find((record) => !seen.has(record.id));
+    if (!latest) return;
+    soundManager.playAccessGranted();
+    setToastMessage({
+      id: latest.id,
+      title: latest.direction === 'entry' ? 'Entrada pela câmera' : 'Saída pela câmera',
+      studentName: latest.studentName,
+      time: latest.exactTime,
+      phone: latest.notification.phoneTarget,
+    });
+    setTimeout(() => {
+      setToastMessage((current) => current?.id === latest.id ? null : current);
+    }, 4500);
+  }
 
   // Real-time live simulation state
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
