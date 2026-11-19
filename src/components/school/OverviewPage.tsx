@@ -146,12 +146,12 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                             <li key={lane.deviceId} className="flex items-center justify-between gap-3 text-[13px]">
                               <span className="flex items-center gap-2 text-ink-2">
                                 {lane.direction === 'entry' ? <LogIn aria-hidden="true" className="h-4 w-4" /> : <LogOut aria-hidden="true" className="h-4 w-4" />}
-                                {lane.direction === 'entry' ? 'Câmera de entrada' : 'Câmera de saída'}
+                                {lane.direction === 'entry' ? 'Entrada' : 'Saída'}
                               </span>
                               {!lane.active
-                                ? <Chip tone="neutral">Desativada</Chip>
+                                ? <Chip tone="neutral">Câmera desativada</Chip>
                                 : reading
-                                  ? <Chip tone="positive">Lendo</Chip>
+                                  ? <Chip tone="positive">Leitura recente</Chip>
                                   : <Chip tone="neutral">Sem leitura recente</Chip>}
                             </li>
                           );
