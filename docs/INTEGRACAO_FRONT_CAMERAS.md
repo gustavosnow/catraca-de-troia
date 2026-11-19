@@ -4,6 +4,10 @@ Guia para quem constrói as telas que comandam o protótipo de reconhecimento
 facial. A funcionalidade já existe na API; este documento descreve **como usá-la
 no front**. Regras de negócio e limites: `CONTROLE_DE_MUDANCAS.md` (MC-036 e MC-037).
 
+> **Estado (MC-038):** implementado em `src/components/school/FaceRecognitionPanel.tsx`,
+> exibido em **Ferramentas** do painel escolar. Origem dos registros: `accessOriginLabel`
+> e `MethodChip` em `src/components/school/AccessLogTable.tsx`.
+
 > Protótipo de laboratório. Cadastre apenas adultos da equipe, com consentimento,
 > ligados a estudantes fictícios. As telas não devem sugerir reconhecimento
 > homologado, catraca física acionada ou uso com estudantes reais.

@@ -311,3 +311,14 @@ Decisão: a API local passa a iniciar e encerrar os scripts de `edge/` como proc
 Segurança e governança: desligado por padrão; ligado somente por `EDGE_CONTROL_ENABLED=true`, definido em `npm run dev` (uso local) e ausente de `api:device` e da apresentação. Argumentos dos scripts vêm da base (catraca, câmera, nome do estudante), nunca de texto livre. Iniciar/parar catraca: perfis escolares. Cadastrar, consultar, remover rostos e configurar câmera: somente Coordenação e Direção; o cadastro exige `consent: true` (adulto da equipe, com consentimento, ligado a estudante fictício). Início, término e remoção ficam em `audit_log` (`FACE_ENROLLMENT`, `EDGE_AGENT`, `ACCESS_DEVICE`). Uma câmera não pode ser usada por dois processos ao mesmo tempo.
 
 Limites: mantém todos os limites de MC-036. O comando só funciona no computador onde a API e o ambiente Python estão instalados; não há controle remoto de outras máquinas nem acionamento de catraca física.
+
+
+## MC-038 — Integração do protótipo facial ao redesign em 18/11/2026
+
+Solicitação: integrar a PR #2 (MC-036 e MC-037) à `main` com o redesign da MC-035, sem restaurar a interface antiga e sem perder simulação, passagem assistida, registros ou autorização.
+
+Decisão: a `main` é a referência de estrutura e identidade visual; a PR é a referência de contratos, API e agente. O backend da PR entrou sem conflito. `LiveStreamFeed.tsx`, substituído no redesign, foi removido; a distinção de origem que ele recebeu foi levada para `AccessLogTable`. O painel facial foi reescrito com os componentes do redesign e passou a ser um cartão de **Ferramentas**: estado das câmeras, fonte de vídeo (Coordenação/Direção), iniciar e parar por catraca, cadastro facial com estudante fictício, câmera de captura e confirmação obrigatória de consentimento, lista e remoção de cadastros com confirmação, últimas leituras negadas e os estados `RUNNING`, `STOPPING`, `STOPPED`, `COMPLETED` e `FAILED`. Uma única consulta periódica (2 s com processo ativo, 5 s no restante) é encerrada ao sair da tela. O aviso de nova passagem pela câmera reaproveita a consulta de eventos do `App.tsx` e dispara uma vez por registro.
+
+Origem dos registros: `FACE_PROTOTYPE` aparece como **Protótipo facial**, distinto de **Simulada** e **Assistida**, com o mesmo rótulo na tabela de registros, na ficha do estudante e na exportação CSV (coluna `Origem`, antes `Metodo`).
+
+Limites: mantém todos os limites de MC-036 e MC-037. Comando das câmeras só com `npm run dev` no computador da portaria; na apresentação por QR, o cartão mostra estado e leituras negadas, com os comandos desligados. Ensaio físico com câmera e adulto voluntário não foi executado nesta integração (ambiente sem `edge/.venv`, OpenCV e modelos). Validação: lint, build, PWA, 39 testes de API, 24 cenários de aceite visual, 26 verificações de regras de negócio em base isolada e 15 verificações da interface com respostas simuladas da API.
